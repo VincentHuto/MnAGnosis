@@ -18,6 +18,10 @@ public enum EnumArmorTiers implements ArmorMaterial {
 			3.0F, 0.1F, () -> {
 				return Ingredient.of(ItemRegistry.primal_mote.get());
 			}),
+	PRIMAL_CROWN(MnAGnosis.MODID + ":primal_crown", 37, new int[] { 3, 6, 8, 3 }, 15, SoundEvents.ARMOR_EQUIP_NETHERITE,
+			3.0F, 0.1F, () -> {
+		return Ingredient.of(ItemRegistry.primal_mote.get());
+	}),
 	;
 
 	private static final int[] MAX_DAMAGE_ARRAY = new int[] { 13, 15, 16, 11 };

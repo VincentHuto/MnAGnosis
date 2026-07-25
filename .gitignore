@@ -21,7 +21,17 @@ build
 eclipse
 run
 
+# Keep the minimal Forge GameTest structure reproducible.
+!run/
+run/*
+!run/gameteststructures/
+run/gameteststructures/*
+!run/gameteststructures/empty.snbt
+
 libs
 
 # Files from Forge MDK
 forge*changelog.txt
+/.codebuddy/
+/docs/
+/docs/

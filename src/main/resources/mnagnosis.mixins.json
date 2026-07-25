@@ -4,8 +4,17 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "mnagnosis.refmap.json",
   "mixins": [
+    "core.AncientCouncilMixin",
+    "core.CommandMnaMixin",
+    "core.DemonLordMixin",
+    "core.EffectColdDarkMixin",
+    "core.FaerieQueenMixin",
+    "core.ProgressionEventHandlerMixin",
+    "core.PlayerProgressionMixin"
   ],
   "client": [
+    "client.GuiOcculusMixin",
+    "core.RenderTypeAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

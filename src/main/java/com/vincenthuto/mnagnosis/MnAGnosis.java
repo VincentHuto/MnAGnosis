@@ -1,14 +1,15 @@
 package com.vincenthuto.mnagnosis;
 
 import com.mojang.logging.LogUtils;
+import com.vincenthuto.mnagnosis.client.render.block.TesseractBlockEntityRenderer;
+import com.vincenthuto.mnagnosis.common.registry.BlockEntityRegistry;
+import com.vincenthuto.mnagnosis.common.registry.BlockRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -16,6 +17,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
@@ -41,9 +43,13 @@ public class MnAGnosis {
     public MnAGnosis(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::clientSetup);
+
         GeckoLib.initialize();
         CREATIVE_MODE_TABS.register(modEventBus);
         ItemRegistry.BASEITEMS.register(modEventBus);
+        BlockRegistry.BASEBLOCKS.register(modEventBus);
+        BlockEntityRegistry.BLOCK_ENTITIES.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(this);
         modEventBus.addListener(this::addCreative);
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -54,6 +60,10 @@ public class MnAGnosis {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+    }
+    public  void clientSetup(FMLClientSetupEvent event) {
+        BlockEntityRenderers.register(BlockEntityRegistry.TESSERACT_BE.get(),
+                TesseractBlockEntityRenderer::new);
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
@@ -66,4 +76,5 @@ public class MnAGnosis {
 
         // LOGGER.info("HELLO from server starting");
     }
+
 }

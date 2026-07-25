@@ -1,0 +1,62 @@
+package com.vincenthuto.mnagnosis.client.shader.core;
+
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.mixin.core.RenderTypeAccessor;
+import net.minecraft.Util;
+import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
+
+import java.util.function.Function;
+
+public final class RenderHelper extends RenderType {
+    private RenderHelper(String string, VertexFormat vertexFormat, VertexFormat.Mode mode, int i, boolean bl, boolean bl2, Runnable runnable, Runnable runnable2) {
+        super(string, vertexFormat, mode, i, bl, bl2, runnable, runnable2);
+        throw new UnsupportedOperationException("Should not be instantiated");
+    }
+
+    private static final Function<ResourceLocation, RenderType> DOPPLEGANGER = Util.memoize(texture -> {
+        // [VanillaCopy] entity_translucent, with own shader
+        CompositeState glState = RenderType.CompositeState.builder()
+                .setShaderState(new ShaderStateShard(CoreShaders::doppleganger))
+                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return makeLayer("mnagnosis:doppleganger", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, glState);
+    });
+
+    private static final Function<ResourceLocation, RenderType> NOISE = Util.memoize(texture -> {
+        // [VanillaCopy] entity_translucent, with own shader
+        CompositeState glState = RenderType.CompositeState.builder()
+                .setShaderState(new ShaderStateShard(CoreShaders::noise))
+                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return makeLayer("mnagnosis:noise", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, glState);
+    });
+
+    public static RenderType getDopplegangerLayer(ResourceLocation texture) {
+        return DOPPLEGANGER.apply(texture);
+    }
+
+    public static RenderType getNoiseLayer(ResourceLocation texture) {
+        return NOISE.apply(texture);
+    }
+    private static RenderType makeLayer(String name, VertexFormat format, VertexFormat.Mode mode,
+                                        int bufSize, boolean hasCrumbling, boolean sortOnUpload, CompositeState glState) {
+        return RenderTypeAccessor.create(name, format, mode, bufSize, hasCrumbling, sortOnUpload, glState);
+    }
+
+    private static RenderType makeLayer(String name, VertexFormat format, VertexFormat.Mode mode,
+                                        int bufSize, CompositeState glState) {
+        return makeLayer(name, format, mode, bufSize, false, false, glState);
+    }
+}

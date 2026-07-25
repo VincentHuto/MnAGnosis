@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mnagnosis:block/tesseract_block"
+    }
+  }
+}
