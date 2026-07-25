@@ -36,6 +36,22 @@ public abstract class EffectColdDarkMixin {
             method = "lambda$removeAttributeModifiers$0",
             at = @At(
                     value = "INVOKE",
+                    target = "Lcom/mna/api/capabilities/IPlayerProgression;setTier(ILnet/minecraft/world/entity/player/Player;)V"
+            ),
+            require = 1
+    )
+    private static void mnagnosis$replaceUndeadTierSixWithTruth(
+            IPlayerProgression progression,
+            int requestedTier,
+            Player player
+    ) {
+        Tier6Progression.advanceOrSummonTruthNearPlayer(progression, requestedTier, player);
+    }
+
+    @Redirect(
+            method = "lambda$removeAttributeModifiers$0",
+            at = @At(
+                    value = "INVOKE",
                     target = "Lnet/minecraft/world/entity/player/Player;sendSystemMessage(Lnet/minecraft/network/chat/Component;)V",
                     ordinal = 1
             ),

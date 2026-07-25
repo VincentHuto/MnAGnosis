@@ -43,12 +43,29 @@ public final class RenderHelper extends RenderType {
         return makeLayer("mnagnosis:noise", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, glState);
     });
 
+    private static final Function<ResourceLocation, RenderType> TRUTH_GLITCH = Util.memoize(texture -> {
+        CompositeState glState = RenderType.CompositeState.builder()
+                .setShaderState(new ShaderStateShard(CoreShaders::truthGlitch))
+                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return makeLayer("mnagnosis:truth_glitch", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, glState);
+    });
+
     public static RenderType getDopplegangerLayer(ResourceLocation texture) {
         return DOPPLEGANGER.apply(texture);
     }
 
     public static RenderType getNoiseLayer(ResourceLocation texture) {
         return NOISE.apply(texture);
+    }
+
+    /** Finale progress is carried in vertex alpha, avoiding a shared mutable shader uniform. */
+    public static RenderType getTruthGlitchLayer(ResourceLocation texture) {
+        return TRUTH_GLITCH.apply(texture);
     }
     private static RenderType makeLayer(String name, VertexFormat format, VertexFormat.Mode mode,
                                         int bufSize, boolean hasCrumbling, boolean sortOnUpload, CompositeState glState) {

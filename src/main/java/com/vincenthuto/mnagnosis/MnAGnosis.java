@@ -5,6 +5,7 @@ import com.vincenthuto.mnagnosis.client.render.block.TesseractBlockEntityRendere
 import com.vincenthuto.mnagnosis.common.registry.BlockEntityRegistry;
 import com.vincenthuto.mnagnosis.common.registry.BlockRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
+import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -50,6 +51,7 @@ public class MnAGnosis {
         ItemRegistry.BASEITEMS.register(modEventBus);
         BlockRegistry.BASEBLOCKS.register(modEventBus);
         BlockEntityRegistry.BLOCK_ENTITIES.register(modEventBus);
+        EntityRegistry.ENTITIES.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(this);
         modEventBus.addListener(this::addCreative);
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);

@@ -2,7 +2,9 @@ package com.vincenthuto.mnagnosis.client.event;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.client.render.entity.TruthRenderer;
 import com.vincenthuto.mnagnosis.client.render.item.*;
+import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import com.vincenthuto.mnagnosis.client.shader.core.CoreShaders;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -114,6 +116,7 @@ public class ClientEvents {
 
 		@SubscribeEvent
 		public static void renderEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+			event.registerEntityRenderer(EntityRegistry.TRUTH.get(), TruthRenderer::new);
 		}
 
 		@SubscribeEvent

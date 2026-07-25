@@ -21,6 +21,7 @@ in vec4 normal;
 out vec4 fragColor;
 
 uniform float BotaniaGrainIntensity;
+uniform float GameTime;
 
 float rand(vec2 co) {
     return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
@@ -35,11 +36,13 @@ void main() {
     color.rgb = mix(overlayColor.rgb, color.rgb, overlayColor.a);
     color *= lightMapColor;
 
-    // Botania - Grayscale + Noise with grain intensity
-    float r = rand(texCoord0);
-    vec3 offset = BotaniaGrainIntensity * vec3(r, r, r);
-    float gs = (color.r + color.g + color.b) / 50.0;
-    color = vec4(vec3(gs, gs, gs) + offset, color.a);
+    // Aura strength is carried in vertex alpha so every Truth can grow independently.
+    float auraStrength = clamp(vertexColor.a, 0.0, 1.0);
+    float r = rand(texCoord0 + vec2(vertexDistance * 0.025, GameTime * 31.0));
+    float grain = mix(BotaniaGrainIntensity, 0.42, auraStrength);
+    float staticBit = step(1.0 - grain, r);
+    float charcoal = mix(0.005, 0.18, staticBit) + r * grain * 0.08;
+    color = vec4(vec3(charcoal), color.a * mix(0.35, 0.95, auraStrength));
 
     fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

@@ -4,6 +4,7 @@ import com.mna.api.capabilities.IPlayerProgression;
 import com.mna.entities.boss.DemonLord;
 import com.vincenthuto.mnagnosis.common.progression.Tier6Progression;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -36,7 +37,10 @@ public abstract class DemonLordMixin {
             int requestedTier,
             Player player
     ) {
-        Tier6Progression.advanceIfReady(progression, requestedTier, player);
+        Entity demonLord = (Entity) (Object) this;
+        Tier6Progression.advanceOrSummonTruth(
+                progression, requestedTier, player, demonLord.position(), demonLord.getYRot()
+        );
     }
 
     @Redirect(

@@ -5,6 +5,7 @@ import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public final class Tier6Progression {
 
@@ -21,11 +22,54 @@ public final class Tier6Progression {
                 && progression.getTierProgress(level) >= 1.0F;
     }
 
-    public static void advanceIfReady(
+    /**
+     * Tier 6 is offered only to a Tier 5 player whose Odin Oculus condition is complete.
+     */
+    public static boolean isEligibleForTruth(IPlayerProgression progression, Level level) {
+        return progression.getTier() == 5 && progression.getTierProgress(level) >= 1.0F;
+    }
+
+    public static boolean shouldSummonTruth(
+            IPlayerProgression progression,
+            int requestedTier,
+            Level level
+    ) {
+        return requestedTier == MAX_TIER && isEligibleForTruth(progression, level);
+    }
+
+    /**
+     * Used by every M&A faction advancement redirect. Ordinary advancement remains untouched;
+     * the Odin-qualified Tier 5 -> 6 step instead creates Truth.
+     */
+    public static void advanceOrSummonTruth(
+            IPlayerProgression progression,
+            int requestedTier,
+            Player player,
+            Vec3 sourcePosition,
+            float sourceYaw
+    ) {
+        if (shouldSummonTruth(progression, requestedTier, player.level())) {
+            if (TruthEncounterService.summonOrReplace(player, sourcePosition, sourceYaw) != null) {
+                player.getPersistentData().putBoolean("mnagnosis_truth_summoned", true);
+            }
+            return;
+        }
+        if (canAdvance(progression, player.level())) {
+            progression.setTier(requestedTier, player);
+        }
+    }
+
+    public static void advanceOrSummonTruthNearPlayer(
             IPlayerProgression progression,
             int requestedTier,
             Player player
     ) {
+        if (shouldSummonTruth(progression, requestedTier, player.level())) {
+            if (TruthEncounterService.summonOrReplaceNearPlayer(player) != null) {
+                player.getPersistentData().putBoolean("mnagnosis_truth_summoned", true);
+            }
+            return;
+        }
         if (canAdvance(progression, player.level())) {
             progression.setTier(requestedTier, player);
         }
@@ -40,6 +84,10 @@ public final class Tier6Progression {
     }
 
     public static void sendAdvancementMessage(Player player, Component originalMessage) {
+        if (player.getPersistentData().getBoolean("mnagnosis_truth_summoned")) {
+            player.getPersistentData().remove("mnagnosis_truth_summoned");
+            return;
+        }
         IPlayerProgression progression = player
                 .getCapability(PlayerProgressionProvider.PROGRESSION)
                 .orElse(null);

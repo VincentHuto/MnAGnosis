@@ -10,7 +10,8 @@
     "core.EffectColdDarkMixin",
     "core.FaerieQueenMixin",
     "core.ProgressionEventHandlerMixin",
-    "core.PlayerProgressionMixin"
+    "core.PlayerProgressionMixin",
+    "core.SummonCommandMixin"
   ],
   "client": [
     "client.GuiOcculusMixin",

@@ -10,6 +10,14 @@
 	"item.mnagnosis.primal_staff": "Primal Staff",
 	"item_group.mnagnosis.mnagnosistab": "Mana and Artifice: Gnosis",
 	"item.mnagnosis.tesseract": "Tesseract",
-	"block.mnagnosis.tesseract_block": "Tesseract Block"
+	"block.mnagnosis.tesseract_block": "Tesseract Block",
+	"entity.mnagnosis.truth": "Truth",
+	"entity.mnagnosis.truth.not_owner": "Truth waits only for the one who summoned it.",
+	"entity.mnagnosis.truth.requires_offerings": "Truth reaches for a Codex Arcana and a Chimerite Manaweaver Wand.",
+	"entity.mnagnosis.truth.no_longer_eligible": "Truth finds your path incomplete.",
+	"entity.mnagnosis.truth.already_has_codex": "Truth already holds your Codex Arcana.",
+	"entity.mnagnosis.truth.already_has_wand": "Truth already holds your Chimerite Manaweaver Wand.",
+	"entity.mnagnosis.truth.offering_accepted": "Truth accepts the offering and continues to wait.",
+	"entity.mnagnosis.truth.appears": "Truth waits with an outstretched hand."
 
 }

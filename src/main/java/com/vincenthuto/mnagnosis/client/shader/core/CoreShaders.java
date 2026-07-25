@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 public class CoreShaders {
     private static ShaderInstance doppleganger;
     private static ShaderInstance noise;
+    private static ShaderInstance truthGlitch;
 
     public static void init(TriConsumer<ResourceLocation, VertexFormat, Consumer<ShaderInstance>> registrations) {
         registrations.accept(
@@ -32,6 +33,11 @@ public class CoreShaders {
                 DefaultVertexFormat.NEW_ENTITY,
                 inst -> noise = inst
         );
+        registrations.accept(
+                MnAGnosis.rloc("truth_glitch"),
+                DefaultVertexFormat.NEW_ENTITY,
+                inst -> truthGlitch = inst
+        );
 
     }
 
@@ -42,6 +48,10 @@ public class CoreShaders {
 
     public static ShaderInstance noise() {
         return noise;
+    }
+
+    public static ShaderInstance truthGlitch() {
+        return truthGlitch;
     }
 
 
