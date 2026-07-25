@@ -21,7 +21,7 @@ Extend Mana and Artifice 3.1.0.7 on Minecraft 1.20.1 so MnAGnosis supports a rea
 
 ## Architecture
 
-Use narrow Mixin injections at the semantic tier ceilings instead of overwriting complete Mana and Artifice methods. A small MnAGnosis progression-rules class owns the value `6` and terminal-tier predicates so every injection uses the same definition.
+Use narrow Mixin injections at the semantic tier ceilings instead of overwriting complete Mana and Artifice methods. A small MnAGnosis progression-rules class owns the value `6` so every injection uses the same definition.
 
 The compatibility layer has four responsibilities:
 
@@ -46,7 +46,7 @@ When the player earns the Odin advancement, the widened event-handler ceiling re
 - `ProgressionEventHandler.onPlayerAdvancement` and `confirmExistingAdvancements`: change their terminal-tier comparisons from 5 to 6.
 - `GuiOcculus.init`, `renderBg`, and `renderLabels`: change their progression maximum comparison from 5 to 6.
 - `AncientCouncil` completion callback, `FaerieQueen.interactAt`, and `DemonLord.interactAt`: change their advancement ceiling from 5 to 6.
-- `EffectColdDark.removeAttributeModifiers`: redirect the progression `setTier` call through a guard that refuses values above 6.
+- `EffectColdDark.lambda$removeAttributeModifiers$0`: cancel the faction-advancement callback at its head when the player is already Tier 6.
 
 Every injection is required and constrained to its named method and target. A changed upstream method therefore fails fast at startup instead of silently disabling Tier 6.
 
@@ -76,4 +76,3 @@ Verification also includes:
 - `compileJava` and resource processing, proving all Mixin targets and JSON compile.
 - `runGameTestServer`, proving the live transformations and data behavior.
 - A bounded client startup smoke test, proving the client-only Oculus mixin applies successfully.
-
