@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create a polished, maintainable Word document that defines MnAGnosis as a late-game
+Create a polished, maintainable Markdown document that defines MnAGnosis as a late-game
 addon to Mana and Artifice for Minecraft 1.20.1. The document must serve two purposes:
 preserve the mod's lore and creative identity, and track its current implementation,
 future systems, and production decisions.
@@ -45,7 +45,7 @@ of exchange, equivalence, and knowledge that cannot be seized by force.
 
 ## Document Architecture
 
-The Word document will be a single volume divided into two visually distinct books.
+The Markdown document will be a single volume divided into two clearly separated books.
 
 ### Book I - Gnosis: Lore and Creative Identity
 
@@ -105,40 +105,38 @@ The document will distinguish:
 - what the creator has explicitly approved as future direction;
 - what is newly proposed for exploration.
 
-## Visual Design
+## Markdown Presentation
 
-The document will use the `compact_reference_guide` preset as its numeric layout base,
-with a named MnAGnosis monochrome override applied consistently.
+The document will express the MnAGnosis identity through Markdown-native structure:
 
-The override will provide:
+- a linked table of contents;
+- restrained monochrome symbols and text dividers;
+- short atmospheric epigraphs;
+- consistent heading hierarchy;
+- blockquotes for in-world fragments;
+- compact tables for status, progression, and feature tracking;
+- reusable entry and feature-card templates;
+- strong separation between Book I and Book II.
 
-- black, white, and restrained neutral gray only;
-- stark editorial typography;
-- thin geometric rules and linework;
-- inverted divider pages or section bands where readability is preserved;
-- subtle static-inspired texture or patterning used sparingly;
-- strong visual separation between Book I and Book II;
-- compact but breathable tables and feature cards;
-- quiet headers, page numbers, and revision metadata.
-
-Glitch motifs must support hierarchy and atmosphere. They must not impair reading,
-create clipped text, or turn the document into a novelty prop.
+Decorative marks must remain plain-text friendly and readable in raw Markdown as well
+as rendered views. The document will not depend on embedded HTML, external stylesheets,
+or images to communicate its structure.
 
 ## Maintainability
 
-The document will be authored with real Word heading styles, tables with fixed
-geometry, consistent status markers, and reusable entry patterns. A table of contents
-or equivalent navigation aid will make the two books easy to scan. The final structure
-must support future editing without requiring the entire document to be redesigned.
+The document will use consistent Markdown headings, compact tables, status markers,
+and reusable entry patterns. A linked table of contents will make the two books easy
+to scan. The final structure must support future editing without requiring the entire
+document to be redesigned.
 
 ## Verification and Delivery
 
-The final DOCX will be rendered to page images. Every page will be inspected for
-clipping, overlap, broken tables, inconsistent spacing, font substitution, and
-misplaced headers or footers. Any defect will be corrected and the document re-rendered
-before delivery.
+The final Markdown file will be checked for coherent heading levels, valid internal
+links, readable tables, consistent status labels, repository accuracy, placeholder
+text, contradictions, and accidental claims that speculative ideas are implemented.
 
-Only the final verified DOCX will be delivered unless additional formats are requested.
+Only the final Markdown source file will be delivered unless additional formats are
+requested.
 
 ## Boundaries
 
