@@ -6,6 +6,8 @@ import com.vincenthuto.mnagnosis.common.registry.BlockEntityRegistry;
 import com.vincenthuto.mnagnosis.common.registry.BlockRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
+import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
+import com.vincenthuto.mnagnosis.common.network.NetworkHandler;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -52,6 +54,7 @@ public class MnAGnosis {
         BlockRegistry.BASEBLOCKS.register(modEventBus);
         BlockEntityRegistry.BLOCK_ENTITIES.register(modEventBus);
         EntityRegistry.ENTITIES.register(modEventBus);
+        SoundRegistry.SOUNDS.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(this);
         modEventBus.addListener(this::addCreative);
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -62,6 +65,7 @@ public class MnAGnosis {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(NetworkHandler::register);
     }
     public  void clientSetup(FMLClientSetupEvent event) {
         BlockEntityRenderers.register(BlockEntityRegistry.TESSERACT_BE.get(),

@@ -49,7 +49,7 @@ public final class Tier6Progression {
             float sourceYaw
     ) {
         if (shouldSummonTruth(progression, requestedTier, player.level())) {
-            if (TruthEncounterService.summonOrReplace(player, sourcePosition, sourceYaw) != null) {
+            if (TruthEncounterService.interceptLeader(player, sourcePosition, sourceYaw)) {
                 player.getPersistentData().putBoolean("mnagnosis_truth_summoned", true);
             }
             return;
@@ -65,7 +65,8 @@ public final class Tier6Progression {
             Player player
     ) {
         if (shouldSummonTruth(progression, requestedTier, player.level())) {
-            if (TruthEncounterService.summonOrReplaceNearPlayer(player) != null) {
+            Vec3 position = player.position().add(player.getLookAngle().scale(2.0D));
+            if (TruthEncounterService.interceptLeader(player, position, player.getYRot())) {
                 player.getPersistentData().putBoolean("mnagnosis_truth_summoned", true);
             }
             return;

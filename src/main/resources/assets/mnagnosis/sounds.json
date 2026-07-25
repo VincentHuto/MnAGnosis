@@ -1,0 +1,47 @@
+{
+  "truth_giggle": {
+    "sounds": [
+      {
+        "name": "mnagnosis:entity/truth/kiddistorted",
+        "stream": true
+      }
+    ]
+  },
+  "truth_burning_offering": {
+    "sounds": [
+      {
+        "name": "mnagnosis:entity/truth/burningoffering",
+        "stream": true
+      }
+    ]
+  },
+  "truth_ambient": {
+    "sounds": [
+      {
+        "name": "mnagnosis:entity/truth/ambient",
+        "stream": true
+      }
+    ]
+  },
+  "truth_appear": {
+    "sounds": [
+      {
+        "name": "mnagnosis:entity/truth/appear"
+      }
+    ]
+  },
+  "truth_disappear": {
+    "sounds": [
+      {
+        "name": "mnagnosis:entity/truth/disappear"
+      }
+    ]
+  },
+  "truth_vanish": {
+    "sounds": [
+      {
+        "name": "mnagnosis:entity/truth/woooosh"
+      }
+    ]
+  }
+}

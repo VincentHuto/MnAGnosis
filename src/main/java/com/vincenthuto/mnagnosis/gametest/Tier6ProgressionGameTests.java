@@ -2,6 +2,10 @@ package com.vincenthuto.mnagnosis.gametest;
 
 import com.mna.api.config.GeneralConfigValues;
 import com.mna.capabilities.playerdata.progression.PlayerProgression;
+import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
+import com.mna.entities.EntityInit;
+import com.mna.entities.boss.DemonLord;
+import com.mna.entities.rituals.DemonStone;
 import com.mna.items.ItemInit;
 import com.mna.recipes.progression.ProgressionCondition;
 import com.mojang.brigadier.StringReader;
@@ -9,11 +13,13 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.authlib.GameProfile;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.progression.Tier6Progression;
 import com.vincenthuto.mnagnosis.common.progression.TruthEncounterService;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
+import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -27,9 +33,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import software.bernie.geckolib.animatable.GeoEntity;
 
 import java.util.List;
+import java.util.UUID;
 
 @GameTestHolder(MnAGnosis.MODID)
 @PrefixGameTestTemplate(false)
@@ -164,6 +173,110 @@ public final class Tier6ProgressionGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void eligibleLeaderRevealIsInterceptedWithoutAdvancing(GameTestHelper helper) {
+        Player player = helper.makeMockSurvivalPlayer();
+        PlayerProgression progression = (PlayerProgression) player
+                .getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing progression capability"));
+        progression.setTier(5, null, false);
+        progression.addTierProgressionComplete(ODIN_PROGRESSION);
+
+        boolean intercepted = TruthEncounterService.interceptLeader(
+                player, new Vec3(1.5D, 1.0D, 1.5D), 0.0F
+        );
+
+        helper.assertTrue(intercepted, "An eligible leader reveal was not intercepted");
+        helper.assertTrue(progression.getTier() == 5, "Interception advanced directly to Tier 6");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void eligibleDemonStoneRevealSpawnsTruthInsteadOfDemonLord(GameTestHelper helper) {
+        FakePlayer player = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "truth_reveal_test")
+        );
+        helper.getLevel().addNewPlayer(player);
+        PlayerProgression progression = (PlayerProgression) player
+                .getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing progression capability"));
+        progression.setTier(5, null, false);
+        progression.addTierProgressionComplete(ODIN_PROGRESSION);
+        DemonStone stone = new DemonStone(EntityInit.DEMON_STONE.get(), helper.getLevel());
+        stone.setCasterUUID(player.getUUID());
+        stone.setPos(1.5D, 1.0D, 1.5D);
+        int demonLordsBefore = countEntities(helper, DemonLord.class);
+        int truthsBefore = countEntities(helper, TruthEntity.class);
+
+        for (int tick = 0; tick <= 200; tick++) {
+            stone.tick();
+        }
+
+        helper.assertTrue(
+                countEntities(helper, DemonLord.class) == demonLordsBefore,
+                "Demon Stone still revealed a new Demon Lord"
+        );
+        helper.assertTrue(
+                countEntities(helper, TruthEntity.class) == truthsBefore + 1,
+                "Demon Stone reveal did not produce one new Truth"
+        );
+        helper.assertTrue(progression.getTier() == 5, "Demon Stone interception advanced directly to Tier 6");
+        helper.getLevel().removePlayerImmediately(player, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void hostileDemonStoneStillSpawnsTheBoss(GameTestHelper helper) {
+        FakePlayer player = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "truth_hostile_test")
+        );
+        helper.getLevel().addNewPlayer(player);
+        PlayerProgression progression = (PlayerProgression) player
+                .getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing progression capability"));
+        progression.setTier(5, null, false);
+        progression.addTierProgressionComplete(ODIN_PROGRESSION);
+        DemonStone stone = new DemonStone(EntityInit.DEMON_STONE.get(), helper.getLevel());
+        stone.setCasterUUID(player.getUUID());
+        stone.setSummonAsHostile();
+        stone.setPos(1.5D, 1.0D, 1.5D);
+        int demonLordsBefore = countEntities(helper, DemonLord.class);
+        int truthsBefore = countEntities(helper, TruthEntity.class);
+
+        for (int tick = 0; tick <= 200; tick++) {
+            stone.tick();
+        }
+
+        helper.assertTrue(
+                countEntities(helper, DemonLord.class) == demonLordsBefore + 1,
+                "Truth incorrectly intercepted the hostile Demon Lord boss summon"
+        );
+        helper.assertTrue(
+                countEntities(helper, TruthEntity.class) == truthsBefore,
+                "A hostile Demon Stone incorrectly produced Truth"
+        );
+        helper.getLevel().removePlayerImmediately(player, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void offlineTruthSceneStateCanBeClearedWithoutTheOwner(GameTestHelper helper) {
+        UUID offlineOwner = UUID.randomUUID();
+
+        TruthEncounterService.setSceneActive(helper.getLevel().getServer(), offlineOwner, true);
+        helper.assertTrue(
+                TruthEncounterService.isSceneActive(helper.getLevel().getServer(), offlineOwner),
+                "The server did not persist an offline owner's active Truth scene"
+        );
+
+        TruthEncounterService.setSceneActive(helper.getLevel().getServer(), offlineOwner, false);
+        helper.assertTrue(
+                !TruthEncounterService.isSceneActive(helper.getLevel().getServer(), offlineOwner),
+                "Truth removal could not clear scene state while its owner was offline"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void tierSixUsesBeyondComprehensionMessage(GameTestHelper helper) {
         Component original = Component.translatable("mna:progresscondition.advanced", 6);
         Component message = Tier6Progression.getAdvancementMessage(6, original);
@@ -273,6 +386,61 @@ public final class Tier6ProgressionGameTests {
                 truth.getFinaleTicks() == TruthEntity.FINALE_DURATION_TICKS,
                 "Truth's finale was not initialized to its full five-second duration"
         );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void truthBurningOfferingSoundIsRegistered(GameTestHelper helper) {
+        helper.assertTrue(
+                MnAGnosis.rloc("truth_burning_offering")
+                        .equals(SoundRegistry.TRUTH_BURNING_OFFERING.getId()),
+                "Truth's burning-offering sound event is not registered"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void truthAmbientSoundIsRegistered(GameTestHelper helper) {
+        helper.assertTrue(
+                MnAGnosis.rloc("truth_ambient").equals(SoundRegistry.TRUTH_AMBIENT.getId()),
+                "Truth's persistent ambient sound event is not registered"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void truthAppearanceSoundsAreRegistered(GameTestHelper helper) {
+        helper.assertTrue(
+                MnAGnosis.rloc("truth_appear").equals(SoundRegistry.TRUTH_APPEAR.getId()),
+                "Truth's appearance sound event is not registered"
+        );
+        helper.assertTrue(
+                MnAGnosis.rloc("truth_disappear").equals(SoundRegistry.TRUTH_DISAPPEAR.getId()),
+                "Truth's disappearance sound event is not registered"
+        );
+        helper.assertTrue(
+                MnAGnosis.rloc("truth_vanish").equals(SoundRegistry.TRUTH_VANISH.getId()),
+                "Truth's final vanish sound event is not registered"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void truthDisappearanceGiggleStartsWithTheGrin(GameTestHelper helper) {
+        TruthEntity truth = new TruthEntity(EntityRegistry.TRUTH.get(), helper.getLevel());
+        truth.beginFinale();
+
+        for (int tick = 0; tick < 29; tick++) {
+            truth.tick();
+        }
+        helper.assertTrue(!truth.hasFinaleGiggleStarted(),
+                "Truth's disappearance giggle began before its grin");
+
+        truth.tick();
+
+        helper.assertTrue(truth.shouldShowGrin(), "Truth's grin did not begin at the expected finale phase");
+        helper.assertTrue(truth.hasFinaleGiggleStarted(),
+                "Truth's disappearance giggle did not begin with its grin");
         helper.succeed();
     }
 
@@ -580,5 +748,15 @@ public final class Tier6ProgressionGameTests {
             throw new IllegalStateException("Missing command node: " + name);
         }
         return child;
+    }
+
+    private static int countEntities(GameTestHelper helper, Class<? extends Entity> type) {
+        int count = 0;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (type.isInstance(entity) && !entity.isRemoved()) {
+                count++;
+            }
+        }
+        return count;
     }
 }

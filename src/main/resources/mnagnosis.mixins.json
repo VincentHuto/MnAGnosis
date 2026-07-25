@@ -6,9 +6,9 @@
   "mixins": [
     "core.AncientCouncilMixin",
     "core.CommandMnaMixin",
-    "core.DemonLordMixin",
+    "core.DemonStoneMixin",
     "core.EffectColdDarkMixin",
-    "core.FaerieQueenMixin",
+    "core.FeyLightMixin",
     "core.ProgressionEventHandlerMixin",
     "core.PlayerProgressionMixin",
     "core.SummonCommandMixin"

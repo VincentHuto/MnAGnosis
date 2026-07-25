@@ -1,12 +1,19 @@
 package com.vincenthuto.mnagnosis.common.progression;
 
+import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.particles.ItemParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -63,6 +70,43 @@ public final class TruthEncounterService {
     public record Source(Vec3 position, float yaw) {
     }
 
+    /**
+     * Replaces the final faction-leader reveal only for an Odin-qualified Tier 5 player.
+     * The precursor calls this at its last transition so all of its normal presentation has
+     * already played before the interception becomes visible.
+     */
+    public static boolean interceptLeader(Player player, Vec3 sourcePosition, float sourceYaw) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        boolean eligible = player.getCapability(PlayerProgressionProvider.PROGRESSION)
+                .map(progression -> Tier6Progression.isEligibleForTruth(progression, player.level()))
+                .orElse(false);
+        if (!eligible) {
+            return false;
+        }
+
+        TruthEntity truth = summonOrReplace(player, sourcePosition, sourceYaw);
+        if (truth == null) {
+            return false;
+        }
+        emitInterceptionShards(serverLevel, sourcePosition);
+        return true;
+    }
+
+    private static void emitInterceptionShards(ServerLevel level, Vec3 position) {
+        ItemParticleOption black = new ItemParticleOption(
+                ParticleTypes.ITEM, new ItemStack(Items.BLACK_CONCRETE)
+        );
+        ItemParticleOption white = new ItemParticleOption(
+                ParticleTypes.ITEM, new ItemStack(Items.WHITE_CONCRETE)
+        );
+        level.sendParticles(black, position.x, position.y + 1.0D, position.z,
+                48, 0.75D, 0.9D, 0.75D, 0.22D);
+        level.sendParticles(white, position.x, position.y + 1.0D, position.z,
+                48, 0.75D, 0.9D, 0.75D, 0.22D);
+    }
+
     public static TruthEntity summonOrReplace(Player player, Vec3 sourcePosition, float sourceYaw) {
         if (!(player.level() instanceof ServerLevel serverLevel)) {
             return null;
@@ -73,9 +117,11 @@ public final class TruthEncounterService {
         }
 
         TruthEntity truth = new TruthEntity(EntityRegistry.TRUTH.get(), serverLevel);
-        truth.setOwner(player);
         truth.moveTo(sourcePosition.x, sourcePosition.y, sourcePosition.z, sourceYaw, 0.0F);
-        serverLevel.addFreshEntity(truth);
+        if (!serverLevel.addFreshEntity(truth)) {
+            return null;
+        }
+        truth.setOwner(player);
         player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("entity.mnagnosis.truth.appears"));
         return truth;
     }
@@ -110,5 +156,29 @@ public final class TruthEncounterService {
         }
         truth.setOwner(player);
         return true;
+    }
+
+    public static void setSceneActive(ServerPlayer player, boolean active) {
+        setSceneActive(player.getServer(), player.getUUID(), active);
+    }
+
+    public static void setSceneActive(MinecraftServer server, UUID ownerId, boolean active) {
+        TruthSceneSavedData.get(server).setActive(ownerId, active);
+        ServerPlayer onlineOwner = server.getPlayerList().getPlayer(ownerId);
+        if (onlineOwner != null) {
+            com.vincenthuto.mnagnosis.common.network.NetworkHandler.setTruthScene(
+                    onlineOwner, active
+            );
+        }
+    }
+
+    public static void syncScene(ServerPlayer player) {
+        com.vincenthuto.mnagnosis.common.network.NetworkHandler.setTruthScene(
+                player, isSceneActive(player.getServer(), player.getUUID())
+        );
+    }
+
+    public static boolean isSceneActive(MinecraftServer server, UUID ownerId) {
+        return TruthSceneSavedData.get(server).isActive(ownerId);
     }
 }

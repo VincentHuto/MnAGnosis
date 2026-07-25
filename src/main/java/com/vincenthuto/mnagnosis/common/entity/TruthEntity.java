@@ -4,6 +4,8 @@ import com.mna.api.capabilities.IPlayerProgression;
 import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
 import com.mna.items.ItemInit;
 import com.vincenthuto.mnagnosis.common.progression.Tier6Progression;
+import com.vincenthuto.mnagnosis.common.progression.TruthEncounterService;
+import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -64,6 +66,8 @@ public class TruthEntity extends Entity implements GeoEntity {
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private Vec3 clientFlamePosition;
+    private boolean sceneAnnounced;
+    private boolean finaleGigglePlayed;
 
     public TruthEntity(EntityType<? extends TruthEntity> type, Level level) {
         super(type, level);
@@ -117,6 +121,10 @@ public class TruthEntity extends Entity implements GeoEntity {
         return this.getFinaleProgress(0.0F) >= 0.30F;
     }
 
+    public boolean hasFinaleGiggleStarted() {
+        return this.finaleGigglePlayed;
+    }
+
     public boolean shouldShowGlitchSlices() {
         return this.getFinaleProgress(0.0F) >= 0.70F;
     }
@@ -136,6 +144,20 @@ public class TruthEntity extends Entity implements GeoEntity {
 
     public void setOwner(Player player) {
         this.entityData.set(OWNER, Optional.of(player.getUUID()));
+        if (player instanceof ServerPlayer serverPlayer) {
+            TruthEncounterService.setSceneActive(serverPlayer, true);
+            this.sceneAnnounced = true;
+            this.level().playSound(
+                    null,
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
+                    SoundRegistry.TRUTH_APPEAR.get(),
+                    SoundSource.AMBIENT,
+                    1.0F,
+                    1.0F
+            );
+        }
     }
 
     public boolean isOwner(Player player) {
@@ -161,10 +183,10 @@ public class TruthEntity extends Entity implements GeoEntity {
                     this.getX(),
                     this.getY(),
                     this.getZ(),
-                    SoundEvents.ENDERMAN_TELEPORT,
+                    SoundRegistry.TRUTH_BURNING_OFFERING.get(),
                     SoundSource.AMBIENT,
-                    1.4F,
-                    0.55F
+                    1.0F,
+                    1.0F
             );
         }
     }
@@ -180,11 +202,35 @@ public class TruthEntity extends Entity implements GeoEntity {
         }
 
         this.faceBoundOwner();
+        this.announceSceneToOwner();
 
         if (this.isFinaleActive()) {
             int remaining = this.getFinaleTicks() - 1;
             this.entityData.set(FINALE_TICKS, remaining);
+            if (!this.finaleGigglePlayed && remaining <= FINALE_DURATION_TICKS * 0.70F) {
+                this.finaleGigglePlayed = true;
+                this.level().playSound(
+                        null,
+                        this.getX(),
+                        this.getY(),
+                        this.getZ(),
+                        SoundRegistry.TRUTH_DISAPPEAR.get(),
+                        SoundSource.AMBIENT,
+                        1.0F,
+                        1.0F
+                );
+            }
             if (remaining <= 0) {
+                this.level().playSound(
+                        null,
+                        this.getX(),
+                        this.getY(),
+                        this.getZ(),
+                        SoundRegistry.TRUTH_VANISH.get(),
+                        SoundSource.AMBIENT,
+                        1.0F,
+                        1.0F
+                );
                 this.discard();
             }
             return;
@@ -195,6 +241,33 @@ public class TruthEntity extends Entity implements GeoEntity {
         if (idleTicks >= IDLE_TIMEOUT_TICKS) {
             this.refundOfferings();
             this.discard();
+        }
+    }
+
+    private void announceSceneToOwner() {
+        if (this.sceneAnnounced || !(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        this.getOwnerId()
+                .map(serverLevel::getPlayerByUUID)
+                .filter(ServerPlayer.class::isInstance)
+                .map(ServerPlayer.class::cast)
+                .ifPresent(owner -> {
+                    TruthEncounterService.setSceneActive(owner, true);
+                    this.sceneAnnounced = true;
+                });
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        boolean destroyedOnServer =
+                reason.shouldDestroy() && !this.isRemoved() && !this.level().isClientSide;
+        UUID ownerId = destroyedOnServer
+                ? this.getOwnerId().orElse(null)
+                : null;
+        super.remove(reason);
+        if (ownerId != null) {
+            TruthEncounterService.setSceneActive(this.level().getServer(), ownerId, false);
         }
     }
 
@@ -229,11 +302,13 @@ public class TruthEntity extends Entity implements GeoEntity {
     }
 
     private void spawnClientParticles() {
+        float finaleProgress = this.getFinaleProgress(1.0F);
+        this.spawnClientHazeParticle(finaleProgress);
+
         if (this.tickCount % 2 != 0) {
             return;
         }
 
-        float finaleProgress = this.getFinaleProgress(1.0F);
         double radius = 0.55D + finaleProgress * 1.15D;
         double angle = this.random.nextDouble() * Math.PI * 2.0D;
         double horizontal = radius * (0.55D + this.random.nextDouble() * 0.45D);
@@ -261,6 +336,25 @@ public class TruthEntity extends Entity implements GeoEntity {
                     0.03D + finaleProgress * 0.05D,
                     (this.random.nextDouble() - 0.5D) * 0.04D);
         }
+    }
+
+    private void spawnClientHazeParticle(float finaleProgress) {
+        double angle = this.random.nextDouble() * Math.PI * 2.0D;
+        double radius = 0.18D + this.random.nextDouble() * (0.48D + finaleProgress * 0.42D);
+        double x = this.getX() + Math.cos(angle) * radius;
+        double y = this.getY() + 0.08D + this.random.nextDouble() * (1.45D + finaleProgress * 0.35D);
+        double z = this.getZ() + Math.sin(angle) * radius;
+        double curl = (this.random.nextDouble() - 0.5D) * 0.009D;
+
+        this.level().addParticle(
+                this.random.nextFloat() < 0.28F ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE,
+                x,
+                y,
+                z,
+                Math.cos(angle + Math.PI * 0.5D) * curl,
+                0.004D + this.random.nextDouble() * 0.009D,
+                Math.sin(angle + Math.PI * 0.5D) * curl
+        );
     }
 
     @Override
@@ -462,6 +556,7 @@ public class TruthEntity extends Entity implements GeoEntity {
         this.entityData.set(WAND_OFFERING, ItemStack.of(tag.getCompound("WandOffering")));
         this.entityData.set(FINALE_TICKS, tag.getInt("FinaleTicks"));
         this.entityData.set(IDLE_TICKS, tag.getInt("IdleTicks"));
+        this.finaleGigglePlayed = tag.getBoolean("FinaleGigglePlayed");
     }
 
     @Override
@@ -471,5 +566,6 @@ public class TruthEntity extends Entity implements GeoEntity {
         tag.put("WandOffering", this.entityData.get(WAND_OFFERING).save(new CompoundTag()));
         tag.putInt("FinaleTicks", this.getFinaleTicks());
         tag.putInt("IdleTicks", this.getIdleTicks());
+        tag.putBoolean("FinaleGigglePlayed", this.finaleGigglePlayed);
     }
 }
