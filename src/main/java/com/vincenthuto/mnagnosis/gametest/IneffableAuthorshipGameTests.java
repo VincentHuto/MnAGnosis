@@ -7,6 +7,7 @@ import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
 import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStateEvents;
 import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStateProvider;
 import com.vincenthuto.mnagnosis.common.authorship.state.LedgerTransition;
+import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -214,6 +215,89 @@ public final class IneffableAuthorshipGameTests {
                 "Death clone did not preserve the selected interpretation");
         helper.assertTrue(replacement.declaredClosure().equals(java.util.Optional.of(debt.id())),
                 "Death clone did not preserve the declared Closure");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void paradoxReservesIneffableManaCapacity(GameTestHelper helper) {
+        IneffableMana mana = new IneffableMana();
+        mana.setMaxAmount(100.0F);
+        mana.setParadox(30.0F);
+        mana.restore(100.0F);
+
+        helper.assertTrue(Math.abs(mana.getAmount() - 70.0F) < 0.0001F,
+                "Ordinary restoration filled capacity reserved by Paradox");
+        helper.assertTrue(Math.abs(mana.getSafeMaximum() - 70.0F) < 0.0001F,
+                "Safe maximum did not expose unreserved capacity");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void sharedCapacityClampsManaAndParadoxOnMaximumChanges(
+            GameTestHelper helper
+    ) {
+        IneffableMana mana = new IneffableMana();
+        mana.setMaxAmount(100.0F);
+        mana.setAmount(80.0F);
+        mana.setParadox(35.0F);
+
+        helper.assertTrue(Math.abs(mana.getAmount() - 65.0F) < 0.0001F,
+                "Adding Paradox did not displace Mana above shared capacity");
+        mana.setMaxAmount(20.0F);
+        helper.assertTrue(Math.abs(mana.getParadox() - 20.0F) < 0.0001F
+                        && Math.abs(mana.getAmount()) < 0.0001F,
+                "Reducing maximum did not clamp both sides of shared capacity");
+        mana.setParadox(-5.0F);
+        helper.assertTrue(Math.abs(mana.getParadox()) < 0.0001F,
+                "Negative Paradox was not clamped to zero");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableManaCopyPreservesSharedCapacity(GameTestHelper helper) {
+        IneffableMana original = new IneffableMana();
+        original.setMaxAmount(120.0F);
+        original.addModifier("test-capacity", 15.0F);
+        original.setParadox(42.5F);
+        original.setAmount(70.0F);
+
+        IneffableMana copy = new IneffableMana();
+        copy.copyFrom(original);
+
+        helper.assertTrue(Math.abs(copy.getMaxAmount() - 135.0F) < 0.0001F,
+                "Casting-resource copy lost maximum modifiers");
+        helper.assertTrue(Math.abs(copy.getParadox() - 42.5F) < 0.0001F,
+                "Casting-resource copy lost Paradox");
+        helper.assertTrue(Math.abs(copy.getAmount() - 70.0F) < 0.0001F,
+                "Casting-resource copy changed safe Mana");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableManaNbtRoundTripPreservesSharedCapacity(
+            GameTestHelper helper
+    ) {
+        IneffableMana original = new IneffableMana();
+        original.setMaxAmount(140.0F);
+        original.addModifier("test-capacity", 10.0F);
+        original.addRegenerationModifier("test-regen", 0.25F);
+        original.setParadox(47.5F);
+        original.setAmount(88.0F);
+        CompoundTag saved = new CompoundTag();
+        original.writeNBT(saved);
+
+        IneffableMana restored = new IneffableMana();
+        restored.readNBT(saved);
+
+        helper.assertTrue(Math.abs(restored.getMaxAmount() - 150.0F) < 0.0001F,
+                "Casting-resource NBT lost maximum capacity");
+        helper.assertTrue(Math.abs(restored.getParadox() - 47.5F) < 0.0001F,
+                "Casting-resource NBT lost Paradox");
+        helper.assertTrue(Math.abs(restored.getAmount() - 88.0F) < 0.0001F,
+                "Casting-resource NBT changed safe Mana");
+        helper.assertTrue(Math.abs(restored.getRegenerationModifiers()
+                        .getOrDefault("test-regen", 0.0F) - 0.25F) < 0.0001F,
+                "Casting-resource NBT lost regeneration modifiers");
         helper.succeed();
     }
 
