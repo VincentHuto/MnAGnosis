@@ -51,11 +51,14 @@ public final class ComponentLivingLand extends SpellEffect {
         LivingLandControllerEntity.makeRoomFor(level, player.getUUID());
         LivingLandControllerEntity controller = new LivingLandControllerEntity(
                 EntityRegistry.LIVING_LAND_CONTROLLER.get(), level);
+        boolean projected = context.getSpell().getModifiers().stream()
+                .anyMatch(SpellComponentRegistry::isPrecision);
         controller.configure(player, victim,
                 modifiedPart.getValue(Attribute.RADIUS),
                 Math.round(modifiedPart.getValue(Attribute.DURATION) * 20.0F),
                 modifiedPart.getValue(Attribute.MAGNITUDE),
-                modifiedPart.getValue(Attribute.SPEED));
+                modifiedPart.getValue(Attribute.SPEED),
+                projected);
         return ComponentApplicationResult.fromBoolean(level.addFreshEntity(controller));
     }
 

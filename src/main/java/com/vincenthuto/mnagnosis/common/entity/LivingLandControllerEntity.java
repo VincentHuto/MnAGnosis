@@ -30,6 +30,7 @@ public final class LivingLandControllerEntity extends Entity {
     private int remainingTicks = 160;
     private float magnitude = 1.0F;
     private float speed = 1.0F;
+    private boolean projected;
     private long createdAt;
 
     public LivingLandControllerEntity(EntityType<? extends LivingLandControllerEntity> type,
@@ -43,13 +44,15 @@ public final class LivingLandControllerEntity extends Entity {
     }
 
     public void configure(ServerPlayer owner, LivingEntity target, float radius,
-                          int durationTicks, float magnitude, float speed) {
+                          int durationTicks, float magnitude, float speed,
+                          boolean projected) {
         ownerId = owner.getUUID();
         targetId = target.getUUID();
         this.radius = clamp(radius, 4.0F, 12.0F);
         remainingTicks = Math.max(20, Math.min(durationTicks, 600));
         this.magnitude = clamp(magnitude, 0.5F, 3.0F);
         this.speed = clamp(speed, 0.5F, 3.0F);
+        this.projected = projected;
         createdAt = level().getGameTime();
         setPos(target.position());
     }
@@ -92,7 +95,8 @@ public final class LivingLandControllerEntity extends Entity {
                     sources.add(source.source().relative(
                             source.approach().getOpposite(), index));
                 }
-                LivingLandPillarPayload.acquire(level, owner, sources, false).ifPresent(payload -> {
+                LivingLandPillarPayload.acquire(
+                        level, owner, sources, projected).ifPresent(payload -> {
                     LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                             EntityRegistry.LIVING_LAND_STRIKE.get(), level
                     );
@@ -141,6 +145,7 @@ public final class LivingLandControllerEntity extends Entity {
         remainingTicks = Math.max(1, Math.min(tag.getInt("RemainingTicks"), 600));
         magnitude = clamp(tag.getFloat("Magnitude"), 0.5F, 3.0F);
         speed = clamp(tag.getFloat("Speed"), 0.5F, 3.0F);
+        projected = tag.getBoolean("Projected");
         createdAt = tag.getLong("CreatedAt");
     }
 
@@ -152,6 +157,7 @@ public final class LivingLandControllerEntity extends Entity {
         tag.putInt("RemainingTicks", remainingTicks);
         tag.putFloat("Magnitude", magnitude);
         tag.putFloat("Speed", speed);
+        tag.putBoolean("Projected", projected);
         tag.putLong("CreatedAt", createdAt);
     }
 
@@ -162,6 +168,7 @@ public final class LivingLandControllerEntity extends Entity {
 
     public UUID getOwnerId() { return ownerId; }
     public long getCreatedAt() { return createdAt; }
+    public boolean isProjected() { return projected; }
 
     private static float clamp(float value, float minimum, float maximum) {
         return Float.isFinite(value) ? Math.max(minimum, Math.min(value, maximum)) : minimum;

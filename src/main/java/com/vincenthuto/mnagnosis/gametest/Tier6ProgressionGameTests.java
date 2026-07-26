@@ -1820,6 +1820,50 @@ public final class Tier6ProgressionGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void precisionRegistersAndProjectsLivingLand(GameTestHelper helper) {
+        helper.assertTrue(Registries.Modifier.get()
+                        .getValue(SpellComponentRegistry.PRECISION_ID)
+                        == SpellComponentRegistry.PRECISION,
+                "Precision was not registered in M&A's modifier registry");
+        ClassLoader resources = Tier6ProgressionGameTests.class.getClassLoader();
+        List<String> required = List.of(
+                "data/mnagnosis/recipes/precision.json",
+                "assets/mnagnosis/textures/spell/modifier/precision.png"
+        );
+        helper.assertTrue(required.stream().allMatch(path ->
+                        resources.getResource(path) != null),
+                "Precision was missing its Tier 6 recipe or icon");
+
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "precision_spell")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 1);
+        ComponentLivingLand component = SpellComponentRegistry.LIVING_LAND;
+        ModifiedSpellPart<SpellEffect> modified = new ModifiedSpellPart<>(component);
+        SpellRecipe projectedSpell = new SpellRecipe(Shapes.SELF, component);
+        projectedSpell.addModifier(SpellComponentRegistry.PRECISION);
+        helper.assertTrue(component.ApplyEffect(
+                        new SpellSource(caster, InteractionHand.MAIN_HAND),
+                        new SpellTarget(target), modified,
+                        new SpellContext(helper.getLevel(), projectedSpell))
+                        == ComponentApplicationResult.SUCCESS,
+                "Precision Living Land rejected a hostile target");
+        LivingLandControllerEntity newest = null;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof LivingLandControllerEntity controller
+                    && !controller.isRemoved()
+                    && (newest == null || controller.getId() > newest.getId())) {
+                newest = controller;
+            }
+        }
+        helper.assertTrue(newest != null && newest.isProjected(),
+                "Living Land did not pass Precision projection to its conductor");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void livingLandCreatesAndCapsTargetConductors(GameTestHelper helper) {
         FakePlayer caster = FakePlayerFactory.get(
                 helper.getLevel(), new GameProfile(UUID.randomUUID(), "living_land_spell")

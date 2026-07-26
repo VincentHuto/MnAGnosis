@@ -34,6 +34,7 @@
 	"mnagnosis:components/living_land.desc.speed": "How quickly awakened terrain hunts its target.",
 	"mnagnosis:components/living_land.desc.delay": "A delay before the land is given intent.",
 	"mnagnosis:polarity": "Polarity",
+	"mnagnosis:precision": "Precision",
 	"subtitles.mnagnosis.true_damage_static": "Reality breaks into static",
 	"death.attack.mnagnosis.true_damage": "%1$s was revised out of existence",
 	"death.attack.mnagnosis.true_damage.player": "%1$s was revised out of existence by %2$s",

@@ -30,6 +30,10 @@ public final class SpellComponentRegistry {
     public static final PolarityModifier POLARITY = new PolarityModifier(
             MnAGnosis.rloc("textures/spell/modifier/polarity.png")
     );
+    public static final ResourceLocation PRECISION_ID = MnAGnosis.rloc("precision");
+    public static final PrecisionModifier PRECISION = new PrecisionModifier(
+            MnAGnosis.rloc("textures/spell/modifier/precision.png")
+    );
 
     private SpellComponentRegistry() {
     }
@@ -46,12 +50,20 @@ public final class SpellComponentRegistry {
         );
         event.register(
                 Registries.Modifier.get().getRegistryKey(),
-                helper -> helper.register(POLARITY_ID, POLARITY)
+                helper -> {
+                    helper.register(POLARITY_ID, POLARITY);
+                    helper.register(PRECISION_ID, PRECISION);
+                }
         );
     }
 
     public static boolean isPolarity(com.mna.api.spells.parts.Modifier modifier) {
         return modifier == POLARITY
                 || POLARITY_ID.equals(modifier.getRegistryName());
+    }
+
+    public static boolean isPrecision(com.mna.api.spells.parts.Modifier modifier) {
+        return modifier == PRECISION
+                || PRECISION_ID.equals(modifier.getRegistryName());
     }
 }

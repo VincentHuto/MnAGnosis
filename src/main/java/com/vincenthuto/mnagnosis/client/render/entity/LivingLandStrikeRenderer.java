@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStrikeEntity> {
@@ -34,6 +35,20 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
         for (int index = 0; index < entity.getPayloadLength(); index++) {
             poseStack.pushPose();
             poseStack.translate(-0.5D, -0.5D, index - center - 0.5D);
+            if (entity.isProjected()) {
+                poseStack.pushPose();
+                poseStack.translate(0.5D, 0.5D, 0.5D);
+                poseStack.scale(1.06F, 1.06F, 1.06F);
+                poseStack.translate(-0.5D, -0.5D, -0.5D);
+                context.getBlockRenderDispatcher().renderSingleBlock(
+                        (index & 1) == 0
+                                ? Blocks.BLACK_CONCRETE.defaultBlockState()
+                                : Blocks.WHITE_CONCRETE.defaultBlockState(),
+                        poseStack, buffers, packedLight, OverlayTexture.NO_OVERLAY);
+                poseStack.popPose();
+                poseStack.translate(0.07D, 0.07D, 0.07D);
+                poseStack.scale(0.86F, 0.86F, 0.86F);
+            }
             context.getBlockRenderDispatcher().renderSingleBlock(
                     entity.getCarriedState(index), poseStack, buffers,
                     packedLight, OverlayTexture.NO_OVERLAY);

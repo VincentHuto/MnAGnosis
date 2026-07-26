@@ -1,0 +1,17 @@
+{
+  "type": "mna:modifier",
+  "tier": 6,
+  "output": "mnagnosis:precision",
+  "items": [
+    "mnagnosis:tesseract",
+    "minecraft:spyglass",
+    "minecraft:quartz",
+    "minecraft:amethyst_shard",
+    "minecraft:black_concrete",
+    "minecraft:white_concrete"
+  ],
+  "patterns": [
+    "mna:manaweave_patterns/square",
+    "mna:manaweave_patterns/diamond"
+  ]
+}
