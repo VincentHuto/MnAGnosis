@@ -80,7 +80,6 @@ public final class SuspensionLawHandler implements AuthoredLawHandler {
             IModifiedSpellPart<SpellEffect> original,
             SpellTarget target
     ) {
-        CompoundTag consequence = capture(context, original, target);
         float fraction = MANA.equals(context.interpretationId())
                 ? Config.SUSPENDED_MANA_FRACTION.get().floatValue()
                 : 0.5F;
@@ -91,6 +90,15 @@ public final class SuspensionLawHandler implements AuthoredLawHandler {
             if (result != ComponentApplicationResult.SUCCESS) {
                 return result;
             }
+        }
+        CompoundTag consequence = capture(context, original, target);
+        if (EXPIRATION.equals(context.interpretationId())
+                && target.isLivingEntity()) {
+            EffectExpirationSuspension.capture(
+                    consequence,
+                    target.getLivingEntity(),
+                    context.spellContext().getLevel().getGameTime()
+            );
         }
         SuspensionPayload payload = new SuspensionPayload(
                 SuspensionPayload.VERSION,
@@ -207,6 +215,11 @@ public final class SuspensionLawHandler implements AuthoredLawHandler {
             ManaCostSuspension.release(player, payload, reason);
         } else if (ACTIVATION.equals(payload.interpretationId())) {
             EffectActivationSuspension.release(player, payload, reason);
+        } else if (DAMAGE.equals(payload.interpretationId())
+                || FORCE.equals(payload.interpretationId())) {
+            ForceDamageSuspension.release(player, payload, reason);
+        } else if (EXPIRATION.equals(payload.interpretationId())) {
+            EffectExpirationSuspension.release(player, payload, reason);
         }
     }
 }

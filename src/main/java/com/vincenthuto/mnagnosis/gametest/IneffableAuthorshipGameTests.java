@@ -36,6 +36,9 @@ import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspendedActio
 import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspensionLawHandler;
 import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspensionPayload;
 import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspensionSavedData;
+import com.vincenthuto.mnagnosis.common.authorship.law.suspension.ForceDamageSuspension;
+import com.vincenthuto.mnagnosis.common.authorship.law.suspension.EffectActivationSuspension;
+import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspensionScheduler;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
@@ -1112,6 +1115,66 @@ public final class IneffableAuthorshipGameTests {
                 "Suspension scheduler did not release in due-time order");
         helper.assertTrue(data.actions().equals(List.of(later)),
                 "Suspension scheduler did not persist the remaining action");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void suspensionDefersExactManaDamageAndActivation(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "suspension_cast")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        SpellRecipe heal = new SpellRecipe(Shapes.SELF, Components.HEAL);
+        helper.assertTrue(Math.abs(AuthorshipRegistry.SUSPENSION.adjustedManaCost(
+                        caster, heal, SuspensionLawHandler.MANA, 100.0F) - 60.0F)
+                        < 0.001F,
+                "Mana Suspension did not defer the configured 40%");
+        ForceDamageSuspension.DamageCapture large =
+                ForceDamageSuspension.captureDamage(10.0F, 0.5F);
+        ForceDamageSuspension.DamageCapture minimum =
+                ForceDamageSuspension.captureDamage(1.0F, 0.5F);
+        helper.assertTrue(large.remaining() == 5.0F && large.captured() == 5.0F,
+                "Damage Suspension did not capture its bounded half");
+        helper.assertTrue(minimum.remaining() == 1.0F && minimum.captured() == 0.0F,
+                "Damage Suspension reduced a nonzero hit below one");
+
+        var target = helper.spawnWithNoFreeWill(EntityType.PIG, 2, 2, 1);
+        target.setHealth(5.0F);
+        SpellContext spellContext = new SpellContext(helper.getLevel(), heal);
+        AuthoredCastContext activation = new AuthoredCastContext(
+                caster,
+                heal,
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                spellContext,
+                ItemStack.EMPTY,
+                SuspensionLawHandler.ACTIVATION,
+                20.0F
+        );
+        helper.assertTrue(AuthorshipRegistry.SUSPENSION.applyAuthored(
+                        activation, heal.getComponent(0), new SpellTarget(target))
+                        == ComponentApplicationResult.SUCCESS,
+                "Activation Suspension rejected a serializable component");
+        helper.assertTrue(target.getHealth() == 5.0F,
+                "Activation Suspension applied its component immediately");
+        SuspensionPayload activationPayload = SuspensionPayload.load(
+                spellContext.getMeta().getCompound("mnagnosis")
+                        .getCompound("authored_payload")
+        );
+        EffectActivationSuspension.release(
+                caster, activationPayload, SuspensionScheduler.ReleaseReason.DUE
+        );
+        helper.assertTrue(target.getHealth() == 6.0F,
+                "Activation Suspension did not replay the exact delayed component; "
+                        + "health was " + target.getHealth()
+                        + ", captured target was "
+                        + activationPayload.consequence().getUUID("target")
+                        + ", actual target was " + target.getUUID());
+
+        helper.getLevel().removePlayerImmediately(
+                caster, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
         helper.succeed();
     }
 

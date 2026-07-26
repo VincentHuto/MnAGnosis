@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 public final class ContradictionLedger {
 
@@ -71,6 +72,29 @@ public final class ContradictionLedger {
             if (debt.id().equals(id)) {
                 entries.remove(index);
                 return Optional.of(debt);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Contradiction> updatePayload(
+            UUID id,
+            UnaryOperator<CompoundTag> updater
+    ) {
+        for (int index = 0; index < entries.size(); index++) {
+            Contradiction debt = entries.get(index);
+            if (debt.id().equals(id)) {
+                Contradiction updated = new Contradiction(
+                        debt.id(),
+                        debt.lawId(),
+                        debt.interpretationId(),
+                        debt.paradox(),
+                        debt.safeCasts(),
+                        debt.order(),
+                        updater.apply(debt.payload())
+                );
+                entries.set(index, updated);
+                return Optional.of(updated);
             }
         }
         return Optional.empty();
