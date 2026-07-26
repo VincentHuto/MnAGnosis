@@ -50,6 +50,8 @@ import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
 import com.vincenthuto.mnagnosis.common.spell.ComponentGravityConvergence;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
+import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
+import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTerrain;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
 import net.minecraft.commands.CommandSourceStack;
@@ -76,6 +78,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -1483,6 +1486,52 @@ public final class Tier6ProgressionGameTests {
                         .filter(SpellComponentRegistry.GRAVITY_CONVERGENCE::equals)
                         .isPresent(),
                 "M&A could not resolve the Gravity Convergence component recipe");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandTerrainChoosesItsEnvironmentalAttack(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(LivingLandTerrain.selectMode(2, 4, 2).orElseThrow()
+                        == LivingLandMode.CEILING_CRUSH,
+                "Living Land did not prioritize a low ceiling");
+        helper.assertTrue(LivingLandTerrain.selectMode(0, 2, 2).orElseThrow()
+                        == LivingLandMode.WALL_LANCES,
+                "Living Land did not select enclosing walls");
+        helper.assertTrue(LivingLandTerrain.selectMode(0, 1, 2).orElseThrow()
+                        == LivingLandMode.FLOOR_TEETH,
+                "Living Land did not fall back to solid ground");
+        helper.assertTrue(LivingLandTerrain.selectMode(0, 1, 1).isEmpty(),
+                "Living Land accepted terrain without two conserved sources");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandRejectsProtectedAndUnstableSources(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "living_land_scan")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        net.minecraft.core.BlockPos stone = helper.absolutePos(
+                new net.minecraft.core.BlockPos(2, 1, 1)
+        );
+        net.minecraft.core.BlockPos bedrock = stone.east();
+        net.minecraft.core.BlockPos water = stone.east(2);
+        helper.getLevel().setBlock(stone, Blocks.STONE.defaultBlockState(), 3);
+        helper.getLevel().setBlock(bedrock, Blocks.BEDROCK.defaultBlockState(), 3);
+        helper.getLevel().setBlock(water, Blocks.WATER.defaultBlockState(), 3);
+        helper.assertTrue(LivingLandTerrain.isEligibleSource(
+                        helper.getLevel(), caster, stone),
+                "Living Land rejected ordinary solid terrain");
+        helper.assertTrue(!LivingLandTerrain.isEligibleSource(
+                        helper.getLevel(), caster, bedrock)
+                        && !LivingLandTerrain.isEligibleSource(
+                        helper.getLevel(), caster, water),
+                "Living Land accepted protected or fluid terrain");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
         helper.succeed();
     }
 
