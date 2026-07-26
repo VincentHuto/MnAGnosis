@@ -54,12 +54,22 @@ public class IneffableManaGui implements ICastingResourceGuiProvider {
 
     @Override
     public int getFrameHeight() {
-        return 24;
+        return 16;
     }
 
     @Override
     public int getFillWidth() {
         return 128;
+    }
+
+    @Override
+    public int getFillStartY() {
+        return 5;
+    }
+
+    @Override
+    public int getFillHeight() {
+        return 6;
     }
 
     @Override

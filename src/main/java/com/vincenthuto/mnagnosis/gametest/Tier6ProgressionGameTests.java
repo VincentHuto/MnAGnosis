@@ -33,6 +33,7 @@ import com.mojang.authlib.GameProfile;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.client.authorship.CounterlawHudRenderer;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityFieldEntity;
 import com.vincenthuto.mnagnosis.common.event.CommontEvents;
@@ -315,14 +316,49 @@ public final class Tier6ProgressionGameTests {
                 "The Ineffable GUI provider did not expose its custom HUD atlas");
         helper.assertTrue(gui.getFrameU() == 0 && gui.getFrameV() == 0,
                 "The Ineffable frame did not begin at the HUD atlas origin");
-        helper.assertTrue(gui.getFrameWidth() == 153 && gui.getFrameHeight() == 24,
+        helper.assertTrue(gui.getFrameWidth() == 153 && gui.getFrameHeight() == 16,
                 "The Ineffable frame broke MnA's standard HUD dimensions");
-        helper.assertTrue(gui.getFillWidth() == 128 && gui.getBarColor() == 0xFFFFFFFF,
+        helper.assertTrue(gui.getFillStartY() == 5 && gui.getFillHeight() == 6
+                        && gui.getFillWidth() == 128
+                        && gui.getBarColor() == 0xFFFFFFFF,
                 "The Ineffable mana fill was not the planned opaque white");
         helper.assertTrue(gui.getBarManaCostEstimateColor() == 0xFF808080,
                 "The Ineffable affordable-cost preview was not middle gray");
         helper.assertTrue(!gui.getBadgeItem().isEmpty(),
                 "The Ineffable GUI provider did not supply its outlined-square badge");
+        try (InputStream stream = Tier6ProgressionGameTests.class.getClassLoader()
+                .getResourceAsStream(
+                        "assets/mnagnosis/textures/mna/ineffable_resource_bars.png"
+                )) {
+            java.awt.image.BufferedImage atlas = javax.imageio.ImageIO.read(stream);
+            helper.assertTrue(atlas.getWidth() == 256 && atlas.getHeight() == 256,
+                    "The Ineffable HUD atlas no longer matches M&A's atlas contract");
+            int occupiedBottom = -1;
+            for (int y = 0; y < atlas.getHeight(); y++) {
+                for (int x = 0; x < atlas.getWidth(); x++) {
+                    if ((atlas.getRGB(x, y) >>> 24) != 0) {
+                        occupiedBottom = y;
+                    }
+                }
+            }
+            helper.assertTrue(occupiedBottom == 15,
+                    "The Ineffable frame sprite was not the approved thin 16-pixel frame");
+        } catch (Exception exception) {
+            helper.fail("Could not inspect the Ineffable HUD atlas: "
+                    + exception.getMessage());
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void counterlawOverlayUsesTranslatedManaCoordinates(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(CounterlawHudRenderer.manaFillX(100) == 133,
+                "Counterlaw lattice ignored M&A's local frame X translation");
+        helper.assertTrue(CounterlawHudRenderer.manaFillY(50) == 61,
+                "Counterlaw lattice ignored M&A's local frame Y translation");
         helper.succeed();
     }
 

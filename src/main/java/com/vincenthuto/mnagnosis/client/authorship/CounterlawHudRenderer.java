@@ -10,10 +10,12 @@ import java.util.List;
 
 public final class CounterlawHudRenderer {
 
+    private static final int FRAME_OFFSET_X = 14;
+    private static final int FRAME_OFFSET_Y = 6;
     private static final int FILL_OFFSET_X = 19;
-    private static final int FILL_OFFSET_Y = 6;
+    private static final int FILL_OFFSET_Y = 5;
     private static final int FILL_WIDTH = 128;
-    private static final int FILL_HEIGHT = 12;
+    private static final int FILL_HEIGHT = 6;
     private static final int BLACK = 0xFF050505;
     private static final int WHITE = 0xFFF7F7F7;
 
@@ -40,6 +42,14 @@ public final class CounterlawHudRenderer {
         return FrameState.STABLE;
     }
 
+    public static int manaFillX(int hudX) {
+        return hudX + FRAME_OFFSET_X + FILL_OFFSET_X;
+    }
+
+    public static int manaFillY(int hudY) {
+        return hudY + FRAME_OFFSET_Y + FILL_OFFSET_Y;
+    }
+
     public static void render(
             GuiGraphics graphics,
             int frameX,
@@ -54,6 +64,8 @@ public final class CounterlawHudRenderer {
         float paradox = Math.max(mana.getParadox(), snapshot.paradox());
         float ratio = paradox / mana.getMaxAmount();
         int pixels = paradoxPixels(ratio, FILL_WIDTH);
+        frameX += FRAME_OFFSET_X;
+        frameY += FRAME_OFFSET_Y;
         int fillX = frameX + FILL_OFFSET_X;
         int fillY = frameY + FILL_OFFSET_Y;
         renderLattice(graphics, fillX + FILL_WIDTH - pixels, fillY, pixels);
@@ -98,7 +110,7 @@ public final class CounterlawHudRenderer {
             for (int cell = 0; cell < 6; cell++) {
                 int cellX = x + 52 + cell * 5 + phase;
                 graphics.fill(cellX, y + 1, cellX + 3, y + 3, BLACK);
-                graphics.fill(cellX, y + 21, cellX + 3, y + 23, BLACK);
+                graphics.fill(cellX, y + 13, cellX + 3, y + 15, BLACK);
             }
         }
         if (state.ordinal() >= FrameState.LOCAL_INVERSION.ordinal()) {
@@ -107,9 +119,9 @@ public final class CounterlawHudRenderer {
             graphics.fill(x + 91, y + 1, x + 94, y + 3, BLACK);
         }
         if (state == FrameState.CONTRADICTION) {
-            graphics.fill(x + 109, y + 21, x + 129, y + 24, WHITE);
-            graphics.fill(x + 112, y + 21, x + 115, y + 23, BLACK);
-            graphics.fill(x + 121, y + 21, x + 124, y + 23, BLACK);
+            graphics.fill(x + 109, y + 13, x + 129, y + 16, WHITE);
+            graphics.fill(x + 112, y + 13, x + 115, y + 15, BLACK);
+            graphics.fill(x + 121, y + 13, x + 124, y + 15, BLACK);
         }
     }
 
