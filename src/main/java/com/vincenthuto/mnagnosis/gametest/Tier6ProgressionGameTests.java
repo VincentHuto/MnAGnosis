@@ -397,6 +397,23 @@ public final class Tier6ProgressionGameTests {
                         && IneffableHudRenderer.RAIL_THICKNESS == 1
                         && IneffableHudRenderer.CAP_STEM_HEIGHT == 2,
                 "Paradox no longer uses the approved balanced lattice density");
+
+        var stableDetails = IneffableHudRenderer.detailNodes(
+                IneffableHudRenderer.FrameState.STABLE
+        );
+        var shiftedDetails = IneffableHudRenderer.detailNodes(
+                IneffableHudRenderer.FrameState.DESYNCHRONIZED
+        );
+        helper.assertTrue(stableDetails.size() == 4,
+                "The stable frame lost its permanent circuit nodes");
+        helper.assertTrue(stableDetails.get(0).x()
+                        == IneffableHudRenderer.FRAME_X + 24
+                        && stableDetails.get(2).x()
+                        == IneffableHudRenderer.FRAME_X + 119,
+                "The stable circuit nodes drifted from the frame");
+        helper.assertTrue(shiftedDetails.get(0).x() == stableDetails.get(0).x() - 1
+                        && shiftedDetails.get(2).x() == stableDetails.get(2).x() + 1,
+                "Desynchronization did not make the circuit nodes disagree");
         helper.succeed();
     }
 

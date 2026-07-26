@@ -6,6 +6,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.List;
+
 public final class IneffableHudRenderer {
 
     public static final int FRAME_WIDTH = 153;
@@ -55,6 +57,18 @@ public final class IneffableHudRenderer {
         return FRAME_WIDTH - CHANNEL_X - CHANNEL_WIDTH;
     }
 
+    public static List<DetailNode> detailNodes(FrameState state) {
+        int displacement = state == FrameState.DESYNCHRONIZED ? 1 : 0;
+        return List.of(
+                new DetailNode(FRAME_X + 24 - displacement, FRAME_Y - 3, 5),
+                new DetailNode(FRAME_X + 31 - displacement, FRAME_Y, 3),
+                new DetailNode(FRAME_X + 119 + displacement,
+                        FRAME_Y + FRAME_HEIGHT, 5),
+                new DetailNode(FRAME_X + 126 + displacement,
+                        FRAME_Y + FRAME_HEIGHT - 3, 3)
+        );
+    }
+
     public static FrameState frameState(float paradoxRatio) {
         return Float.isFinite(paradoxRatio) && paradoxRatio >= 0.20F
                 ? FrameState.DESYNCHRONIZED
@@ -93,6 +107,7 @@ public final class IneffableHudRenderer {
         drawParadox(graphics, channelLeft + CHANNEL_WIDTH - paradoxWidth,
                 channelTop, paradoxWidth);
         drawExperience(graphics, FRAME_X, FRAME_Y, magic);
+        drawCircuitDetails(graphics, FRAME_X, FRAME_Y, state);
         drawDesynchronization(graphics, FRAME_X, FRAME_Y, state, paradox / maximum);
         CounterlawHudRenderer.renderContradictions(
                 graphics,
@@ -219,6 +234,55 @@ public final class IneffableHudRenderer {
         );
     }
 
+    private static void drawCircuitDetails(
+            GuiGraphics graphics,
+            int x,
+            int y,
+            FrameState state
+    ) {
+        int displacement = state == FrameState.DESYNCHRONIZED ? 1 : 0;
+        int topShift = -displacement;
+        int bottomShift = displacement;
+
+        // Upper-left rail folds down into the channel before rejoining the frame.
+        graphics.fill(x + 13 + topShift, y + 3,
+                x + 40 + topShift, y + 6, BLACK);
+        graphics.fill(x + 14 + topShift, y + 3,
+                x + 17 + topShift, y + 4, WHITE);
+        graphics.fill(x + 17 + topShift, y + 4,
+                x + 32 + topShift, y + 5, WHITE);
+        graphics.fill(x + 32 + topShift, y + 3,
+                x + 35 + topShift, y + 4, WHITE);
+
+        // Lower-right rail rises into the channel as an opposing law branch.
+        graphics.fill(x + 96 + bottomShift, y + 8,
+                x + 137 + bottomShift, y + 12, BLACK);
+        graphics.fill(x + 101 + bottomShift, y + 10,
+                x + 104 + bottomShift, y + 11, WHITE);
+        graphics.fill(x + 104 + bottomShift, y + 9,
+                x + 128 + bottomShift, y + 10, WHITE);
+        graphics.fill(x + 128 + bottomShift, y + 10,
+                x + 132 + bottomShift, y + 11, WHITE);
+
+        for (DetailNode node : detailNodes(state)) {
+            drawDetailNode(graphics, node);
+        }
+    }
+
+    private static void drawDetailNode(
+            GuiGraphics graphics,
+            DetailNode node
+    ) {
+        graphics.fill(node.x() - 1, node.y() - 1,
+                node.x() + node.size() + 1,
+                node.y() + node.size() + 1, BLACK);
+        graphics.fill(node.x(), node.y(),
+                node.x() + node.size(), node.y() + node.size(), WHITE);
+        graphics.fill(node.x() + 1, node.y() + 1,
+                node.x() + node.size() - 1,
+                node.y() + node.size() - 1, BLACK);
+    }
+
     private static void drawDesynchronization(
             GuiGraphics graphics,
             int x,
@@ -247,14 +311,9 @@ public final class IneffableHudRenderer {
                 x + 119 + displacement,
                 y + FRAME_HEIGHT - 2 - phase + RAIL_THICKNESS, WHITE);
 
-        graphics.fill(x + 58, y - 2, x + 62, y + 2, WHITE);
-        graphics.fill(x + 59, y - 1, x + 61, y + 1, BLACK);
-        if (paradoxRatio >= 0.45F) {
-            graphics.fill(x + 126, y + FRAME_HEIGHT - 1,
-                    x + 130, y + FRAME_HEIGHT + 3, WHITE);
-            graphics.fill(x + 127, y + FRAME_HEIGHT,
-                    x + 129, y + FRAME_HEIGHT + 2, BLACK);
-        }
+    }
+
+    public record DetailNode(int x, int y, int size) {
     }
 
     public enum FrameState {
