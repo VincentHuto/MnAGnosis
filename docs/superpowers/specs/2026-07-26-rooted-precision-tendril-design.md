@@ -25,8 +25,16 @@ head, so even after emergence the visual detaches from the land.
 - The final segment remains fixed at the root. Intermediate segments form a
   deterministic, animated curve between the root and head.
 - The projected renderer draws continuous elongated terrain sections between
-  adjacent curve points. The sections expand as the head travels, creating the
-  appearance of the source terrain stretching outward.
+  adjacent curve points using the copied source block states. The sections
+  expand as the head travels, creating the appearance of the source terrain
+  stretching outward. Black-and-white projection feedback is limited to
+  particles and never replaces or encloses the copied terrain texture.
+- A wave examines scanned candidates until it has launched its requested
+  number of tendrils. A rejected candidate does not consume a launch slot.
+- Each candidate attempts the magnitude-requested pillar length first, then
+  shorter lengths down to the three-block minimum. This preserves magnitude
+  scaling where terrain supports it without making ordinary uneven terrain
+  silently cancel the entire wave.
 - Non-Precision Living Land retains its existing traveling articulated pillar.
 - Impact, damage, duration, capacity limits, and non-destructive settlement
   remain unchanged.
@@ -40,5 +48,7 @@ GameTests will prove that:
 3. its synchronized root remains fixed while the head advances;
 4. projected segment endpoints span from the head to that root;
 5. the original terrain remains unchanged.
+6. invalid early candidates are skipped and shallow valid candidates fall
+   back to a three-block tendril.
 
 The full GameTest suite and Gradle build must pass.

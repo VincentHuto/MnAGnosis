@@ -119,3 +119,43 @@ Expected: `BUILD SUCCESSFUL`.
 
 Commit only the controller, strike, tendril math, renderer, and GameTest
 changes. Do not include unrelated staged or untracked files.
+
+### Task 4: Make wave acquisition terrain-tolerant
+
+**Files:**
+- Modify: `src/main/java/com/vincenthuto/mnagnosis/common/entity/LivingLandControllerEntity.java`
+- Modify: `src/main/java/com/vincenthuto/mnagnosis/gametest/Tier6ProgressionGameTests.java`
+
+**Interfaces:**
+- Consumes: ordered `LivingLandTerrain.ScanResult.sources()`
+- Produces: candidate fallback that counts successful launches rather than
+  inspected candidates
+
+- [ ] **Step 1: Reproduce invalid-first-candidate cancellation**
+
+Create an ordered candidate list whose first source has no valid backing
+column and whose second source has three eligible backing blocks. Assert that
+one payload is selected from the second candidate.
+
+- [ ] **Step 2: Reproduce requested-length fallback**
+
+Request a five-block pillar from a source with exactly three eligible blocks
+and assert that acquisition returns a three-entry payload.
+
+- [ ] **Step 3: Implement adaptive acquisition**
+
+Iterate all candidates until the successful launch count reaches the wave
+target. For each candidate, call payload acquisition from the requested
+length down through three and use the first success.
+
+- [ ] **Step 4: Preserve copied textures**
+
+Render projected spans directly from `getCarriedState(index)`. Remove the
+opaque black/white concrete shell; retain the existing projection particles.
+
+- [ ] **Step 5: Verify and commit**
+
+Run `.\gradlew.bat runGameTestServer --no-daemon` and require every GameTest
+to pass. Run `.\gradlew.bat build --no-daemon` and require
+`BUILD SUCCESSFUL`. Commit only the controller, renderer, tests, and these
+approved documentation amendments.
