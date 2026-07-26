@@ -37,6 +37,11 @@ public final class ExchangeLawHandler implements AuthoredLawHandler {
     private final Map<ResourceLocation, ExchangeProperty> properties = new LinkedHashMap<>();
 
     public ExchangeLawHandler() {
+        register(new PositionExchange());
+        register(new VelocityExchange());
+        register(new EffectExchange(false));
+        register(new EffectExchange(true));
+        register(new ManaExchange());
     }
 
     public ExchangeLawHandler register(ExchangeProperty property) {

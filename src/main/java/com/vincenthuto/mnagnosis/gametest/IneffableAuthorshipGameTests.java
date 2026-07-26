@@ -12,6 +12,7 @@ import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.capabilities.playerdata.progression.PlayerProgression;
 import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
+import com.mna.capabilities.playerdata.magic.PlayerMagicProvider;
 import com.mna.spells.crafting.ModifiedSpellPart;
 import com.mna.spells.crafting.SpellRecipe;
 import com.mna.tools.SummonUtils;
@@ -45,6 +46,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -814,6 +817,253 @@ public final class IneffableAuthorshipGameTests {
         );
         helper.assertTrue(payload.equals(ExchangePayload.load(payload.save())),
                 "Exchange payload did not preserve subjects and conserved values");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void exchangePositionAndVelocityConserveBothSubjects(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "exchange_subject")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        net.minecraft.core.BlockPos casterPos = helper.absolutePos(
+                new net.minecraft.core.BlockPos(1, 2, 1)
+        );
+        caster.moveTo(
+                casterPos.getX() + 0.5D,
+                casterPos.getY(),
+                casterPos.getZ() + 0.5D,
+                10.0F,
+                5.0F
+        );
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 2, 1);
+        SpellRecipe carrier = new SpellRecipe(Shapes.SELF, Components.EXCHANGE);
+        SpellContext positionContext = new SpellContext(helper.getLevel(), carrier);
+        AuthoredCastContext positionCast = new AuthoredCastContext(
+                caster,
+                carrier,
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                positionContext,
+                ItemStack.EMPTY,
+                ExchangeLawHandler.POSITION,
+                20.0F
+        );
+        double casterX = caster.getX();
+        double targetX = target.getX();
+        net.minecraft.world.phys.AABB casterDestination = caster.getBoundingBox().move(
+                target.position().subtract(caster.position())
+        );
+        net.minecraft.world.phys.AABB targetDestination = target.getBoundingBox().move(
+                caster.position().subtract(target.position())
+        );
+        helper.assertTrue(!caster.isAlliedTo(target),
+                "The position test fixture unexpectedly made its subjects allied");
+        helper.assertTrue(!helper.getLevel()
+                        .getBlockCollisions(caster, casterDestination).iterator().hasNext()
+                        && !helper.getLevel()
+                        .getBlockCollisions(target, targetDestination).iterator().hasNext(),
+                "The position test fixture placed a destination inside blocks");
+        helper.assertTrue(AuthorshipRegistry.EXCHANGE.applyAuthored(
+                        positionCast, carrier.getComponent(0), new SpellTarget(target))
+                        == ComponentApplicationResult.SUCCESS,
+                "Position Exchange rejected two valid loaded subjects");
+        helper.assertTrue(Math.abs(caster.getX() - targetX) < 0.001D
+                        && Math.abs(target.getX() - casterX) < 0.001D,
+                "Position Exchange did not swap both positions exactly");
+        ExchangePayload positionPayload = ExchangePayload.load(
+                positionContext.getMeta().getCompound("mnagnosis")
+                        .getCompound("authored_payload")
+        );
+        AuthorshipRegistry.EXCHANGE.vent(caster, new Contradiction(
+                UUID.randomUUID(),
+                AuthorshipRegistry.EXCHANGE_LAW_ID,
+                ExchangeLawHandler.POSITION,
+                10.0F,
+                3,
+                1,
+                positionPayload.save()
+        ));
+        helper.assertTrue(Math.abs(caster.getX() - casterX) < 0.001D
+                        && Math.abs(target.getX() - targetX) < 0.001D,
+                "Position Vent did not restore both loaded subjects");
+        helper.assertTrue(AuthorshipRegistry.EXCHANGE.applyAuthored(
+                        positionCast, carrier.getComponent(0), new SpellTarget(caster))
+                        == ComponentApplicationResult.FAIL,
+                "Position Exchange accepted a self-target");
+
+        caster.setDeltaMovement(1.0D, 0.0D, 0.0D);
+        target.setDeltaMovement(0.0D, 0.5D, -1.0D);
+        SpellContext velocityContext = new SpellContext(helper.getLevel(), carrier);
+        AuthoredCastContext velocityCast = new AuthoredCastContext(
+                caster,
+                carrier,
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                velocityContext,
+                ItemStack.EMPTY,
+                ExchangeLawHandler.VELOCITY,
+                20.0F
+        );
+        helper.assertTrue(AuthorshipRegistry.EXCHANGE.applyAuthored(
+                        velocityCast, carrier.getComponent(0), new SpellTarget(target))
+                        == ComponentApplicationResult.SUCCESS,
+                "Velocity Exchange rejected two valid loaded subjects");
+        helper.assertTrue(caster.getDeltaMovement().equals(
+                        new net.minecraft.world.phys.Vec3(0.0D, 0.5D, -1.0D))
+                        && target.getDeltaMovement().equals(
+                        new net.minecraft.world.phys.Vec3(1.0D, 0.0D, 0.0D)),
+                "Velocity Exchange did not conserve and swap both vectors");
+        net.minecraft.world.scores.Scoreboard scoreboard = helper.getLevel().getScoreboard();
+        net.minecraft.world.scores.PlayerTeam protectedTeam =
+                scoreboard.addPlayerTeam("exchange_protected_" + target.getId());
+        scoreboard.addPlayerToTeam(caster.getScoreboardName(), protectedTeam);
+        scoreboard.addPlayerToTeam(target.getScoreboardName(), protectedTeam);
+        helper.assertTrue(AuthorshipRegistry.EXCHANGE.applyAuthored(
+                        positionCast, carrier.getComponent(0), new SpellTarget(target))
+                        == ComponentApplicationResult.FAIL,
+                "Position Exchange bypassed allied-team protection");
+        scoreboard.removePlayerFromTeam(caster.getScoreboardName(), protectedTeam);
+        scoreboard.removePlayerFromTeam(target.getScoreboardName(), protectedTeam);
+        scoreboard.removePlayerTeam(protectedTeam);
+
+        helper.getLevel().removePlayerImmediately(
+                caster, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void exchangeEffectsAndDurationsPreserveExactInstances(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "effect_exchange")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 1);
+        caster.addEffect(new MobEffectInstance(
+                MobEffects.MOVEMENT_SPEED, 240, 1, true, false, true
+        ));
+        target.addEffect(new MobEffectInstance(
+                MobEffects.DAMAGE_RESISTANCE, 120, 0, false, true, false
+        ));
+        SpellRecipe carrier = new SpellRecipe(Shapes.SELF, Components.EXCHANGE);
+        AuthoredCastContext effectCast = new AuthoredCastContext(
+                caster,
+                carrier,
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                new SpellContext(helper.getLevel(), carrier),
+                ItemStack.EMPTY,
+                ExchangeLawHandler.EFFECT,
+                20.0F
+        );
+        helper.assertTrue(AuthorshipRegistry.EXCHANGE.applyAuthored(
+                        effectCast, carrier.getComponent(0), new SpellTarget(target))
+                        == ComponentApplicationResult.SUCCESS,
+                "Effect Exchange rejected compatible non-instant effects");
+        MobEffectInstance casterEffect = caster.getEffect(MobEffects.DAMAGE_RESISTANCE);
+        MobEffectInstance targetEffect = target.getEffect(MobEffects.MOVEMENT_SPEED);
+        helper.assertTrue(casterEffect != null && casterEffect.getDuration() == 120
+                        && !casterEffect.isAmbient() && casterEffect.isVisible()
+                        && !casterEffect.showIcon(),
+                "Effect Exchange lost the target effect's exact flags");
+        helper.assertTrue(targetEffect != null && targetEffect.getDuration() == 240
+                        && targetEffect.getAmplifier() == 1 && targetEffect.isAmbient()
+                        && !targetEffect.isVisible() && targetEffect.showIcon(),
+                "Effect Exchange lost the caster effect's exact state");
+
+        caster.removeAllEffects();
+        target.removeAllEffects();
+        caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 100, 2));
+        target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 300, 0));
+        AuthoredCastContext durationCast = new AuthoredCastContext(
+                caster,
+                carrier,
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                new SpellContext(helper.getLevel(), carrier),
+                ItemStack.EMPTY,
+                ExchangeLawHandler.DURATION,
+                20.0F
+        );
+        helper.assertTrue(AuthorshipRegistry.EXCHANGE.applyAuthored(
+                        durationCast, carrier.getComponent(0), new SpellTarget(target))
+                        == ComponentApplicationResult.SUCCESS,
+                "Duration Exchange rejected a shared compatible effect");
+        helper.assertTrue(caster.getEffect(MobEffects.MOVEMENT_SPEED).getDuration() == 300
+                        && caster.getEffect(MobEffects.MOVEMENT_SPEED).getAmplifier() == 2
+                        && target.getEffect(MobEffects.MOVEMENT_SPEED).getDuration() == 100
+                        && target.getEffect(MobEffects.MOVEMENT_SPEED).getAmplifier() == 0,
+                "Duration Exchange changed more than the conserved remaining ticks");
+
+        helper.getLevel().removePlayerImmediately(
+                caster, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void exchangeManaIsBoundedConservedAndParadoxAware(
+            GameTestHelper helper
+    ) {
+        FakePlayer first = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "mana_exchange_first")
+        );
+        FakePlayer second = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "mana_exchange_second")
+        );
+        helper.getLevel().addNewPlayer(first);
+        helper.getLevel().addNewPlayer(second);
+        ((PlayerProgression) first.getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing first progression")))
+                .setTier(6, first, false);
+        ((PlayerProgression) second.getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing second progression")))
+                .setTier(6, second, false);
+        IneffableMana firstMana = (IneffableMana) first
+                .getCapability(PlayerMagicProvider.MAGIC).orElseThrow(
+                        () -> new IllegalStateException("Missing first magic"))
+                .getCastingResource();
+        IneffableMana secondMana = (IneffableMana) second
+                .getCapability(PlayerMagicProvider.MAGIC).orElseThrow(
+                        () -> new IllegalStateException("Missing second magic"))
+                .getCastingResource();
+        firstMana.setMaxAmount(100.0F);
+        secondMana.setMaxAmount(100.0F);
+        firstMana.setAmount(80.0F);
+        secondMana.setParadox(20.0F);
+        secondMana.setAmount(20.0F);
+
+        SpellRecipe carrier = new SpellRecipe(Shapes.SELF, Components.EXCHANGE);
+        AuthoredCastContext manaCast = new AuthoredCastContext(
+                first,
+                carrier,
+                new SpellSource(first, InteractionHand.MAIN_HAND),
+                new SpellContext(helper.getLevel(), carrier),
+                ItemStack.EMPTY,
+                ExchangeLawHandler.MANA,
+                20.0F
+        );
+        float total = firstMana.getAmount() + secondMana.getAmount();
+        helper.assertTrue(AuthorshipRegistry.EXCHANGE.applyAuthored(
+                        manaCast, carrier.getComponent(0), new SpellTarget(second))
+                        == ComponentApplicationResult.SUCCESS,
+                "Mana Exchange rejected two compatible Ineffable resources");
+        helper.assertTrue(Math.abs(firstMana.getAmount() - 55.0F) < 0.001F
+                        && Math.abs(secondMana.getAmount() - 45.0F) < 0.001F,
+                "Mana Exchange ignored the 25% lower-capacity transfer bound");
+        helper.assertTrue(Math.abs(
+                        firstMana.getAmount() + secondMana.getAmount() - total) < 0.001F,
+                "Mana Exchange created or destroyed casting mana");
+        helper.assertTrue(secondMana.getAmount() <= secondMana.getSafeMaximum(),
+                "Mana Exchange overflowed Paradox-reserved capacity");
+
+        helper.getLevel().removePlayerImmediately(
+                first, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
+        helper.getLevel().removePlayerImmediately(
+                second, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
         helper.succeed();
     }
 
