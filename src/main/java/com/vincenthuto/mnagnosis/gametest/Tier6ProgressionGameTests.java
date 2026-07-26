@@ -1732,16 +1732,30 @@ public final class Tier6ProgressionGameTests {
                 helper.getLevel(), new GameProfile(UUID.randomUUID(), "precision_launch")
         );
         helper.getLevel().addNewPlayer(caster);
-        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 3, 1);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 6, 1);
         net.minecraft.core.BlockPos origin = target.blockPosition();
         List<net.minecraft.core.BlockPos> sources = new java.util.ArrayList<>();
         for (Direction horizontal : Direction.Plane.HORIZONTAL) {
             net.minecraft.core.BlockPos column = origin.relative(horizontal);
+            for (int height = 2; height <= 5; height++) {
+                helper.getLevel().setBlock(
+                        column.above(height), Blocks.AIR.defaultBlockState(), 3);
+            }
+            for (int distance = 2; distance <= 6; distance++) {
+                helper.getLevel().setBlock(
+                        origin.above().relative(horizontal, distance),
+                        Blocks.AIR.defaultBlockState(), 3);
+            }
+            int availableDepth = horizontal == Direction.WEST ? 1 : 3;
             for (int depth = 1; depth <= 5; depth++) {
                 net.minecraft.core.BlockPos source = column.below(depth);
-                helper.getLevel().setBlock(
-                        source, Blocks.MOSSY_COBBLESTONE.defaultBlockState(), 3);
-                sources.add(source);
+                helper.getLevel().setBlock(source,
+                        depth <= availableDepth
+                                ? Blocks.MOSSY_COBBLESTONE.defaultBlockState()
+                                : Blocks.AIR.defaultBlockState(), 3);
+                if (depth <= availableDepth) {
+                    sources.add(source);
+                }
             }
         }
         LivingLandTerrain.ScanResult scan = LivingLandTerrain.scan(
@@ -1750,16 +1764,12 @@ public final class Tier6ProgressionGameTests {
                         "Precision launch terrain did not produce a scan"));
         helper.assertTrue(scan.mode() == LivingLandMode.FLOOR_TEETH
                         && !scan.sources().isEmpty(),
-                "Precision launch terrain selected no usable floor sources");
-        LivingLandTerrain.SourceCandidate first = scan.sources().get(0);
-        List<net.minecraft.core.BlockPos> firstPillar = new java.util.ArrayList<>();
-        for (int index = 0; index < 3; index++) {
-            firstPillar.add(first.source().relative(
-                    first.approach().getOpposite(), index));
-        }
-        helper.assertTrue(LivingLandPillarPayload.acquire(
-                        helper.getLevel(), caster, firstPillar, true).isPresent(),
-                "Precision launch terrain could not produce a projected payload");
+                "Precision launch terrain selected no usable floor sources"
+                        + " (mode=" + scan.mode()
+                        + ", sources=" + scan.sources().size() + ")");
+        helper.assertTrue(scan.sources().get(0).source()
+                        .equals(origin.relative(Direction.WEST).below()),
+                "Precision fallback fixture did not put the shallow source first");
         LivingLandControllerEntity controller = new LivingLandControllerEntity(
                 EntityRegistry.LIVING_LAND_CONTROLLER.get(), helper.getLevel());
         controller.configure(caster, target, 6.0F, 80, 1.0F, 1.0F, true);
@@ -1768,14 +1778,58 @@ public final class Tier6ProgressionGameTests {
         controller.tick();
         int ownedStrikes = LivingLandStrikeEntity.activeCount(
                 helper.getLevel(), caster.getUUID());
-        int allStrikes = countEntities(helper, LivingLandStrikeEntity.class);
         helper.assertTrue(ownedStrikes == 1,
-                "Precision controller did not launch a tendril from valid intact terrain"
-                        + " (tick=" + controller.tickCount
-                        + ", owned=" + ownedStrikes + ", all=" + allStrikes + ")");
+                "Precision controller let an invalid first candidate cancel its wave");
         helper.assertTrue(sources.stream().allMatch(pos ->
                         helper.getLevel().getBlockState(pos).is(Blocks.MOSSY_COBBLESTONE)),
                 "Precision controller removed its projected source terrain");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandFallsBackToAvailablePillarLength(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "living_land_fallback")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 6, 1);
+        net.minecraft.core.BlockPos origin = target.blockPosition();
+        for (Direction horizontal : Direction.Plane.HORIZONTAL) {
+            net.minecraft.core.BlockPos column = origin.relative(horizontal);
+            for (int height = 2; height <= 5; height++) {
+                helper.getLevel().setBlock(
+                        column.above(height), Blocks.AIR.defaultBlockState(), 3);
+            }
+            for (int distance = 2; distance <= 6; distance++) {
+                helper.getLevel().setBlock(
+                        origin.above().relative(horizontal, distance),
+                        Blocks.AIR.defaultBlockState(), 3);
+            }
+            for (int depth = 1; depth <= 5; depth++) {
+                helper.getLevel().setBlock(column.below(depth),
+                        depth <= 3
+                                ? Blocks.DEEPSLATE.defaultBlockState()
+                                : Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+        LivingLandControllerEntity controller = new LivingLandControllerEntity(
+                EntityRegistry.LIVING_LAND_CONTROLLER.get(), helper.getLevel());
+        controller.configure(caster, target, 6.0F, 80, 3.0F, 1.0F, false);
+        helper.assertTrue(helper.getLevel().addFreshEntity(controller),
+                "Living Land fallback controller could not enter the level");
+        controller.tick();
+        int ownedStrikes = LivingLandStrikeEntity.activeCount(
+                helper.getLevel(), caster.getUUID());
+        helper.assertTrue(ownedStrikes == 2,
+                "Living Land did not fall back from five-block to three-block pillars");
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof LivingLandStrikeEntity strike
+                    && caster.getUUID().equals(strike.getOwnerId())) {
+                helper.assertTrue(strike.getPayloadLength() == 3,
+                        "Living Land fallback produced the wrong pillar length");
+            }
+        }
         helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
         helper.succeed();
     }
@@ -2041,7 +2095,15 @@ public final class Tier6ProgressionGameTests {
                             == ComponentApplicationResult.SUCCESS,
                     "Living Land rejected a hostile living target");
         }
-        helper.assertTrue(countEntities(helper, LivingLandControllerEntity.class) == 2,
+        int ownedControllers = 0;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof LivingLandControllerEntity controller
+                    && caster.getUUID().equals(controller.getOwnerId())
+                    && !controller.isRemoved()) {
+                ownedControllers++;
+            }
+        }
+        helper.assertTrue(ownedControllers == 2,
                 "A third Living Land cast did not replace the oldest conductor");
         helper.assertTrue(component.ApplyEffect(
                         new SpellSource(caster, InteractionHand.MAIN_HAND),

@@ -10,7 +10,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStrikeEntity> {
@@ -83,16 +82,9 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
             float spanPitch = (float) -Math.toDegrees(Math.asin(direction.y));
 
             renderSpan(
-                    (index & 1) == 0
-                            ? Blocks.BLACK_CONCRETE.defaultBlockState()
-                            : Blocks.WHITE_CONCRETE.defaultBlockState(),
-                    midpoint.subtract(renderedHead), spanYaw, spanPitch,
-                    0.98F, (float) length + 0.16F,
-                    poseStack, buffers, packedLight);
-            renderSpan(
                     entity.getCarriedState(index),
                     midpoint.subtract(renderedHead), spanYaw, spanPitch,
-                    0.76F, (float) length + 0.06F,
+                    0.94F, (float) length + 0.10F,
                     poseStack, buffers, packedLight);
         }
     }

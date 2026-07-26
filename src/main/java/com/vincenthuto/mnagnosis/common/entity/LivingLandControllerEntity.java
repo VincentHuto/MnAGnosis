@@ -19,6 +19,7 @@ import net.minecraftforge.network.NetworkHooks;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class LivingLandControllerEntity extends Entity {
@@ -89,31 +90,55 @@ public final class LivingLandControllerEntity extends Entity {
         if (capacity <= 0) return;
         LivingLandTerrain.scan(level, owner, target, Math.round(radius)).ifPresent(scan -> {
             int count = Math.min(pillarsPerWave(magnitude), capacity);
-            int length = pillarLength(magnitude);
-            for (LivingLandTerrain.SourceCandidate source
-                    : scan.sources().subList(0, Math.min(count, scan.sources().size()))) {
-                List<BlockPos> sources = new ArrayList<>();
-                for (int index = 0; index < length; index++) {
-                    sources.add(source.source().relative(
-                            source.approach().getOpposite(), index));
+            int desiredLength = pillarLength(magnitude);
+            int launched = 0;
+            for (LivingLandTerrain.SourceCandidate source : scan.sources()) {
+                if (launched >= count) {
+                    break;
                 }
-                LivingLandPillarPayload.acquire(
-                        level, owner, sources, projected).ifPresent(payload -> {
-                    LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
-                            EntityRegistry.LIVING_LAND_STRIKE.get(), level
-                    );
-                    strike.configure(owner, target, scan.mode(), source.approach(), payload,
-                            4.0F + magnitude * 2.0F, 0.35F + speed * 0.15F);
-                    if (!level.addFreshEntity(strike)) {
-                        if (!payload.settle(
-                                level, owner, source.source(), Vec3.atLowerCornerOf(
-                                        source.approach().getNormal()))) {
-                            payload.emergencySettle(level);
-                        }
-                    }
-                });
+                Optional<LivingLandPillarPayload> acquired = acquirePillar(
+                        level, owner, source, desiredLength, projected);
+                if (acquired.isEmpty()) {
+                    continue;
+                }
+                LivingLandPillarPayload payload = acquired.get();
+                LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
+                        EntityRegistry.LIVING_LAND_STRIKE.get(), level
+                );
+                strike.configure(owner, target, scan.mode(), source.approach(), payload,
+                        4.0F + magnitude * 2.0F, 0.35F + speed * 0.15F);
+                if (level.addFreshEntity(strike)) {
+                    launched++;
+                } else if (!payload.settle(
+                        level, owner, source.source(), Vec3.atLowerCornerOf(
+                                source.approach().getNormal()))) {
+                    payload.emergencySettle(level);
+                }
             }
         });
+    }
+
+    private static Optional<LivingLandPillarPayload> acquirePillar(
+            ServerLevel level,
+            ServerPlayer owner,
+            LivingLandTerrain.SourceCandidate source,
+            int desiredLength,
+            boolean projected
+    ) {
+        for (int length = Math.max(3, Math.min(desiredLength, 5));
+             length >= 3; length--) {
+            List<BlockPos> sources = new ArrayList<>(length);
+            for (int index = 0; index < length; index++) {
+                sources.add(source.source().relative(
+                        source.approach().getOpposite(), index));
+            }
+            Optional<LivingLandPillarPayload> payload =
+                    LivingLandPillarPayload.acquire(level, owner, sources, projected);
+            if (payload.isPresent()) {
+                return payload;
+            }
+        }
+        return Optional.empty();
     }
 
     public static int pillarsPerWave(float magnitude) {
