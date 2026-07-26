@@ -23,6 +23,7 @@ public final class AuthorshipInputEvents {
     public static final int HOLD_TICKS = 8;
     private static boolean wasDown;
     private static int heldTicks;
+    private static boolean wheelOpened;
 
     private AuthorshipInputEvents() {
     }
@@ -34,18 +35,23 @@ public final class AuthorshipInputEvents {
         }
         Minecraft minecraft = Minecraft.getInstance();
         boolean down = minecraft.player != null
-                && minecraft.screen == null
+                && (minecraft.screen == null || minecraft.screen instanceof LawWheelScreen)
                 && AuthorshipKeyMappings.AUTHORSHIP.isDown();
         if (down) {
             if (!wasDown) {
                 heldTicks = 0;
             }
             heldTicks++;
+            if (heldTicks == HOLD_TICKS && minecraft.screen == null) {
+                minecraft.setScreen(new LawWheelScreen());
+                wheelOpened = true;
+            }
         } else if (wasDown) {
-            if (heldTicks < HOLD_TICKS) {
+            if (!wheelOpened && heldTicks < HOLD_TICKS) {
                 cycleInterpretation();
             }
             heldTicks = 0;
+            wheelOpened = false;
         }
         wasDown = down;
     }
@@ -66,6 +72,7 @@ public final class AuthorshipInputEvents {
         ClientAuthorshipState.reset();
         wasDown = false;
         heldTicks = 0;
+        wheelOpened = false;
     }
 
     @Mod.EventBusSubscriber(

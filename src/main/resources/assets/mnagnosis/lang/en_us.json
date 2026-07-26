@@ -10,7 +10,13 @@
 	"item.mnagnosis.primal_staff": "Primal Staff",
 	"item_group.mnagnosis.mnagnosistab": "Mana and Artifice: Gnosis",
 	"item.mnagnosis.tesseract": "Tesseract",
+	"item.mnagnosis.ineffable_hud_badge": "Ineffable HUD Badge",
+	"item.mnagnosis.ineffable_hood": "Ineffable Hood",
+	"item.mnagnosis.ineffable_robes": "Ineffable Robes",
+	"item.mnagnosis.ineffable_leggings": "Ineffable Leggings",
+	"item.mnagnosis.ineffable_boots": "Ineffable Boots",
 	"block.mnagnosis.tesseract_block": "Tesseract Block",
+	"mnagnosis.occulus.task.ineffable": "No further path remains.",
 	"entity.mnagnosis.truth": "Truth",
 	"entity.mnagnosis.truth.not_owner": "Truth waits only for the one who summoned it.",
 	"entity.mnagnosis.truth.requires_offerings": "Truth reaches for a Codex Arcana and a Chimerite Manaweaver Wand.",
@@ -18,6 +24,17 @@
 	"entity.mnagnosis.truth.already_has_codex": "Truth already holds your Codex Arcana.",
 	"entity.mnagnosis.truth.already_has_wand": "Truth already holds your Chimerite Manaweaver Wand.",
 	"entity.mnagnosis.truth.offering_accepted": "Truth accepts the offering and continues to wait.",
-	"entity.mnagnosis.truth.appears": "Truth waits with an outstretched hand."
+	"entity.mnagnosis.truth.appears": "Truth waits with an outstretched hand.",
+	"mnagnosis:components/true_damage": "True Damage",
+	"mnagnosis:components/true_damage.desc.damage": "Direct harm authored into the target. Increasing it is prohibitively expensive.",
+	"mnagnosis:components/true_damage.desc.delay": "A delay in seconds before the component resolves.",
+	"subtitles.mnagnosis.true_damage_static": "Reality breaks into static",
+	"death.attack.mnagnosis.true_damage": "%1$s was revised out of existence",
+	"death.attack.mnagnosis.true_damage.player": "%1$s was revised out of existence by %2$s",
+	"mnagnosis:components/banish": "Banish",
+	"key.categories.mnagnosis": "MnA: Gnosis",
+	"key.mnagnosis.authorship": "Authorship / Law Wheel",
+	"screen.mnagnosis.law_wheel": "Law Interpretation",
+	"screen.mnagnosis.law_wheel.release": "Release over a Law or Contradiction"
 
 }

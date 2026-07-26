@@ -2,6 +2,7 @@ package com.vincenthuto.mnagnosis;
 
 import com.mojang.logging.LogUtils;
 import com.vincenthuto.mnagnosis.client.render.block.TesseractBlockEntityRenderer;
+import com.vincenthuto.mnagnosis.client.authorship.ClientAuthorshipConfig;
 import com.vincenthuto.mnagnosis.common.registry.BlockEntityRegistry;
 import com.vincenthuto.mnagnosis.common.registry.BlockRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
@@ -58,6 +59,11 @@ public class MnAGnosis {
         MinecraftForge.EVENT_BUS.register(this);
         modEventBus.addListener(this::addCreative);
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        context.registerConfig(
+                ModConfig.Type.CLIENT,
+                ClientAuthorshipConfig.SPEC,
+                "mnagnosis-client.toml"
+        );
     }
 
     public static ResourceLocation rloc(String path) {
@@ -74,7 +80,9 @@ public class MnAGnosis {
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == mnagnosistab.getKey())
-            ItemRegistry.BASEITEMS.getEntries().forEach(i -> event.accept(i.get()));
+            ItemRegistry.BASEITEMS.getEntries().stream()
+                    .filter(item -> item != ItemRegistry.INEFFABLE_HUD_BADGE)
+                    .forEach(item -> event.accept(item.get()));
     }
 
     @SubscribeEvent

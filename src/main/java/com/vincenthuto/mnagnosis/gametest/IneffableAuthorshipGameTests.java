@@ -28,6 +28,7 @@ import com.vincenthuto.mnagnosis.common.authorship.AuthorshipControlService;
 import com.vincenthuto.mnagnosis.common.network.AuthorshipStatePacket;
 import com.vincenthuto.mnagnosis.common.network.DeclareClosurePacket;
 import com.vincenthuto.mnagnosis.common.network.SelectInterpretationPacket;
+import com.vincenthuto.mnagnosis.client.authorship.CounterlawHudRenderer;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
@@ -749,6 +750,25 @@ public final class IneffableAuthorshipGameTests {
         helper.getLevel().removePlayerImmediately(
                 player, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
         );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void counterlawHudMathUsesApprovedThresholds(GameTestHelper helper) {
+        helper.assertTrue(CounterlawHudRenderer.paradoxPixels(0.5F, 128) == 64,
+                "The right-to-left Paradox lattice used the wrong width");
+        helper.assertTrue(CounterlawHudRenderer.frameState(0.19F)
+                        == CounterlawHudRenderer.FrameState.STABLE,
+                "The frame reacted before the first Paradox threshold");
+        helper.assertTrue(CounterlawHudRenderer.frameState(0.20F)
+                        == CounterlawHudRenderer.FrameState.LATTICE,
+                "The frame did not enter its lattice state at 20%");
+        helper.assertTrue(CounterlawHudRenderer.frameState(0.45F)
+                        == CounterlawHudRenderer.FrameState.LOCAL_INVERSION,
+                "The frame did not locally invert at 45%");
+        helper.assertTrue(CounterlawHudRenderer.frameState(0.80F)
+                        == CounterlawHudRenderer.FrameState.CONTRADICTION,
+                "The frame did not split into contradiction regions at 80%");
         helper.succeed();
     }
 
