@@ -1,6 +1,16 @@
 package com.vincenthuto.mnagnosis.gametest;
 
+import com.mna.Registries;
+import com.mna.api.spells.SpellCraftingContext;
+import com.mna.api.spells.collections.Components;
+import com.mna.api.spells.collections.Shapes;
+import com.mna.capabilities.playerdata.progression.PlayerProgression;
+import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
+import com.mna.spells.crafting.SpellRecipe;
+import com.mojang.authlib.GameProfile;
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.common.authorship.AuthorshipRegistry;
+import com.vincenthuto.mnagnosis.common.authorship.law.SpellFingerprint;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
@@ -14,6 +24,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -298,6 +310,84 @@ public final class IneffableAuthorshipGameTests {
         helper.assertTrue(Math.abs(restored.getRegenerationModifiers()
                         .getOrDefault("test-regen", 0.0F) - 0.25F) < 0.0001F,
                 "Casting-resource NBT lost regeneration modifiers");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void spellFingerprintSurvivesSpellNbtRoundTrip(GameTestHelper helper) {
+        SpellRecipe original = new SpellRecipe(Shapes.SELF, Components.HEAL);
+        original.addComponent(Components.HASTE);
+        CompoundTag serialized = new CompoundTag();
+        original.writeToNBT(serialized);
+        SpellRecipe restored = SpellRecipe.fromNBT(serialized);
+
+        helper.assertTrue(SpellFingerprint.of(original).equals(SpellFingerprint.of(restored)),
+                "A spell NBT round trip changed its canonical fingerprint");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void spellFingerprintIsCanonicalAndFunctional(GameTestHelper helper) {
+        CompoundTag first = new CompoundTag();
+        first.putInt("mana", 40);
+        CompoundTag firstNested = new CompoundTag();
+        firstNested.putString("component", "mna:components/heal");
+        firstNested.putFloat("magnitude", 2.0F);
+        first.put("spell", firstNested);
+
+        CompoundTag reordered = new CompoundTag();
+        CompoundTag reorderedNested = new CompoundTag();
+        reorderedNested.putFloat("magnitude", 2.0F);
+        reorderedNested.putString("component", "mna:components/heal");
+        reordered.put("spell", reorderedNested);
+        reordered.putInt("mana", 40);
+
+        CompoundTag changed = reordered.copy();
+        changed.getCompound("spell").putFloat("magnitude", 3.0F);
+
+        helper.assertTrue(SpellFingerprint.ofTag(first)
+                        .equals(SpellFingerprint.ofTag(reordered)),
+                "CompoundTag insertion order changed a canonical spell fingerprint");
+        helper.assertTrue(!SpellFingerprint.ofTag(first)
+                        .equals(SpellFingerprint.ofTag(changed)),
+                "Functional spell data changed without changing its fingerprint");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void inversionLawInscriptionIsRegistered(GameTestHelper helper) {
+        helper.assertTrue(
+                Registries.Modifier.get().getValue(AuthorshipRegistry.LAW_INVERSION_ID)
+                        == AuthorshipRegistry.LAW_INVERSION,
+                "The Inversion Law Inscription was not registered under its stable ID"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void inversionInscriptionRequiresTierSixIneffableAuthor(
+            GameTestHelper helper
+    ) {
+        FakePlayer player = FakePlayerFactory.get(
+                helper.getLevel(),
+                new GameProfile(UUID.randomUUID(), "inversion_author_test")
+        );
+        helper.getLevel().addNewPlayer(player);
+        PlayerProgression progression = (PlayerProgression) player
+                .getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing progression capability"));
+        SpellCraftingContext context = new SpellCraftingContext(player);
+
+        progression.setTier(5, player, false);
+        helper.assertTrue(!AuthorshipRegistry.LAW_INVERSION.isCraftable(context),
+                "A lower-tier player could craft a Law Inscription");
+
+        progression.setTier(6, player, false);
+        helper.assertTrue(AuthorshipRegistry.LAW_INVERSION.isCraftable(context),
+                "A Tier 6 Ineffable player could not craft a Law Inscription");
+        helper.getLevel().removePlayerImmediately(
+                player, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
         helper.succeed();
     }
 

@@ -1,0 +1,16 @@
+{
+  "type": "mna:modifier",
+  "output": "mnagnosis:law_inversion",
+  "tier": 6,
+  "items": [
+    "mnagnosis:tesseract",
+    "minecraft:black_concrete",
+    "minecraft:white_concrete",
+    "mna:greater_mote_arcane",
+    "mna:greater_mote_ender"
+  ],
+  "patterns": [
+    "mna:manaweave_patterns/diamond",
+    "mna:manaweave_patterns/inverted_triangle"
+  ]
+}
