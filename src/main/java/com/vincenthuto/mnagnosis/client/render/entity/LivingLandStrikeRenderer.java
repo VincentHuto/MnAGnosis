@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -26,18 +27,24 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
     public void render(LivingLandStrikeEntity entity, float yaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource buffers, int packedLight) {
         poseStack.pushPose();
-        Vec3 axis = entity.flightAxis();
-        float axisYaw = (float) Math.toDegrees(Math.atan2(axis.x, axis.z));
-        float pitch = (float) -Math.toDegrees(Math.asin(axis.y));
-        poseStack.mulPose(Axis.YP.rotationDegrees(axisYaw));
-        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
-        double center = (entity.getPayloadLength() - 1) * 0.5D;
+        Vec3 renderedHead = new Vec3(
+                Mth.lerp(partialTick, entity.xOld, entity.getX()),
+                Mth.lerp(partialTick, entity.yOld, entity.getY()),
+                Mth.lerp(partialTick, entity.zOld, entity.getZ()));
         for (int index = 0; index < entity.getPayloadLength(); index++) {
+            Vec3 segment = entity.getSegmentPosition(index, partialTick);
+            Vec3 tangent = entity.getSegmentTangent(index, partialTick);
+            Vec3 offset = segment.subtract(renderedHead);
+            float segmentYaw = (float) Math.toDegrees(Math.atan2(tangent.x, tangent.z));
+            float segmentPitch = (float) -Math.toDegrees(Math.asin(tangent.y));
             poseStack.pushPose();
-            poseStack.translate(-0.5D, -0.5D, index - center - 0.5D);
+            poseStack.translate(offset.x, offset.y, offset.z);
+            poseStack.mulPose(Axis.YP.rotationDegrees(segmentYaw));
+            poseStack.mulPose(Axis.XP.rotationDegrees(segmentPitch));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(
+                    (index & 1) == 0 ? 7.0F : -7.0F));
             if (entity.isProjected()) {
                 poseStack.pushPose();
-                poseStack.translate(0.5D, 0.5D, 0.5D);
                 poseStack.scale(1.06F, 1.06F, 1.06F);
                 poseStack.translate(-0.5D, -0.5D, -0.5D);
                 context.getBlockRenderDispatcher().renderSingleBlock(
@@ -46,9 +53,11 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
                                 : Blocks.WHITE_CONCRETE.defaultBlockState(),
                         poseStack, buffers, packedLight, OverlayTexture.NO_OVERLAY);
                 poseStack.popPose();
-                poseStack.translate(0.07D, 0.07D, 0.07D);
                 poseStack.scale(0.86F, 0.86F, 0.86F);
+            } else {
+                poseStack.scale(0.94F, 0.94F, 0.94F);
             }
+            poseStack.translate(-0.5D, -0.5D, -0.5D);
             context.getBlockRenderDispatcher().renderSingleBlock(
                     entity.getCarriedState(index), poseStack, buffers,
                     packedLight, OverlayTexture.NO_OVERLAY);
