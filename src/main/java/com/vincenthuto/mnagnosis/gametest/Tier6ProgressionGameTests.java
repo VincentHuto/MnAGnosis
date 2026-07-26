@@ -58,6 +58,7 @@ import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTerrain;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandConservation;
+import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandPillarPayload;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
 import net.minecraft.commands.CommandSourceStack;
@@ -1671,6 +1672,55 @@ public final class Tier6ProgressionGameTests {
                         helper.getLevel(), caster, reservation, destination)
                         == LivingLandConservation.SettlementResult.FAILED,
                 "Living Land settled the same reservation twice");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandPillarAcquisitionIsAtomic(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "pillar_atomic")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        net.minecraft.core.BlockPos first = helper.absolutePos(
+                new net.minecraft.core.BlockPos(2, 1, 1));
+        List<net.minecraft.core.BlockPos> sources =
+                List.of(first, first.below(), first.below(2));
+        helper.getLevel().setBlock(sources.get(0), Blocks.STONE.defaultBlockState(), 3);
+        helper.getLevel().setBlock(sources.get(1), Blocks.BEDROCK.defaultBlockState(), 3);
+        helper.getLevel().setBlock(sources.get(2), Blocks.DEEPSLATE.defaultBlockState(), 3);
+        helper.assertTrue(LivingLandPillarPayload.acquire(
+                        helper.getLevel(), caster, sources, false).isEmpty(),
+                "Living Land acquired a pillar containing an invalid source");
+        helper.assertTrue(helper.getLevel().getBlockState(sources.get(0)).is(Blocks.STONE)
+                        && helper.getLevel().getBlockState(sources.get(1)).is(Blocks.BEDROCK)
+                        && helper.getLevel().getBlockState(sources.get(2)).is(Blocks.DEEPSLATE),
+                "Failed pillar acquisition partially removed terrain");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void precisionPillarProjectsWithoutRemovingTerrain(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "pillar_projection")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        net.minecraft.core.BlockPos first = helper.absolutePos(
+                new net.minecraft.core.BlockPos(2, 3, 1));
+        List<net.minecraft.core.BlockPos> sources =
+                List.of(first, first.below(), first.below(2));
+        helper.getLevel().setBlock(sources.get(0), Blocks.STONE.defaultBlockState(), 3);
+        helper.getLevel().setBlock(sources.get(1), Blocks.ANDESITE.defaultBlockState(), 3);
+        helper.getLevel().setBlock(sources.get(2), Blocks.DEEPSLATE.defaultBlockState(), 3);
+        LivingLandPillarPayload payload = LivingLandPillarPayload.acquire(
+                helper.getLevel(), caster, sources, true).orElseThrow();
+        helper.assertTrue(payload.projected() && payload.entries().size() == 3,
+                "Precision did not create a three-block projected payload");
+        helper.assertTrue(helper.getLevel().getBlockState(sources.get(0)).is(Blocks.STONE)
+                        && helper.getLevel().getBlockState(sources.get(1)).is(Blocks.ANDESITE)
+                        && helper.getLevel().getBlockState(sources.get(2)).is(Blocks.DEEPSLATE),
+                "Precision projection changed its source terrain");
         helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
         helper.succeed();
     }

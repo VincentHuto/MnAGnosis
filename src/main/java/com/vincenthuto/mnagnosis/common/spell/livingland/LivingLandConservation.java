@@ -29,8 +29,13 @@ public final class LivingLandConservation {
         private boolean settled;
 
         public Reservation(BlockPos source, BlockState state) {
+            this(source, state, false);
+        }
+
+        public Reservation(BlockPos source, BlockState state, boolean settled) {
             this.source = source.immutable();
             this.state = state;
+            this.settled = settled;
         }
 
         public BlockPos source() {
