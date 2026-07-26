@@ -239,6 +239,75 @@ public final class IneffableAuthorshipGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void castingStateMigrationRejectsLegacyAndUnknownAuthorship(
+            GameTestHelper helper
+    ) {
+        IneffableCastingStateProvider sourceProvider =
+                new IneffableCastingStateProvider();
+        IIneffableCastingState source = sourceProvider
+                .getCapability(IneffableCastingStateProvider.CAPABILITY)
+                .orElseThrow(() -> new IllegalStateException("Missing source state"));
+        Contradiction valid = contradiction("vector", 8.0F, 3, 1);
+        Contradiction unknown = new Contradiction(
+                UUID.randomUUID(),
+                MnAGnosis.rloc("forgotten_law"),
+                MnAGnosis.rloc("forgotten_interpretation"),
+                11.0F,
+                3,
+                2,
+                new CompoundTag()
+        );
+        source.ledger().add(valid);
+        source.ledger().add(unknown);
+        source.selectInterpretation(
+                "sha256:known-selection", InversionLawHandler.VECTOR
+        );
+        source.selectInterpretation(
+                "sha256:unknown-selection",
+                MnAGnosis.rloc("forgotten_interpretation")
+        );
+        source.declareClosure(unknown.id());
+
+        IneffableCastingStateProvider restoredProvider =
+                new IneffableCastingStateProvider();
+        restoredProvider.deserializeNBT(sourceProvider.serializeNBT());
+        IIneffableCastingState restored = restoredProvider
+                .getCapability(IneffableCastingStateProvider.CAPABILITY)
+                .orElseThrow(() -> new IllegalStateException("Missing restored state"));
+        helper.assertTrue(
+                restored.ledger().entries().stream().map(Contradiction::id).toList()
+                        .equals(List.of(valid.id())),
+                "Unknown authored laws survived schema migration"
+        );
+        helper.assertTrue(
+                restored.selectedInterpretation("sha256:known-selection")
+                        .equals(Optional.of(InversionLawHandler.VECTOR))
+                        && restored.selectedInterpretation("sha256:unknown-selection")
+                        .isEmpty(),
+                "Schema migration did not filter unknown interpretations"
+        );
+        helper.assertTrue(restored.declaredClosure().isEmpty(),
+                "A Closure declaration survived after its debt was discarded");
+        IneffableMana reconciledMana = new IneffableMana();
+        reconciledMana.setMaxAmount(200.0F);
+        reconciledMana.setParadox(99.0F);
+        AuthorshipCastingService.reconcileParadox(restored, reconciledMana);
+        helper.assertTrue(reconciledMana.getParadox() == valid.paradox(),
+                "Loaded Paradox was not derived from the surviving ledger");
+
+        CompoundTag legacy = sourceProvider.serializeNBT();
+        legacy.remove("schema_version");
+        restoredProvider.deserializeNBT(legacy);
+        helper.assertTrue(restoredProvider
+                        .getCapability(IneffableCastingStateProvider.CAPABILITY)
+                        .orElseThrow(() ->
+                                new IllegalStateException("Missing legacy state"))
+                        .ledger().size() == 0,
+                "Unversioned authorship data was not treated as empty legacy state");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void deathClonePreservesIneffableCastingState(GameTestHelper helper) {
         Player originalPlayer = helper.makeMockSurvivalPlayer();
         Player replacementPlayer = helper.makeMockSurvivalPlayer();

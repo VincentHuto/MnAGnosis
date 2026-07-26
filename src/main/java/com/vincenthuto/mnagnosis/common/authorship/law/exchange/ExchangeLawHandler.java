@@ -67,6 +67,11 @@ public final class ExchangeLawHandler implements AuthoredLawHandler {
     }
 
     @Override
+    public boolean isKnownInterpretation(ResourceLocation interpretationId) {
+        return ORDER.contains(interpretationId);
+    }
+
+    @Override
     public boolean supports(ResourceLocation componentId, ResourceLocation interpretationId) {
         return CARRIER.equals(componentId)
                 && ORDER.contains(interpretationId)

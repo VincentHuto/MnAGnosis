@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.common.authorship.state;
 
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.common.authorship.AuthorshipCastingService;
 import com.vincenthuto.mnagnosis.common.network.NetworkHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -77,6 +78,7 @@ public final class IneffableCastingStateEvents {
 
     private static void sync(Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
+            AuthorshipCastingService.reconcileParadox(serverPlayer);
             NetworkHandler.syncAuthorship(serverPlayer);
         }
     }

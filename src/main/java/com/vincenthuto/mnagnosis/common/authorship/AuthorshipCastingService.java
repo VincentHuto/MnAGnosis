@@ -340,6 +340,19 @@ public final class AuthorshipCastingService {
         return player.getCapability(IneffableCastingStateProvider.CAPABILITY).resolve();
     }
 
+    public static void reconcileParadox(ServerPlayer player) {
+        state(player).ifPresent(state ->
+                mana(player).ifPresent(mana -> reconcileParadox(state, mana))
+        );
+    }
+
+    public static void reconcileParadox(
+            IIneffableCastingState state,
+            IneffableMana mana
+    ) {
+        mana.setParadox(state.ledger().totalParadox());
+    }
+
     private static Optional<IneffableMana> mana(ServerPlayer player) {
         return player.getCapability(PlayerMagicProvider.MAGIC)
                 .map(magic -> magic.getCastingResource())

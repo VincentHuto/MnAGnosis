@@ -44,6 +44,11 @@ public final class SuspensionLawHandler implements AuthoredLawHandler {
     }
 
     @Override
+    public boolean isKnownInterpretation(ResourceLocation interpretationId) {
+        return ORDER.contains(interpretationId);
+    }
+
+    @Override
     public boolean supports(ResourceLocation componentId, ResourceLocation interpretationId) {
         return componentId != null && ORDER.contains(interpretationId);
     }

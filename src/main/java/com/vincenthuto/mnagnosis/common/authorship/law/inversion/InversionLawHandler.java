@@ -71,6 +71,13 @@ public final class InversionLawHandler implements AuthoredLawHandler {
     }
 
     @Override
+    public boolean isKnownInterpretation(ResourceLocation interpretationId) {
+        return RELATIONSHIPS.stream()
+                .anyMatch(relationship ->
+                        relationship.interpretationId().equals(interpretationId));
+    }
+
+    @Override
     public boolean supports(ResourceLocation componentId, ResourceLocation interpretationId) {
         return relationshipFor(componentId)
                 .filter(relationship -> relationship.interpretationId().equals(interpretationId))

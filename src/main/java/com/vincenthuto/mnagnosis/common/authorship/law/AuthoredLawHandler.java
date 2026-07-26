@@ -17,6 +17,8 @@ public interface AuthoredLawHandler {
 
     List<ResourceLocation> interpretations(ISpellDefinition spell);
 
+    boolean isKnownInterpretation(ResourceLocation interpretationId);
+
     boolean supports(ResourceLocation componentId, ResourceLocation interpretationId);
 
     float paradox(AuthoredCastContext context);

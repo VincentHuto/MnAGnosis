@@ -1,5 +1,6 @@
 package com.vincenthuto.mnagnosis.common.authorship.state;
 
+import com.vincenthuto.mnagnosis.common.authorship.AuthorshipRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
@@ -11,6 +12,8 @@ import java.util.UUID;
 
 public final class IneffableCastingState implements IIneffableCastingState {
 
+    private static final int SCHEMA_VERSION = 1;
+    private static final String SCHEMA_VERSION_KEY = "schema_version";
     private static final String LEDGER_KEY = "ledger";
     private static final String SELECTIONS_KEY = "selections";
     private static final String DECLARED_CLOSURE_KEY = "declared_closure";
@@ -55,6 +58,7 @@ public final class IneffableCastingState implements IIneffableCastingState {
     @Override
     public CompoundTag serializeNBT() {
         CompoundTag root = new CompoundTag();
+        root.putInt(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
         root.put(LEDGER_KEY, ledger.save());
 
         CompoundTag selections = new CompoundTag();
@@ -72,21 +76,34 @@ public final class IneffableCastingState implements IIneffableCastingState {
 
     @Override
     public void deserializeNBT(CompoundTag root) {
-        ledger = ContradictionLedger.load(root.getCompound(LEDGER_KEY));
+        ledger = new ContradictionLedger();
         selectedInterpretations.clear();
+        declaredClosure = null;
+        if (root.getInt(SCHEMA_VERSION_KEY) != SCHEMA_VERSION) {
+            return;
+        }
+
+        ledger = ContradictionLedger.load(root.getCompound(LEDGER_KEY));
+        ledger.retain(debt -> AuthorshipRegistry.isKnownAuthorship(
+                debt.lawId(), debt.interpretationId()
+        ));
 
         CompoundTag selections = root.getCompound(SELECTIONS_KEY);
         for (String fingerprint : selections.getAllKeys()) {
             ResourceLocation interpretation =
                     ResourceLocation.tryParse(selections.getString(fingerprint));
-            if (!fingerprint.isBlank() && interpretation != null) {
+            if (!fingerprint.isBlank() && interpretation != null
+                    && AuthorshipRegistry.isKnownInterpretation(interpretation)) {
                 selectedInterpretations.put(fingerprint, interpretation);
             }
         }
 
-        declaredClosure = root.hasUUID(DECLARED_CLOSURE_KEY)
-                ? root.getUUID(DECLARED_CLOSURE_KEY)
-                : null;
+        if (root.hasUUID(DECLARED_CLOSURE_KEY)) {
+            UUID requested = root.getUUID(DECLARED_CLOSURE_KEY);
+            declaredClosure = ledger.entries().stream()
+                    .anyMatch(debt -> debt.id().equals(requested))
+                    ? requested : null;
+        }
     }
 
     @Override

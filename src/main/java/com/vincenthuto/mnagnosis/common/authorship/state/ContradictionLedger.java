@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 public final class ContradictionLedger {
@@ -102,6 +103,10 @@ public final class ContradictionLedger {
 
     public Optional<Contradiction> oldest() {
         return entries.isEmpty() ? Optional.empty() : Optional.of(entries.get(0));
+    }
+
+    public void retain(Predicate<Contradiction> predicate) {
+        entries.removeIf(predicate.negate());
     }
 
     public float totalParadox() {

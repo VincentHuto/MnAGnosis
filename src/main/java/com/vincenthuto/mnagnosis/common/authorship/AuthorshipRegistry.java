@@ -94,4 +94,18 @@ public final class AuthorshipRegistry {
         }
         return Optional.empty();
     }
+
+    public static boolean isKnownAuthorship(
+            ResourceLocation lawId,
+            ResourceLocation interpretationId
+    ) {
+        return AuthoredLawRegistry.get(lawId)
+                .map(handler -> handler.isKnownInterpretation(interpretationId))
+                .orElse(false);
+    }
+
+    public static boolean isKnownInterpretation(ResourceLocation interpretationId) {
+        return AuthoredLawRegistry.handlers().stream()
+                .anyMatch(handler -> handler.isKnownInterpretation(interpretationId));
+    }
 }
