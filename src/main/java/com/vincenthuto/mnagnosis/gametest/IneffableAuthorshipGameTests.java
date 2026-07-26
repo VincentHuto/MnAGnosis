@@ -29,6 +29,8 @@ import com.vincenthuto.mnagnosis.common.network.AuthorshipStatePacket;
 import com.vincenthuto.mnagnosis.common.network.DeclareClosurePacket;
 import com.vincenthuto.mnagnosis.common.network.SelectInterpretationPacket;
 import com.vincenthuto.mnagnosis.client.authorship.CounterlawHudRenderer;
+import com.vincenthuto.mnagnosis.common.authorship.law.exchange.ExchangeLawHandler;
+import com.vincenthuto.mnagnosis.common.authorship.law.exchange.ExchangePayload;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
@@ -769,6 +771,49 @@ public final class IneffableAuthorshipGameTests {
         helper.assertTrue(CounterlawHudRenderer.frameState(0.80F)
                         == CounterlawHudRenderer.FrameState.CONTRADICTION,
                 "The frame did not split into contradiction regions at 80%");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void exchangeLawRegistersEveryPropertyAndPayloadRoundTrips(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(
+                Registries.Modifier.get().getValue(AuthorshipRegistry.LAW_EXCHANGE_ID)
+                        == AuthorshipRegistry.LAW_EXCHANGE,
+                "Exchange Law Inscription was not registered"
+        );
+        SpellRecipe exchangeSpell = new SpellRecipe(Shapes.SELF, Components.EXCHANGE);
+        exchangeSpell.setModifier(AuthorshipRegistry.LAW_EXCHANGE, 0);
+        helper.assertTrue(
+                AuthorshipRegistry.EXCHANGE.interpretations(exchangeSpell).equals(List.of(
+                        ExchangeLawHandler.POSITION,
+                        ExchangeLawHandler.VELOCITY,
+                        ExchangeLawHandler.EFFECT,
+                        ExchangeLawHandler.DURATION,
+                        ExchangeLawHandler.MANA
+                )),
+                "Exchange did not expose all conserved properties for its carrier component"
+        );
+
+        CompoundTag before = new CompoundTag();
+        before.putDouble("first_x", 1.0D);
+        before.putDouble("second_x", 7.0D);
+        CompoundTag after = new CompoundTag();
+        after.putDouble("first_x", 7.0D);
+        after.putDouble("second_x", 1.0D);
+        ExchangePayload payload = new ExchangePayload(
+                ExchangePayload.VERSION,
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                helper.getLevel().dimension().location(),
+                ExchangeLawHandler.POSITION,
+                before,
+                after,
+                1.0F
+        );
+        helper.assertTrue(payload.equals(ExchangePayload.load(payload.save())),
+                "Exchange payload did not preserve subjects and conserved values");
         helper.succeed();
     }
 

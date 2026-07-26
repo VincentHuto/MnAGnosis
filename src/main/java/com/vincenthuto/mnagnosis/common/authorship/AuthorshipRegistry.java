@@ -6,6 +6,7 @@ import com.vincenthuto.mnagnosis.common.authorship.part.LawInscriptionModifier;
 import com.vincenthuto.mnagnosis.common.authorship.part.ComponentBanish;
 import com.vincenthuto.mnagnosis.common.authorship.law.AuthoredLawRegistry;
 import com.vincenthuto.mnagnosis.common.authorship.law.inversion.InversionLawHandler;
+import com.vincenthuto.mnagnosis.common.authorship.law.exchange.ExchangeLawHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -19,6 +20,8 @@ public final class AuthorshipRegistry {
     public static final ResourceLocation LAW_INVERSION_ID = MnAGnosis.rloc("law_inversion");
     public static final ResourceLocation INVERSION_LAW_ID = MnAGnosis.rloc("inversion");
     public static final ResourceLocation BANISH_ID = MnAGnosis.rloc("components/banish");
+    public static final ResourceLocation LAW_EXCHANGE_ID = MnAGnosis.rloc("law_exchange");
+    public static final ResourceLocation EXCHANGE_LAW_ID = MnAGnosis.rloc("exchange");
     public static final LawInscriptionModifier LAW_INVERSION = new LawInscriptionModifier(
             MnAGnosis.rloc("textures/spell/component/true_damage.png")
     );
@@ -26,9 +29,14 @@ public final class AuthorshipRegistry {
             MnAGnosis.rloc("textures/spell/component/true_damage.png")
     );
     public static final InversionLawHandler INVERSION = new InversionLawHandler();
+    public static final LawInscriptionModifier LAW_EXCHANGE = new LawInscriptionModifier(
+            MnAGnosis.rloc("textures/spell/component/true_damage.png")
+    );
+    public static final ExchangeLawHandler EXCHANGE = new ExchangeLawHandler();
 
     static {
         AuthoredLawRegistry.register(INVERSION);
+        AuthoredLawRegistry.register(EXCHANGE);
     }
 
     private AuthorshipRegistry() {
@@ -42,20 +50,31 @@ public final class AuthorshipRegistry {
         );
         event.register(
                 Registries.Modifier.get().getRegistryKey(),
-                helper -> helper.register(LAW_INVERSION_ID, LAW_INVERSION)
+                helper -> {
+                    helper.register(LAW_INVERSION_ID, LAW_INVERSION);
+                    helper.register(LAW_EXCHANGE_ID, LAW_EXCHANGE);
+                }
         );
     }
 
     public static boolean isLawInscription(com.mna.api.spells.parts.Modifier modifier) {
         return modifier == LAW_INVERSION
-                || LAW_INVERSION_ID.equals(modifier.getRegistryName());
+                || LAW_INVERSION_ID.equals(modifier.getRegistryName())
+                || modifier == LAW_EXCHANGE
+                || LAW_EXCHANGE_ID.equals(modifier.getRegistryName());
     }
 
     public static Optional<ResourceLocation> lawForInscription(
             com.mna.api.spells.parts.Modifier modifier
     ) {
-        return isLawInscription(modifier)
-                ? Optional.of(INVERSION_LAW_ID)
-                : Optional.empty();
+        if (modifier == LAW_INVERSION
+                || LAW_INVERSION_ID.equals(modifier.getRegistryName())) {
+            return Optional.of(INVERSION_LAW_ID);
+        }
+        if (modifier == LAW_EXCHANGE
+                || LAW_EXCHANGE_ID.equals(modifier.getRegistryName())) {
+            return Optional.of(EXCHANGE_LAW_ID);
+        }
+        return Optional.empty();
     }
 }

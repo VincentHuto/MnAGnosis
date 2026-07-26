@@ -18,6 +18,14 @@ public class Config
             BUILDER.comment("Mana surcharge multiplier for Forced Closure.")
                     .defineInRange("forcedClosureMultiplier", 1.25D, 0.0D, 4.0D);
 
+    public static final ForgeConfigSpec.DoubleValue EXCHANGE_PARADOX_COEFFICIENT =
+            BUILDER.comment("Paradox generated per point of base mana cost by Exchange.")
+                    .defineInRange("exchangeParadoxCoefficient", 0.50D, 0.0D, 4.0D);
+
+    public static final ForgeConfigSpec.DoubleValue MAXIMUM_MANA_EXCHANGE_FRACTION =
+            BUILDER.comment("Maximum fraction of the lower capacity exchanged in one cast.")
+                    .defineInRange("maximumManaExchangeFraction", 0.25D, 0.0D, 1.0D);
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     @SubscribeEvent
