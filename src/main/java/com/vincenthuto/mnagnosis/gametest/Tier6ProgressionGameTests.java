@@ -1864,8 +1864,9 @@ public final class Tier6ProgressionGameTests {
                         .map(com.mna.api.spells.attributes.AttributeValuePair::getAttribute)
                         .collect(java.util.stream.Collectors.toSet())
                         .equals(java.util.Set.of(Attribute.RADIUS, Attribute.DURATION,
-                                Attribute.MAGNITUDE, Attribute.SPEED, Attribute.DELAY)),
-                "Living Land did not expose its four authored attributes and Delay");
+                                Attribute.MAGNITUDE, Attribute.SPEED, Attribute.PRECISION,
+                                Attribute.DELAY)),
+                "Living Land did not expose Precision with its authored attributes and Delay");
         ClassLoader resources = Tier6ProgressionGameTests.class.getClassLoader();
         List<String> required = List.of(
                 "data/mnagnosis/recipes/components/living_land.json",
@@ -1911,8 +1912,9 @@ public final class Tier6ProgressionGameTests {
         Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 1);
         ComponentLivingLand component = SpellComponentRegistry.LIVING_LAND;
         ModifiedSpellPart<SpellEffect> modified = new ModifiedSpellPart<>(component);
+        helper.assertTrue(modified.setValue(Attribute.PRECISION, 1.0F),
+                "Living Land did not expose an editable Precision attribute");
         SpellRecipe projectedSpell = new SpellRecipe(Shapes.SELF, component);
-        projectedSpell.addModifier(SpellComponentRegistry.PRECISION);
         helper.assertTrue(component.ApplyEffect(
                         new SpellSource(caster, InteractionHand.MAIN_HAND),
                         new SpellTarget(target), modified,

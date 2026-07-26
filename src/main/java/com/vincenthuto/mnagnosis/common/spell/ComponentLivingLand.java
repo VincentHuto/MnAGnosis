@@ -27,7 +27,8 @@ public final class ComponentLivingLand extends SpellEffect {
                 new AttributeValuePair(Attribute.RADIUS, 6.0F, 4.0F, 12.0F, 1.0F, 5.0F),
                 new AttributeValuePair(Attribute.DURATION, 8.0F, 2.0F, 30.0F, 2.0F, 7.0F),
                 new AttributeValuePair(Attribute.MAGNITUDE, 1.0F, 0.5F, 3.0F, 0.5F, 9.0F),
-                new AttributeValuePair(Attribute.SPEED, 1.0F, 0.5F, 3.0F, 0.5F, 7.0F));
+                new AttributeValuePair(Attribute.SPEED, 1.0F, 0.5F, 3.0F, 0.5F, 7.0F),
+                new AttributeValuePair(Attribute.PRECISION, 0.0F, 0.0F, 1.0F, 1.0F, 2.5F));
     }
 
     @Override
@@ -51,7 +52,8 @@ public final class ComponentLivingLand extends SpellEffect {
         LivingLandControllerEntity.makeRoomFor(level, player.getUUID());
         LivingLandControllerEntity controller = new LivingLandControllerEntity(
                 EntityRegistry.LIVING_LAND_CONTROLLER.get(), level);
-        boolean projected = context.getSpell().getModifiers().stream()
+        boolean projected = modifiedPart.getValue(Attribute.PRECISION) >= 1.0F
+                || context.getSpell().getModifiers().stream()
                 .anyMatch(SpellComponentRegistry::isPrecision);
         controller.configure(player, victim,
                 modifiedPart.getValue(Attribute.RADIUS),
