@@ -59,6 +59,7 @@ import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTerrain;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandConservation;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandPillarPayload;
+import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTendrilMath;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
 import net.minecraft.commands.CommandSourceStack;
@@ -1779,6 +1780,34 @@ public final class Tier6ProgressionGameTests {
                         && LivingLandControllerEntity.pillarLength(2.0F) == 4
                         && LivingLandControllerEntity.pillarLength(3.0F) == 5,
                 "Living Land did not scale one or two three-to-five-block pillars");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandTendrilMathCreatesArticulatedMotion(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(LivingLandTendrilMath.emergenceSpacing(0) == 0.0D
+                        && Math.abs(LivingLandTendrilMath.emergenceSpacing(6)
+                        - 0.78D) < 1.0E-6D,
+                "Living Land tendrils did not emerge from collapsed to full spacing");
+        Vec3 follower = LivingLandTendrilMath.constrainFollower(
+                Vec3.ZERO, new Vec3(2.0D, 0.0D, 0.0D), 0.78D, Vec3.ZERO);
+        helper.assertTrue(Math.abs(follower.length() - 0.78D) < 1.0E-6D,
+                "A tendril follower did not preserve articulated segment spacing");
+
+        Vec3 forward = new Vec3(1.0D, 0.0D, 0.0D);
+        Vec3 ceiling = LivingLandTendrilMath.lateralAcceleration(
+                forward, LivingLandMode.CEILING_CRUSH, 7, 3);
+        Vec3 wall = LivingLandTendrilMath.lateralAcceleration(
+                forward, LivingLandMode.WALL_LANCES, 7, 3);
+        Vec3 floor = LivingLandTendrilMath.lateralAcceleration(
+                forward, LivingLandMode.FLOOR_TEETH, 7, 3);
+        helper.assertTrue(ceiling.y < 0.0D && floor.y > 0.0D
+                        && Math.abs(wall.z) > 1.0E-4D
+                        && wall.equals(LivingLandTendrilMath.lateralAcceleration(
+                        forward, LivingLandMode.WALL_LANCES, 7, 3)),
+                "Living Land modes did not create deterministic distinct bend planes");
         helper.succeed();
     }
 
