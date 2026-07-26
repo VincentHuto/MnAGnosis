@@ -37,6 +37,8 @@ import com.vincenthuto.mnagnosis.client.authorship.CounterlawHudRenderer;
 import com.vincenthuto.mnagnosis.client.authorship.IneffableHudRenderer;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityFieldEntity;
+import com.vincenthuto.mnagnosis.common.entity.LivingLandControllerEntity;
+import com.vincenthuto.mnagnosis.common.entity.LivingLandStrikeEntity;
 import com.vincenthuto.mnagnosis.common.event.CommontEvents;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
@@ -50,6 +52,7 @@ import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
 import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
 import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
 import com.vincenthuto.mnagnosis.common.spell.ComponentGravityConvergence;
+import com.vincenthuto.mnagnosis.common.spell.ComponentLivingLand;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
@@ -82,6 +85,8 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.core.Direction;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -1666,6 +1671,105 @@ public final class Tier6ProgressionGameTests {
                         helper.getLevel(), caster, reservation, destination)
                         == LivingLandConservation.SettlementResult.FAILED,
                 "Living Land settled the same reservation twice");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandStrikePersistsItsConservedState(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "living_land_strike")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 1);
+        net.minecraft.core.BlockPos source = helper.absolutePos(
+                new net.minecraft.core.BlockPos(2, 1, 1));
+        net.minecraft.world.level.block.state.BlockState state =
+                Blocks.STONE_BRICK_STAIRS.defaultBlockState()
+                        .setValue(StairBlock.FACING, Direction.WEST);
+        LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
+                EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
+        strike.configure(caster, target, LivingLandMode.WALL_LANCES,
+                new LivingLandConservation.Reservation(source, state), 7.0F, 0.8F);
+        CompoundTag saved = new CompoundTag();
+        strike.saveWithoutId(saved);
+        LivingLandStrikeEntity loaded = new LivingLandStrikeEntity(
+                EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
+        loaded.load(saved);
+        helper.assertTrue(loaded.getMode() == LivingLandMode.WALL_LANCES
+                        && loaded.getCarriedState().equals(state)
+                        && caster.getUUID().equals(loaded.getOwnerId()),
+                "Living Land strike did not preserve its mode, owner, and exact block state");
+        helper.assertTrue(helper.getLevel().addFreshEntity(strike)
+                        && LivingLandStrikeEntity.activeCount(
+                        helper.getLevel(), caster.getUUID()) == 1,
+                "Living Land did not count its active conserved strike");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandRegistersItsSpellAndPresentation(GameTestHelper helper) {
+        SpellEffect registered = Registries.SpellEffect.get()
+                .getValue(SpellComponentRegistry.LIVING_LAND_ID);
+        helper.assertTrue(registered == SpellComponentRegistry.LIVING_LAND
+                        && registered.getFactionRequirement()
+                        == IneffableFactionRegistry.INEFFABLE_FACTION,
+                "Living Land was not registered as an Ineffable component");
+        helper.assertTrue(registered.getModifiableAttributes().stream()
+                        .map(com.mna.api.spells.attributes.AttributeValuePair::getAttribute)
+                        .collect(java.util.stream.Collectors.toSet())
+                        .equals(java.util.Set.of(Attribute.RADIUS, Attribute.DURATION,
+                                Attribute.MAGNITUDE, Attribute.SPEED, Attribute.DELAY)),
+                "Living Land did not expose its four authored attributes and Delay");
+        ClassLoader resources = Tier6ProgressionGameTests.class.getClassLoader();
+        List<String> required = List.of(
+                "data/mnagnosis/recipes/components/living_land.json",
+                "assets/mnagnosis/textures/spell/component/living_land.png",
+                "com/vincenthuto/mnagnosis/client/render/entity/"
+                        + "LivingLandControllerRenderer.class",
+                "com/vincenthuto/mnagnosis/client/render/entity/"
+                        + "LivingLandStrikeRenderer.class"
+        );
+        helper.assertTrue(required.stream().allMatch(path ->
+                        resources.getResource(path) != null),
+                "Living Land was missing its recipe, icon, or renderer");
+        helper.assertTrue(helper.getLevel().getRecipeManager()
+                        .byKey(SpellComponentRegistry.LIVING_LAND_ID)
+                        .filter(ComponentRecipe.class::isInstance)
+                        .map(ComponentRecipe.class::cast)
+                        .map(ComponentRecipe::getComponent)
+                        .filter(SpellComponentRegistry.LIVING_LAND::equals)
+                        .isPresent(),
+                "M&A could not resolve the Living Land component recipe");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandCreatesAndCapsTargetConductors(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "living_land_spell")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 1);
+        ComponentLivingLand component = SpellComponentRegistry.LIVING_LAND;
+        ModifiedSpellPart<SpellEffect> modified = new ModifiedSpellPart<>(component);
+        SpellContext context = new SpellContext(
+                helper.getLevel(), new SpellRecipe(Shapes.SELF, component));
+        for (int cast = 0; cast < 3; cast++) {
+            helper.assertTrue(component.ApplyEffect(
+                            new SpellSource(caster, InteractionHand.MAIN_HAND),
+                            new SpellTarget(target), modified, context)
+                            == ComponentApplicationResult.SUCCESS,
+                    "Living Land rejected a hostile living target");
+        }
+        helper.assertTrue(countEntities(helper, LivingLandControllerEntity.class) == 2,
+                "A third Living Land cast did not replace the oldest conductor");
+        helper.assertTrue(component.ApplyEffect(
+                        new SpellSource(caster, InteractionHand.MAIN_HAND),
+                        new SpellTarget(caster), modified, context)
+                        == ComponentApplicationResult.FAIL,
+                "Living Land accepted its own caster as hostile terrain prey");
         helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
         helper.succeed();
     }

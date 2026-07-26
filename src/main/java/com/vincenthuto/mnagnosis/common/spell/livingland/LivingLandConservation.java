@@ -4,7 +4,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.BlockSnapshot;
+import net.minecraftforge.event.level.BlockEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +39,14 @@ public final class LivingLandConservation {
 
         public BlockState state() {
             return state;
+        }
+
+        public boolean settled() {
+            return settled;
+        }
+
+        private void markSettled() {
+            settled = true;
         }
     }
 
@@ -101,17 +113,59 @@ public final class LivingLandConservation {
         return SettlementResult.FAILED;
     }
 
+    public static SettlementResult emergencySettle(
+            ServerLevel level,
+            Reservation reservation
+    ) {
+        if (reservation.settled) {
+            return SettlementResult.FAILED;
+        }
+        if (level.hasChunkAt(reservation.source)
+                && level.getBlockState(reservation.source).canBeReplaced()
+                && level.setBlock(reservation.source, reservation.state, 3)) {
+            reservation.markSettled();
+            return SettlementResult.RESTORED;
+        }
+        net.minecraft.world.item.Item item = reservation.state.getBlock().asItem();
+        if (item != net.minecraft.world.item.Items.AIR
+                && level.hasChunkAt(reservation.source)) {
+            level.addFreshEntity(new ItemEntity(
+                    level,
+                    reservation.source.getX() + 0.5D,
+                    reservation.source.getY() + 0.5D,
+                    reservation.source.getZ() + 0.5D,
+                    new net.minecraft.world.item.ItemStack(item)
+            ));
+            reservation.markSettled();
+            return SettlementResult.DROPPED;
+        }
+        return SettlementResult.FAILED;
+    }
+
     private static boolean place(
             ServerLevel level,
             ServerPlayer caster,
             BlockPos pos,
             BlockState state
     ) {
-        return level.hasChunkAt(pos)
-                && level.getWorldBorder().isWithinBounds(pos)
-                && level.mayInteract(caster, pos)
-                && level.getBlockState(pos).canBeReplaced()
-                && level.getBlockEntity(pos) == null
-                && level.setBlock(pos, state, 3);
+        if (!level.hasChunkAt(pos)
+                || !level.getWorldBorder().isWithinBounds(pos)
+                || !level.mayInteract(caster, pos)
+                || !level.getBlockState(pos).canBeReplaced()
+                || level.getBlockEntity(pos) != null) {
+            return false;
+        }
+        BlockSnapshot snapshot = BlockSnapshot.create(level.dimension(), level, pos);
+        BlockState replaced = level.getBlockState(pos);
+        if (!level.setBlock(pos, state, 3)) {
+            return false;
+        }
+        BlockEvent.EntityPlaceEvent event =
+                new BlockEvent.EntityPlaceEvent(snapshot, replaced, caster);
+        if (MinecraftForge.EVENT_BUS.post(event)) {
+            snapshot.restore(true, false);
+            return false;
+        }
+        return true;
     }
 }

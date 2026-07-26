@@ -5,6 +5,8 @@ import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmorModel;
 import com.vincenthuto.mnagnosis.client.render.entity.TruthRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.GravityFieldRenderer;
+import com.vincenthuto.mnagnosis.client.render.entity.LivingLandControllerRenderer;
+import com.vincenthuto.mnagnosis.client.render.entity.LivingLandStrikeRenderer;
 import com.vincenthuto.mnagnosis.client.truth.TruthSceneController;
 import com.vincenthuto.mnagnosis.client.render.item.*;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
@@ -135,6 +137,13 @@ public class ClientEvents {
 			event.registerEntityRenderer(EntityRegistry.TRUTH.get(), TruthRenderer::new);
 			event.registerEntityRenderer(
 					EntityRegistry.GRAVITY_FIELD.get(), GravityFieldRenderer::new
+			);
+			event.registerEntityRenderer(
+					EntityRegistry.LIVING_LAND_CONTROLLER.get(),
+					LivingLandControllerRenderer::new
+			);
+			event.registerEntityRenderer(
+					EntityRegistry.LIVING_LAND_STRIKE.get(), LivingLandStrikeRenderer::new
 			);
 		}
 
