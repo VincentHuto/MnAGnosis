@@ -1,7 +1,9 @@
 package com.vincenthuto.mnagnosis.common.progression;
 
 import com.mna.api.capabilities.IPlayerProgression;
+import com.mna.capabilities.playerdata.magic.PlayerMagicProvider;
 import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
+import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -35,6 +37,32 @@ public final class Tier6Progression {
             Level level
     ) {
         return requestedTier == MAX_TIER && isEligibleForTruth(progression, level);
+    }
+
+    public static boolean enforceIneffable(IPlayerProgression progression, Player player) {
+        if (progression == null || progression.getTier() != MAX_TIER) {
+            return false;
+        }
+
+        boolean changed = false;
+        if (progression.getAlliedFaction() != IneffableFactionRegistry.INEFFABLE_FACTION) {
+            progression.setAlliedFaction(IneffableFactionRegistry.INEFFABLE_FACTION, player);
+            changed = true;
+        }
+        if (progression.getFactionStanding() != 0) {
+            progression.setFactionStanding(0);
+            changed = true;
+        }
+        if (player != null) {
+            var magic = player.getCapability(PlayerMagicProvider.MAGIC).orElse(null);
+            if (magic != null && (magic.getCastingResource() == null
+                    || !IneffableFactionRegistry.CASTING_RESOURCE_ID.equals(
+                    magic.getCastingResource().getRegistryName()))) {
+                magic.setCastingResourceType(IneffableFactionRegistry.CASTING_RESOURCE_ID);
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     /**

@@ -1,0 +1,19 @@
+{
+  "type": "mna:component",
+  "tier": 6,
+  "output": "mnagnosis:components/true_damage",
+  "items": [
+    "mnagnosis:primal_mote",
+    "mnagnosis:tesseract",
+    "mna:greater_mote_arcane",
+    "mna:greater_mote_ender",
+    "minecraft:black_concrete",
+    "minecraft:white_concrete",
+    "mna:wands"
+  ],
+  "patterns": [
+    "mna:manaweave_patterns/diamond",
+    "mna:manaweave_patterns/inverted_triangle",
+    "mna:manaweave_patterns/circle"
+  ]
+}

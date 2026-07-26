@@ -1,44 +1,83 @@
 package com.vincenthuto.mnagnosis.gametest;
 
 import com.mna.api.config.GeneralConfigValues;
+import com.mna.api.capabilities.resource.CastingResourceIDs;
+import com.mna.Registries;
+import com.mna.api.spells.ComponentApplicationResult;
+import com.mna.api.spells.attributes.Attribute;
+import com.mna.api.spells.base.IDamageComponent;
+import com.mna.api.spells.base.ISpellDefinition;
+import com.mna.api.spells.parts.SpellEffect;
+import com.mna.api.spells.targeting.SpellContext;
+import com.mna.api.spells.targeting.SpellSource;
+import com.mna.api.spells.targeting.SpellTarget;
+import com.mna.capabilities.playerdata.magic.PlayerMagicProvider;
 import com.mna.capabilities.playerdata.progression.PlayerProgression;
 import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
 import com.mna.entities.EntityInit;
 import com.mna.entities.boss.DemonLord;
 import com.mna.entities.rituals.DemonStone;
+import com.mna.factions.Factions;
 import com.mna.items.ItemInit;
 import com.mna.recipes.progression.ProgressionCondition;
+import com.mna.recipes.spells.ComponentRecipe;
+import com.mna.spells.crafting.ModifiedSpellPart;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.authlib.GameProfile;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
+import com.vincenthuto.mnagnosis.common.event.CommontEvents;
+import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
+import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
+import com.vincenthuto.mnagnosis.common.faction.IneffableManaGui;
 import com.vincenthuto.mnagnosis.common.progression.Tier6Progression;
 import com.vincenthuto.mnagnosis.common.progression.TruthEncounterService;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
+import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
+import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
+import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.animatable.GeoEntity;
 
 import java.util.List;
 import java.util.UUID;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 @GameTestHolder(MnAGnosis.MODID)
 @PrefixGameTestTemplate(false)
@@ -50,6 +89,363 @@ public final class Tier6ProgressionGameTests {
             MnAGnosis.rloc("progression/tier_5/defeat_odin");
 
     private Tier6ProgressionGameTests() {
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void trueDamageBypassesArmorAndResistance(GameTestHelper helper) {
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 1);
+        target.setHealth(20.0F);
+        target.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
+        target.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
+        target.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
+        target.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
+        target.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 4));
+
+        DamageSource source = new DamageSource(
+                helper.getLevel().registryAccess()
+                        .registryOrThrow(net.minecraft.core.registries.Registries.DAMAGE_TYPE)
+                        .getHolderOrThrow(TrueDamageTypes.TRUE_DAMAGE)
+        );
+        helper.assertTrue(source.is(DamageTypeTags.BYPASSES_ARMOR),
+                "True Damage did not bypass armor");
+        helper.assertTrue(source.is(DamageTypeTags.BYPASSES_SHIELD),
+                "True Damage did not bypass shields");
+        helper.assertTrue(source.is(DamageTypeTags.BYPASSES_COOLDOWN),
+                "True Damage did not bypass hurt cooldown");
+        helper.assertTrue(source.is(DamageTypeTags.BYPASSES_EFFECTS),
+                "True Damage did not bypass defensive effects");
+        helper.assertTrue(source.is(DamageTypeTags.BYPASSES_RESISTANCE),
+                "True Damage did not bypass Resistance");
+        helper.assertTrue(source.is(DamageTypeTags.BYPASSES_ENCHANTMENTS),
+                "True Damage did not bypass enchantment mitigation");
+        helper.assertTrue(!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY),
+                "True Damage unexpectedly bypassed explicit invulnerability");
+        boolean hurt = target.hurt(source, 6.0F);
+
+        helper.assertTrue(hurt, "True Damage was rejected by the target");
+        helper.assertTrue(target.getHealth() == 14.0F,
+                "Armor or Resistance reduced True Damage; remaining health was " + target.getHealth());
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void trueDamageBypassesCooldownButRespectsInvulnerability(GameTestHelper helper) {
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 1);
+        target.setHealth(20.0F);
+        DamageSource source = new DamageSource(
+                helper.getLevel().registryAccess()
+                        .registryOrThrow(net.minecraft.core.registries.Registries.DAMAGE_TYPE)
+                        .getHolderOrThrow(TrueDamageTypes.TRUE_DAMAGE)
+        );
+
+        helper.assertTrue(target.hurt(source, 3.0F), "The first True Damage hit was rejected");
+        helper.assertTrue(target.hurt(source, 3.0F),
+                "Hurt cooldown rejected an immediate second True Damage hit");
+        helper.assertTrue(target.getHealth() == 14.0F,
+                "The immediate second True Damage hit was reduced or ignored");
+
+        target.setInvulnerable(true);
+        helper.assertTrue(!target.hurt(source, 3.0F),
+                "True Damage bypassed explicit entity invulnerability");
+        helper.assertTrue(target.getHealth() == 14.0F,
+                "Invulnerable target lost health to True Damage");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void trueDamageRegistersAsExpensiveDamageComponent(GameTestHelper helper) {
+        SpellEffect registered = Registries.SpellEffect.get()
+                .getValue(SpellComponentRegistry.TRUE_DAMAGE_ID);
+
+        helper.assertTrue(registered == SpellComponentRegistry.TRUE_DAMAGE,
+                "True Damage was not registered in M&A's component registry");
+        helper.assertTrue(registered instanceof IDamageComponent,
+                "True Damage was not classified as an M&A damage component");
+        helper.assertTrue(registered.getTier(helper.getLevel()) == 6,
+                "M&A did not resolve True Damage as a Tier 6 component");
+        helper.assertTrue(registered.initialComplexity() == 70.0F,
+                "True Damage did not retain its high base complexity");
+        float damageStepComplexity = registered.getModifiableAttributes().stream()
+                .filter(pair -> pair.getAttribute() == Attribute.DAMAGE)
+                .findFirst()
+                .orElseThrow()
+                .getStepComplexity();
+        helper.assertTrue(damageStepComplexity == 18.0F,
+                "The Damage modifier was not prohibitively expensive");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void trueDamageComponentAuthorsDirectHarm(GameTestHelper helper) {
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 1);
+        target.setHealth(20.0F);
+        target.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 4));
+        Zombie caster = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 1);
+        ComponentTrueDamage component = SpellComponentRegistry.TRUE_DAMAGE;
+        ModifiedSpellPart<SpellEffect> modified = new ModifiedSpellPart<>(component);
+
+        ComponentApplicationResult result = component.ApplyEffect(
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                new SpellTarget(target),
+                modified,
+                new SpellContext(helper.getLevel(), ISpellDefinition.EMPTY)
+        );
+
+        helper.assertTrue(result == ComponentApplicationResult.SUCCESS,
+                "True Damage rejected a living target");
+        helper.assertTrue(target.getHealth() == 16.0F,
+                "True Damage did not apply its configured base value");
+        helper.assertTrue(component.ApplyEffect(
+                        new SpellSource(caster, InteractionHand.MAIN_HAND),
+                        new SpellTarget(helper.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1)),
+                                net.minecraft.core.Direction.UP),
+                        modified,
+                        new SpellContext(helper.getLevel(), ISpellDefinition.EMPTY)
+                ) == ComponentApplicationResult.FAIL,
+                "True Damage unexpectedly targeted a block");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void trueDamageShipsTierSixUnlockAndPresentation(GameTestHelper helper) {
+        ClassLoader resources = Tier6ProgressionGameTests.class.getClassLoader();
+        try (InputStream recipeStream = resources.getResourceAsStream(
+                "data/mnagnosis/recipes/components/true_damage.json"
+        )) {
+            helper.assertTrue(recipeStream != null, "True Damage component recipe was missing");
+            JsonObject recipe = JsonParser.parseReader(new InputStreamReader(
+                    recipeStream, StandardCharsets.UTF_8
+            )).getAsJsonObject();
+            helper.assertTrue(recipe.get("tier").getAsInt() == 6,
+                    "True Damage was not a Tier 6 component recipe");
+            helper.assertTrue("mnagnosis:components/true_damage".equals(recipe.get("output").getAsString()),
+                    "True Damage recipe output did not resolve to the registered component");
+        } catch (Exception exception) {
+            helper.fail("Could not read True Damage recipe: " + exception.getMessage());
+            return;
+        }
+
+        helper.assertTrue(resources.getResource(
+                        "assets/mnagnosis/textures/spell/component/true_damage.png") != null,
+                "True Damage component icon was missing");
+        helper.assertTrue(resources.getResource(
+                        "assets/mnagnosis/sounds/spell/true_damage_static.ogg") != null,
+                "True Damage static impact sound was missing");
+        ComponentRecipe loadedRecipe = helper.getLevel().getRecipeManager()
+                .byKey(SpellComponentRegistry.TRUE_DAMAGE_ID)
+                .filter(ComponentRecipe.class::isInstance)
+                .map(ComponentRecipe.class::cast)
+                .orElseThrow();
+        helper.assertTrue(loadedRecipe.getComponent() == SpellComponentRegistry.TRUE_DAMAGE,
+                "M&A could not resolve the True Damage recipe output");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableFactionRegistersAsNeutral(GameTestHelper helper) {
+        helper.assertTrue(
+                Registries.Factions.get().getValue(IneffableFactionRegistry.FACTION_ID)
+                        == IneffableFactionRegistry.INEFFABLE_FACTION,
+                "The Ineffable faction was not registered under its public ID"
+        );
+        helper.assertTrue(
+                IneffableFactionRegistry.INEFFABLE_FACTION.getEnemyFactions().isEmpty(),
+                "The Ineffable faction unexpectedly participates in normal faction hostility"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableManaUsesStandardManaRules(GameTestHelper helper) {
+        IneffableMana mana = new IneffableMana();
+
+        mana.setMaxAmountByLevel(6);
+
+        helper.assertTrue(mana.getMaxAmount() == 220.0F,
+                "Ineffable mana did not use the standard 100 + 20 per level capacity");
+        helper.assertTrue(mana.getRegenerationRate(null) == GeneralConfigValues.TotalManaRegenTicks,
+                "Ineffable mana did not use MnA's configured mana regeneration time");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableManaGuiUsesMonochromeHudContract(GameTestHelper helper) {
+        IneffableManaGui gui = new IneffableManaGui();
+
+        helper.assertTrue(gui.getTexture().equals(IneffableFactionRegistry.HUD_TEXTURE),
+                "The Ineffable GUI provider did not expose its custom HUD atlas");
+        helper.assertTrue(gui.getFrameU() == 0 && gui.getFrameV() == 0,
+                "The Ineffable frame did not begin at the HUD atlas origin");
+        helper.assertTrue(gui.getFrameWidth() == 153 && gui.getFrameHeight() == 24,
+                "The Ineffable frame broke MnA's standard HUD dimensions");
+        helper.assertTrue(gui.getFillWidth() == 128 && gui.getBarColor() == 0xFFFFFFFF,
+                "The Ineffable mana fill was not the planned opaque white");
+        helper.assertTrue(gui.getBarManaCostEstimateColor() == 0xFF808080,
+                "The Ineffable affordable-cost preview was not middle gray");
+        helper.assertTrue(!gui.getBadgeItem().isEmpty(),
+                "The Ineffable GUI provider did not supply its outlined-square badge");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableArmorRegistersWithTierSixStats(GameTestHelper helper) {
+        int[] defenses = {4, 10, 7, 4};
+        ArmorItem.Type[] types = {
+                ArmorItem.Type.HELMET,
+                ArmorItem.Type.CHESTPLATE,
+                ArmorItem.Type.LEGGINGS,
+                ArmorItem.Type.BOOTS
+        };
+        String[] ids = {
+                "ineffable_hood",
+                "ineffable_robes",
+                "ineffable_leggings",
+                "ineffable_boots"
+        };
+
+        for (int index = 0; index < ids.length; index++) {
+            Item item = ForgeRegistries.ITEMS.getValue(MnAGnosis.rloc(ids[index]));
+            helper.assertTrue(item instanceof ArmorItem, ids[index] + " was not registered as armor");
+            ArmorItem armor = (ArmorItem) item;
+            helper.assertTrue(armor.getType() == types[index], ids[index] + " uses the wrong slot");
+            helper.assertTrue(armor.getDefense() == defenses[index], ids[index] + " uses the wrong defense");
+            helper.assertTrue(armor.getToughness() == 4.0F, ids[index] + " uses the wrong toughness");
+            helper.assertTrue(armor.getMaterial().getKnockbackResistance() == 0.15F,
+                    ids[index] + " uses the wrong knockback resistance");
+            helper.assertTrue(armor.getRarity(item.getDefaultInstance()) == Rarity.EPIC,
+                    ids[index] + " is not Epic");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void tierSixRejectsOtherFactionAndStanding(GameTestHelper helper) {
+        PlayerProgression progression = new PlayerProgression();
+        progression.setTier(6, null, false);
+
+        progression.setAlliedFaction(Factions.COUNCIL, null);
+        progression.setFactionStanding(42);
+
+        helper.assertTrue(progression.getAlliedFaction() == IneffableFactionRegistry.INEFFABLE_FACTION,
+                "Tier 6 accepted a replacement faction");
+        helper.assertTrue(progression.getFactionStanding() == 0,
+                "Tier 6 accepted nonzero faction standing");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void lowerTierKeepsFactionAndStanding(GameTestHelper helper) {
+        PlayerProgression progression = new PlayerProgression();
+        progression.setTier(6, null, false);
+        progression.setTier(5, null, false);
+
+        progression.setAlliedFaction(Factions.COUNCIL, null);
+        progression.setFactionStanding(42);
+
+        helper.assertTrue(progression.getAlliedFaction() == Factions.COUNCIL,
+                "The Tier 6 lock changed a lower-tier faction");
+        helper.assertTrue(progression.getFactionStanding() == 42,
+                "The Tier 6 lock changed lower-tier faction standing");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void reachingTierSixPerformsOneIneffableTransition(GameTestHelper helper) {
+        Player player = helper.makeMockSurvivalPlayer();
+        PlayerProgression progression = (PlayerProgression) player
+                .getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing progression capability"));
+        for (var formerFaction : List.of(
+                Factions.COUNCIL,
+                Factions.FEY,
+                Factions.DEMONS,
+                Factions.UNDEAD
+        )) {
+            progression.setTier(5, null, false);
+            progression.setAlliedFaction(formerFaction, player);
+            progression.setFactionStanding(42);
+
+            progression.setTier(6, player, false);
+
+            helper.assertTrue(progression.getAlliedFaction() == IneffableFactionRegistry.INEFFABLE_FACTION,
+                    "Reaching Tier 6 did not replace a built-in faction");
+            helper.assertTrue(progression.getFactionStanding() == 0,
+                    "Reaching Tier 6 did not reset a built-in faction's standing");
+        }
+        ResourceLocation resourceId = player.getCapability(PlayerMagicProvider.MAGIC)
+                .orElseThrow(() -> new IllegalStateException("Missing magic capability"))
+                .getCastingResource()
+                .getRegistryName();
+        helper.assertTrue(resourceId.equals(IneffableFactionRegistry.CASTING_RESOURCE_ID),
+                "Reaching Tier 6 did not switch the player's casting resource");
+        helper.assertTrue(!Tier6Progression.enforceIneffable(progression, player),
+                "An already-correct Tier 6 transition was not idempotent");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void tierSixTickRepairsCastingResourceDrift(GameTestHelper helper) {
+        Player player = helper.makeMockSurvivalPlayer();
+        PlayerProgression progression = (PlayerProgression) player
+                .getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing progression capability"));
+        progression.setTier(6, player, false);
+        var magic = player.getCapability(PlayerMagicProvider.MAGIC)
+                .orElseThrow(() -> new IllegalStateException("Missing magic capability"));
+        magic.setCastingResourceType(CastingResourceIDs.COUNCIL_MANA);
+
+        CommontEvents.enforceIneffableOnTick(
+                new TickEvent.PlayerTickEvent(TickEvent.Phase.END, player)
+        );
+
+        helper.assertTrue(
+                magic.getCastingResource().getRegistryName()
+                        .equals(IneffableFactionRegistry.CASTING_RESOURCE_ID),
+                "Tier 6 tick reconciliation did not repair casting-resource drift"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void legacyTierSixDataMigratesToIneffable(GameTestHelper helper) {
+        PlayerProgressionProvider provider = new PlayerProgressionProvider();
+        CompoundTag legacyData = new CompoundTag();
+        legacyData.putInt("tier", 6);
+        legacyData.putString("faction", Registries.Factions.get().getKey(Factions.COUNCIL).toString());
+        legacyData.putInt("faction_standing", 42);
+
+        provider.deserializeNBT(legacyData);
+
+        var progression = provider.getCapability(PlayerProgressionProvider.PROGRESSION, null)
+                .orElseThrow(() -> new IllegalStateException("Missing deserialized progression capability"));
+        helper.assertTrue(progression.getAlliedFaction() == IneffableFactionRegistry.INEFFABLE_FACTION,
+                "Legacy Tier 6 data retained its former faction");
+        helper.assertTrue(progression.getFactionStanding() == 0,
+                "Legacy Tier 6 data retained its former faction standing");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableIgnoresOrdinaryFactionRaidAggro(GameTestHelper helper) {
+        FakePlayer player = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "ineffable_raid_test")
+        );
+        helper.getLevel().addNewPlayer(player);
+        PlayerProgression progression = new PlayerProgression();
+        progression.setTier(5, null, false);
+        progression.setAlliedFaction(Factions.COUNCIL, null);
+        progression.incrementFactionAggro(Factions.DEMONS, 1.0F, 1.0F);
+        helper.assertTrue(progression.canBeRaided(Factions.DEMONS, player),
+                "The raid test did not begin with actionable faction aggro");
+
+        progression.setTier(6, player, false);
+
+        helper.assertTrue(!progression.canBeRaided(Factions.DEMONS, player),
+                "Ineffable remained eligible for an ordinary faction raid");
+        helper.assertTrue(!progression.canBeRaided(player),
+                "Ineffable remained globally eligible for ordinary faction raids");
+        helper.getLevel().removePlayerImmediately(player, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")

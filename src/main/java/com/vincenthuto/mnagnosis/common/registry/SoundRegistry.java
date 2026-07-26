@@ -35,6 +35,10 @@ public final class SoundRegistry {
             "truth_vanish",
             () -> SoundEvent.createVariableRangeEvent(MnAGnosis.rloc("truth_vanish"))
     );
+    public static final RegistryObject<SoundEvent> TRUE_DAMAGE_STATIC = SOUNDS.register(
+            "true_damage_static",
+            () -> SoundEvent.createVariableRangeEvent(MnAGnosis.rloc("true_damage_static"))
+    );
 
     private SoundRegistry() {
     }

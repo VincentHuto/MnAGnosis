@@ -22,6 +22,8 @@ public enum EnumArmorTiers implements ArmorMaterial {
 			3.0F, 0.1F, () -> {
 		return Ingredient.of(ItemRegistry.primal_mote.get());
 	}),
+	INEFFABLE(MnAGnosis.MODID + ":ineffable", 45, new int[] { 4, 7, 10, 4 }, 20,
+			SoundEvents.ARMOR_EQUIP_NETHERITE, 4.0F, 0.15F, () -> Ingredient.EMPTY),
 	;
 
 	private static final int[] MAX_DAMAGE_ARRAY = new int[] { 13, 15, 16, 11 };

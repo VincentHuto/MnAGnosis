@@ -2,6 +2,7 @@ package com.vincenthuto.mnagnosis.client.event;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmorModel;
 import com.vincenthuto.mnagnosis.client.render.entity.TruthRenderer;
 import com.vincenthuto.mnagnosis.client.truth.TruthSceneController;
 import com.vincenthuto.mnagnosis.client.render.item.*;
@@ -85,6 +86,14 @@ public class ClientEvents {
 					() -> PrimalLegModel.createLeggingLayers(EquipmentSlot.LEGS));
 			event.registerLayerDefinition(PrimalBootModel.PRIMAL_BOOTS_LAYER,
 					() -> PrimalBootModel.createBootLayer(EquipmentSlot.FEET));
+			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_HOOD_LAYER,
+					IneffableArmorModel::createBodyLayer);
+			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_ROBES_LAYER,
+					IneffableArmorModel::createBodyLayer);
+			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_LEGGINGS_LAYER,
+					IneffableArmorModel::createBodyLayer);
+			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_BOOTS_LAYER,
+					IneffableArmorModel::createBodyLayer);
 		}
 
 
@@ -97,6 +106,12 @@ public class ClientEvents {
 			addLayerToEntity(event, EntityType.HUSK);
 			addLayerToEntity(event, EntityType.DROWNED);
 			addLayerToEntity(event, EntityType.STRAY);
+			addLayerToEntity(event, EntityType.WITHER_SKELETON);
+			addLayerToEntity(event, EntityType.ZOMBIE_VILLAGER);
+			addLayerToEntity(event, EntityType.ZOMBIFIED_PIGLIN);
+			addLayerToEntity(event, EntityType.PIGLIN);
+			addLayerToEntity(event, EntityType.PIGLIN_BRUTE);
+			addLayerToEntity(event, EntityType.GIANT);
 			addLayerToPlayerSkin(event, "default");
 			addLayerToPlayerSkin(event, "slim");
 
@@ -106,6 +121,7 @@ public class ClientEvents {
 				EntityRenderersEvent.AddLayers event, EntityType<? extends T> entityType) {
 			R renderer = event.getRenderer(entityType);
 			if (renderer != null) {
+				renderer.addLayer(new IneffableArmorLayer(renderer));
 //			renderer.addLayer(new BloodGourdLayer(renderer));
 //			renderer.addLayer(new BloodAvatarLayer(renderer));
 //			renderer.addLayer(new CellHandLayer(renderer));
@@ -119,6 +135,7 @@ public class ClientEvents {
 			EntityRenderer<? extends Player> render = event.getSkin(skinName);
 			if (render instanceof LivingEntityRenderer livingRenderer) {
 				livingRenderer.addLayer(new PrimalArmorLayer(livingRenderer));
+				livingRenderer.addLayer(new IneffableArmorLayer(livingRenderer));
 
 			}
 		}

@@ -43,5 +43,13 @@
         "name": "mnagnosis:entity/truth/woooosh"
       }
     ]
+  },
+  "true_damage_static": {
+    "subtitle": "subtitles.mnagnosis.true_damage_static",
+    "sounds": [
+      {
+        "name": "mnagnosis:spell/true_damage_static"
+      }
+    ]
   }
 }
