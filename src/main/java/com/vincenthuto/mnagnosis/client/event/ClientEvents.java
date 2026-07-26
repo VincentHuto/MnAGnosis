@@ -73,19 +73,9 @@ public class ClientEvents {
 
 		@SubscribeEvent
 		public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
-			event.registerLayerDefinition(PrimalCrownModel.LAYER_LOCATION,
-					() -> PrimalCrownModel.createHeadLayer(EquipmentSlot.HEAD));
 			event.registerLayerDefinition(EmptyModel.LAYER_LOCATION,
 					() -> EmptyModel.createHeadLayer(EquipmentSlot.HEAD));
 
-			event.registerLayerDefinition(PrimalHeadModel.PRIMAL_CROWN_LAYER,
-					() -> PrimalHeadModel.createHeadLayer(EquipmentSlot.HEAD));
-			event.registerLayerDefinition(PrimalRobeModel.PRIMAL_ROBE_LAYER,
-					() -> PrimalRobeModel.createBodyLayer(EquipmentSlot.CHEST));
-			event.registerLayerDefinition(PrimalLegModel.PRIMAL_LEG_LAYER,
-					() -> PrimalLegModel.createLeggingLayers(EquipmentSlot.LEGS));
-			event.registerLayerDefinition(PrimalBootModel.PRIMAL_BOOTS_LAYER,
-					() -> PrimalBootModel.createBootLayer(EquipmentSlot.FEET));
 			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_HOOD_LAYER,
 					IneffableArmorModel::createBodyLayer);
 			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_ROBES_LAYER,
@@ -134,7 +124,6 @@ public class ClientEvents {
 		private static void addLayerToPlayerSkin(EntityRenderersEvent.AddLayers event, String skinName) {
 			EntityRenderer<? extends Player> render = event.getSkin(skinName);
 			if (render instanceof LivingEntityRenderer livingRenderer) {
-				livingRenderer.addLayer(new PrimalArmorLayer(livingRenderer));
 				livingRenderer.addLayer(new IneffableArmorLayer(livingRenderer));
 
 			}

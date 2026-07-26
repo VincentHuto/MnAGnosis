@@ -39,7 +39,9 @@ import com.vincenthuto.mnagnosis.common.faction.IneffableManaGui;
 import com.vincenthuto.mnagnosis.common.progression.Tier6Progression;
 import com.vincenthuto.mnagnosis.common.progression.TruthEncounterService;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
+import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
 import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
+import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
 import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
@@ -87,6 +89,28 @@ public final class Tier6ProgressionGameTests {
             ResourceLocation.fromNamespaceAndPath("mna", "boss/defeat_odin");
     private static final ResourceLocation ODIN_PROGRESSION =
             MnAGnosis.rloc("progression/tier_5/defeat_odin");
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void temporaryPrimalArmorIsAbsentFromTheItemRegistry(
+            GameTestHelper helper
+    ) {
+        List<String> removed = List.of(
+                "primal_crown",
+                "primal_robes",
+                "primal_legwraps",
+                "primal_boots"
+        );
+        helper.assertTrue(removed.stream().noneMatch(path ->
+                        ForgeRegistries.ITEMS.containsKey(MnAGnosis.rloc(path))),
+                "A removed Primal armor item is still registered");
+        helper.assertTrue(
+                ForgeRegistries.ITEMS.containsKey(MnAGnosis.rloc("primal_mote")),
+                "Removing Primal armor also removed the Mote of Primal Mana"
+        );
+        helper.assertTrue(ItemRegistry.tesseract.get() instanceof TesseractItem,
+                "Removing Primal armor changed the existing Tesseract item");
+        helper.succeed();
+    }
 
     private Tier6ProgressionGameTests() {
     }

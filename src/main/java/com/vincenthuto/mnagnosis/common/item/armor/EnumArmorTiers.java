@@ -2,7 +2,6 @@ package com.vincenthuto.mnagnosis.common.item.armor;
 
 import com.google.common.base.Supplier;
 import com.vincenthuto.mnagnosis.MnAGnosis;
-import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.LazyLoadedValue;
@@ -14,14 +13,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public enum EnumArmorTiers implements ArmorMaterial {
 
-	PRIMAL(MnAGnosis.MODID + ":primal", 37, new int[] { 3, 6, 8, 3 }, 15, SoundEvents.ARMOR_EQUIP_GENERIC,
-			3.0F, 0.1F, () -> {
-				return Ingredient.of(ItemRegistry.primal_mote.get());
-			}),
-	PRIMAL_CROWN(MnAGnosis.MODID + ":primal_crown", 37, new int[] { 3, 6, 8, 3 }, 15, SoundEvents.ARMOR_EQUIP_NETHERITE,
-			3.0F, 0.1F, () -> {
-		return Ingredient.of(ItemRegistry.primal_mote.get());
-	}),
 	INEFFABLE(MnAGnosis.MODID + ":ineffable", 45, new int[] { 4, 7, 10, 4 }, 20,
 			SoundEvents.ARMOR_EQUIP_NETHERITE, 4.0F, 0.15F, () -> Ingredient.EMPTY),
 	;
