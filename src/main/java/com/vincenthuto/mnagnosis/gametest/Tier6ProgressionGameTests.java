@@ -367,27 +367,35 @@ public final class Tier6ProgressionGameTests {
     public static void ineffableHudUsesOpposedReadableResources(
             GameTestHelper helper
     ) {
+        helper.assertTrue(IneffableHudRenderer.CONTENT_OFFSET_X == 14
+                        && IneffableHudRenderer.BADGE_X == 14
+                        && IneffableHudRenderer.FRAME_X == 34,
+                "The custom Ineffable HUD ignored M&A's reserved left inset");
         helper.assertTrue(IneffableHudRenderer.FRAME_WIDTH == 153
-                        && IneffableHudRenderer.FRAME_HEIGHT == 16,
+                        && IneffableHudRenderer.FRAME_HEIGHT == 14,
                 "The custom Ineffable HUD no longer fits M&A's HUD allocation");
-        helper.assertTrue(IneffableHudRenderer.CHANNEL_WIDTH == 128
-                        && IneffableHudRenderer.CHANNEL_HEIGHT == 6,
+        helper.assertTrue(IneffableHudRenderer.CHANNEL_WIDTH == 121
+                        && IneffableHudRenderer.CHANNEL_HEIGHT == 6
+                        && IneffableHudRenderer.CHANNEL_X == 16
+                        && IneffableHudRenderer.channelRightInset() == 16,
                 "The custom Ineffable HUD channel is not the approved thin design");
-        helper.assertTrue(IneffableHudRenderer.manaPixels(810.0F, 1620.0F) == 64,
+        helper.assertTrue(IneffableHudRenderer.manaPixels(810.0F, 1620.0F) == 61,
                 "Mana no longer fills the Ineffable channel from the left");
-        helper.assertTrue(IneffableHudRenderer.paradoxPixels(405.0F, 1620.0F) == 32,
+        helper.assertTrue(IneffableHudRenderer.paradoxPixels(405.0F, 1620.0F) == 30,
                 "Paradox no longer fills the Ineffable channel from the right");
         helper.assertTrue(IneffableHudRenderer.overlapPixels(
                         1215.0F, 405.0F, 1620.0F) == 0,
                 "Opposed resources overlap before together occupying the whole channel");
         helper.assertTrue(IneffableHudRenderer.overlapPixels(
-                        1458.0F, 567.0F, 1620.0F) == 32,
+                        1458.0F, 567.0F, 1620.0F) == 30,
                 "The Ineffable HUD did not calculate the contested channel region");
         helper.assertTrue(IneffableHudRenderer.frameState(0.34F)
                         == IneffableHudRenderer.FrameState.DESYNCHRONIZED,
                 "High Paradox no longer selects the approved desynchronized frame");
         helper.assertTrue(IneffableHudRenderer.LATTICE_PITCH == 5
-                        && IneffableHudRenderer.LATTICE_CELL == 3,
+                        && IneffableHudRenderer.LATTICE_CELL == 3
+                        && IneffableHudRenderer.RAIL_THICKNESS == 1
+                        && IneffableHudRenderer.CAP_STEM_HEIGHT == 2,
                 "Paradox no longer uses the approved balanced lattice density");
         helper.succeed();
     }

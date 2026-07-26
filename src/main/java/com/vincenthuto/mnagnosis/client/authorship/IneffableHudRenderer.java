@@ -9,16 +9,20 @@ import net.minecraft.world.entity.player.Player;
 public final class IneffableHudRenderer {
 
     public static final int FRAME_WIDTH = 153;
-    public static final int FRAME_HEIGHT = 16;
-    public static final int CHANNEL_WIDTH = 128;
+    public static final int FRAME_HEIGHT = 14;
+    public static final int CHANNEL_WIDTH = 121;
     public static final int CHANNEL_HEIGHT = 6;
     public static final int LATTICE_PITCH = 5;
     public static final int LATTICE_CELL = 3;
+    public static final int RAIL_THICKNESS = 1;
+    public static final int CAP_STEM_HEIGHT = 2;
+    public static final int CONTENT_OFFSET_X = 14;
+    public static final int BADGE_X = CONTENT_OFFSET_X;
+    public static final int FRAME_X = CONTENT_OFFSET_X + 20;
+    public static final int CHANNEL_X = 16;
 
-    private static final int FRAME_X = 20;
     private static final int FRAME_Y = 6;
-    private static final int CHANNEL_X = 19;
-    private static final int CHANNEL_Y = 5;
+    private static final int CHANNEL_Y = 4;
     private static final int BADGE_SIZE = 18;
     private static final int BLACK = 0xFF050505;
     private static final int WHITE = 0xFFF7F7F7;
@@ -45,6 +49,10 @@ public final class IneffableHudRenderer {
         return Math.max(0,
                 manaPixels(mana, maximum) + paradoxPixels(paradox, maximum)
                         - CHANNEL_WIDTH);
+    }
+
+    public static int channelRightInset() {
+        return FRAME_WIDTH - CHANNEL_X - CHANNEL_WIDTH;
     }
 
     public static FrameState frameState(float paradoxRatio) {
@@ -105,8 +113,10 @@ public final class IneffableHudRenderer {
     }
 
     private static void drawBadge(GuiGraphics graphics, int level) {
-        graphics.fill(0, FRAME_Y - 1, BADGE_SIZE, FRAME_Y - 1 + BADGE_SIZE, BLACK);
-        graphics.fill(1, FRAME_Y, BADGE_SIZE - 1,
+        graphics.fill(BADGE_X, FRAME_Y - 1,
+                BADGE_X + BADGE_SIZE, FRAME_Y - 1 + BADGE_SIZE, BLACK);
+        graphics.fill(BADGE_X + 1, FRAME_Y,
+                BADGE_X + BADGE_SIZE - 1,
                 FRAME_Y - 2 + BADGE_SIZE, WHITE);
 
         String levelText = Integer.toString(level);
@@ -114,7 +124,7 @@ public final class IneffableHudRenderer {
         graphics.drawString(
                 Minecraft.getInstance().font,
                 levelText,
-                (BADGE_SIZE - textWidth) / 2,
+                BADGE_X + (BADGE_SIZE - textWidth) / 2,
                 FRAME_Y + BADGE_SIZE + 1,
                 WHITE,
                 true
@@ -122,25 +132,42 @@ public final class IneffableHudRenderer {
     }
 
     private static void drawFrame(GuiGraphics graphics, int x, int y) {
-        // Opaque stepped silhouette: the world can never show through the channel.
-        graphics.fill(x + 8, y, x + FRAME_WIDTH - 12, y + FRAME_HEIGHT, BLACK);
-        graphics.fill(x + 4, y + 2, x + FRAME_WIDTH - 6, y + FRAME_HEIGHT - 2, BLACK);
+        // Symmetric stepped silhouette with an opaque channel backing.
+        graphics.fill(x + 8, y, x + FRAME_WIDTH - 8, y + FRAME_HEIGHT, BLACK);
+        graphics.fill(x + 4, y + 2, x + FRAME_WIDTH - 4,
+                y + FRAME_HEIGHT - 2, BLACK);
         graphics.fill(x, y + 5, x + FRAME_WIDTH, y + FRAME_HEIGHT - 5, BLACK);
 
-        // Thin angular rails.
-        graphics.fill(x + 13, y + 2, x + FRAME_WIDTH - 17, y + 4, WHITE);
-        graphics.fill(x + 13, y + FRAME_HEIGHT - 4,
-                x + FRAME_WIDTH - 17, y + FRAME_HEIGHT - 2, WHITE);
-        graphics.fill(x + 8, y + 4, x + 13, y + 5, WHITE);
-        graphics.fill(x + 8, y + FRAME_HEIGHT - 5,
-                x + 13, y + FRAME_HEIGHT - 4, WHITE);
-        graphics.fill(x + FRAME_WIDTH - 17, y + 4,
-                x + FRAME_WIDTH - 9, y + 5, WHITE);
-        graphics.fill(x + FRAME_WIDTH - 17, y + FRAME_HEIGHT - 5,
-                x + FRAME_WIDTH - 9, y + FRAME_HEIGHT - 4, WHITE);
-        graphics.fill(x + 5, y + 5, x + 8, y + FRAME_HEIGHT - 5, WHITE);
-        graphics.fill(x + FRAME_WIDTH - 9, y + 5,
-                x + FRAME_WIDTH - 5, y + FRAME_HEIGHT - 5, WHITE);
+        // One-pixel rails and three-step angular caps.
+        graphics.fill(x + 12, y + 2, x + FRAME_WIDTH - 12,
+                y + 2 + RAIL_THICKNESS, WHITE);
+        graphics.fill(x + 12, y + FRAME_HEIGHT - 3,
+                x + FRAME_WIDTH - 12,
+                y + FRAME_HEIGHT - 3 + RAIL_THICKNESS, WHITE);
+
+        graphics.fill(x + 8, y + 3, x + 12, y + 4, WHITE);
+        graphics.fill(x + 5, y + 4, x + 8, y + 5, WHITE);
+        graphics.fill(x + 4, y + 5, x + 5, y + FRAME_HEIGHT - 5, WHITE);
+        graphics.fill(x + 5, y + FRAME_HEIGHT - 5, x + 8,
+                y + FRAME_HEIGHT - 4, WHITE);
+        graphics.fill(x + 8, y + FRAME_HEIGHT - 4, x + 12,
+                y + FRAME_HEIGHT - 3, WHITE);
+
+        graphics.fill(x + FRAME_WIDTH - 12, y + 3,
+                x + FRAME_WIDTH - 8, y + 4, WHITE);
+        graphics.fill(x + FRAME_WIDTH - 8, y + 4,
+                x + FRAME_WIDTH - 5, y + 5, WHITE);
+        graphics.fill(x + FRAME_WIDTH - 5, y + 5,
+                x + FRAME_WIDTH - 4, y + FRAME_HEIGHT - 5, WHITE);
+        graphics.fill(x + FRAME_WIDTH - 8, y + FRAME_HEIGHT - 5,
+                x + FRAME_WIDTH - 5, y + FRAME_HEIGHT - 4, WHITE);
+        graphics.fill(x + FRAME_WIDTH - 12, y + FRAME_HEIGHT - 4,
+                x + FRAME_WIDTH - 8, y + FRAME_HEIGHT - 3, WHITE);
+
+        int stemY = y + (FRAME_HEIGHT - CAP_STEM_HEIGHT) / 2;
+        graphics.fill(x, stemY, x + 5, stemY + CAP_STEM_HEIGHT, WHITE);
+        graphics.fill(x + FRAME_WIDTH - 5, stemY,
+                x + FRAME_WIDTH, stemY + CAP_STEM_HEIGHT, WHITE);
 
         graphics.fill(x + CHANNEL_X, y + CHANNEL_Y,
                 x + CHANNEL_X + CHANNEL_WIDTH,
@@ -209,13 +236,16 @@ public final class IneffableHudRenderer {
         }
         int displacement = paradoxRatio >= 0.65F ? 2 : 1;
 
-        graphics.fill(x + 20, y + 2, x + 50, y + 4, BLACK);
+        graphics.fill(x + 20, y + 2, x + 50,
+                y + 2 + RAIL_THICKNESS, BLACK);
         graphics.fill(x + 20 - displacement, y + 1 + phase,
-                x + 50 - displacement, y + 3 + phase, WHITE);
-        graphics.fill(x + 91, y + FRAME_HEIGHT - 4,
-                x + 119, y + FRAME_HEIGHT - 2, BLACK);
-        graphics.fill(x + 91 + displacement, y + FRAME_HEIGHT - 3 - phase,
-                x + 119 + displacement, y + FRAME_HEIGHT - 1 - phase, WHITE);
+                x + 50 - displacement,
+                y + 1 + phase + RAIL_THICKNESS, WHITE);
+        graphics.fill(x + 91, y + FRAME_HEIGHT - 3,
+                x + 119, y + FRAME_HEIGHT - 3 + RAIL_THICKNESS, BLACK);
+        graphics.fill(x + 91 + displacement, y + FRAME_HEIGHT - 2 - phase,
+                x + 119 + displacement,
+                y + FRAME_HEIGHT - 2 - phase + RAIL_THICKNESS, WHITE);
 
         graphics.fill(x + 58, y - 2, x + 62, y + 2, WHITE);
         graphics.fill(x + 59, y - 1, x + 61, y + 1, BLACK);
