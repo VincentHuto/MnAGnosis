@@ -2,6 +2,7 @@ package com.vincenthuto.mnagnosis.common.entity;
 
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandPillarPayload;
+import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTendrilMath;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -26,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 
 import java.util.List;
+import java.util.Arrays;
 import java.util.UUID;
 
 public final class LivingLandStrikeEntity extends Entity {
@@ -56,6 +58,9 @@ public final class LivingLandStrikeEntity extends Entity {
     private float damage = 6.0F;
     private float speed = 0.8F;
     private int remainingTicks = 80;
+    private int tendrilAge;
+    private final Vec3[] segmentPositions = new Vec3[5];
+    private final Vec3[] previousSegmentPositions = new Vec3[5];
 
     public LivingLandStrikeEntity(EntityType<? extends LivingLandStrikeEntity> type, Level level) {
         super(type, level);
@@ -83,6 +88,7 @@ public final class LivingLandStrikeEntity extends Entity {
         entityData.set(MODE, mode.ordinal());
         syncPayload();
         setPos(Vec3.atCenterOf(payload.entries().get(0).source()));
+        initializeSegments(position());
         Vec3 direction = target.getBoundingBox().getCenter().subtract(position()).normalize();
         setDeltaMovement(direction.scale(this.speed));
     }
@@ -103,7 +109,10 @@ public final class LivingLandStrikeEntity extends Entity {
     @Override
     public void tick() {
         super.tick();
+        tendrilAge++;
         if (level().isClientSide) {
+            beginSegmentTick();
+            updateFollowerSegments();
             spawnParticles();
             return;
         }
@@ -123,11 +132,14 @@ public final class LivingLandStrikeEntity extends Entity {
             finish(serverLevel, owner, blockPosition());
             return;
         }
+        beginSegmentTick();
         Vec3 oldPosition = position();
         Vec3 desired = target.getBoundingBox().getCenter().subtract(oldPosition);
         if (desired.lengthSqr() > 1.0E-6D) {
             Vec3 velocity = getDeltaMovement().scale(0.72D)
-                    .add(desired.normalize().scale(speed * 0.28D));
+                    .add(desired.normalize().scale(speed * 0.28D))
+                    .add(LivingLandTendrilMath.lateralAcceleration(
+                            desired, getMode(), tendrilAge, getId()));
             if (velocity.length() > speed) {
                 velocity = velocity.normalize().scale(speed);
             }
@@ -139,20 +151,18 @@ public final class LivingLandStrikeEntity extends Entity {
             return;
         }
         move(MoverType.SELF, getDeltaMovement());
-        if (intersectsTarget(oldPosition, position(), target)) {
+        updateFollowerSegments();
+        if (intersectsTarget(target)) {
             target.hurt(serverLevel.damageSources().indirectMagic(this, owner), damage);
             applyKnockback(target);
             finish(serverLevel, owner, target.blockPosition());
         }
     }
 
-    private boolean intersectsTarget(Vec3 oldPosition, Vec3 newPosition, LivingEntity target) {
-        Vec3 axis = flightAxis();
-        double center = (getPayloadLength() - 1) * 0.5D;
+    private boolean intersectsTarget(LivingEntity target) {
         for (int index = 0; index < getPayloadLength(); index++) {
-            Vec3 offset = axis.scale(index - center);
-            AABB swept = new AABB(oldPosition.add(offset), newPosition.add(offset))
-                    .inflate(0.4D);
+            AABB swept = LivingLandTendrilMath.sweptBounds(
+                    previousSegmentPositions[index], segmentPositions[index]);
             if (swept.intersects(target.getBoundingBox())) {
                 return true;
             }
@@ -161,9 +171,44 @@ public final class LivingLandStrikeEntity extends Entity {
     }
 
     public Vec3 flightAxis() {
-        return getDeltaMovement().lengthSqr() < 1.0E-8D
-                ? new Vec3(0.0D, 1.0D, 0.0D)
+        return getSegmentTangent(0, 1.0F);
+    }
+
+    private void beginSegmentTick() {
+        if (segmentPositions[0] == null) {
+            initializeSegments(position());
+        }
+        System.arraycopy(
+                segmentPositions, 0, previousSegmentPositions, 0, segmentPositions.length);
+    }
+
+    private void initializeSegments(Vec3 anchor) {
+        Arrays.fill(segmentPositions, anchor);
+        Arrays.fill(previousSegmentPositions, anchor);
+    }
+
+    private void updateFollowerSegments() {
+        if (segmentPositions[0] == null) {
+            initializeSegments(position());
+        }
+        segmentPositions[0] = position();
+        double spacing = LivingLandTendrilMath.emergenceSpacing(tendrilAge);
+        Vec3 forward = getDeltaMovement().lengthSqr() < 1.0E-8D
+                ? new Vec3(0.0D, 0.0D, 1.0D)
                 : getDeltaMovement().normalize();
+        for (int index = 1; index < getPayloadLength(); index++) {
+            Vec3 bend = LivingLandTendrilMath.lateralAcceleration(
+                    forward, getMode(), tendrilAge - index * 2, getId() + index * 17)
+                    .scale((index & 1) == 0 ? -4.0D : 4.0D);
+            segmentPositions[index] = LivingLandTendrilMath.constrainFollower(
+                    segmentPositions[index - 1],
+                    segmentPositions[index],
+                    spacing,
+                    bend);
+        }
+        for (int index = getPayloadLength(); index < segmentPositions.length; index++) {
+            segmentPositions[index] = segmentPositions[getPayloadLength() - 1];
+        }
     }
 
     private void applyKnockback(LivingEntity target) {
@@ -183,7 +228,10 @@ public final class LivingLandStrikeEntity extends Entity {
     private void finish(ServerLevel level, ServerPlayer owner, BlockPos preferred) {
         boolean complete = payload == null || payload.settled();
         if (!complete && owner != null) {
-            complete = payload.settle(level, owner, preferred, flightAxis());
+            complete = payload.settle(level, owner, preferred,
+                    LivingLandTendrilMath.localTangent(
+                            Arrays.asList(segmentPositions)
+                                    .subList(0, getPayloadLength())));
         }
         if (!complete) {
             complete = payload.emergencySettle(level);
@@ -222,6 +270,7 @@ public final class LivingLandStrikeEntity extends Entity {
             payload = LivingLandPillarPayload.readNbt(
                     serverLevel, tag.getCompound("Payload"));
             syncPayload();
+            initializeSegments(position());
         }
     }
 
@@ -258,6 +307,38 @@ public final class LivingLandStrikeEntity extends Entity {
     public BlockState getCarriedState(int index) {
         int safeIndex = Math.max(0, Math.min(index, getPayloadLength() - 1));
         return Block.stateById(entityData.get(STATES.get(safeIndex)));
+    }
+
+    public Vec3 getSegmentPosition(int index, float partialTick) {
+        if (segmentPositions[0] == null) {
+            initializeSegments(position());
+        }
+        int safeIndex = Math.max(0, Math.min(index, getPayloadLength() - 1));
+        double progress = Math.max(0.0D, Math.min(partialTick, 1.0F));
+        return previousSegmentPositions[safeIndex].lerp(
+                segmentPositions[safeIndex], progress);
+    }
+
+    public Vec3 getSegmentTangent(int index, float partialTick) {
+        int safeIndex = Math.max(0, Math.min(index, getPayloadLength() - 1));
+        Vec3 tangent;
+        if (getPayloadLength() == 1) {
+            tangent = getDeltaMovement();
+        } else if (safeIndex == 0) {
+            tangent = getSegmentPosition(0, partialTick)
+                    .subtract(getSegmentPosition(1, partialTick));
+        } else if (safeIndex == getPayloadLength() - 1) {
+            tangent = getSegmentPosition(safeIndex - 1, partialTick)
+                    .subtract(getSegmentPosition(safeIndex, partialTick));
+        } else {
+            tangent = getSegmentPosition(safeIndex - 1, partialTick)
+                    .subtract(getSegmentPosition(safeIndex + 1, partialTick));
+        }
+        if (tangent.lengthSqr() < 1.0E-8D) {
+            tangent = getDeltaMovement().lengthSqr() < 1.0E-8D
+                    ? new Vec3(0.0D, 1.0D, 0.0D) : getDeltaMovement();
+        }
+        return tangent.normalize();
     }
 
     public UUID getOwnerId() {

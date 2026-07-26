@@ -35,8 +35,7 @@ public final class LivingLandTendrilMath {
         if (basis.lengthSqr() < 1.0E-8D) {
             basis = direction.cross(new Vec3(1.0D, 0.0D, 0.0D));
         }
-        double pulse = 0.65D + 0.35D * Math.sin(
-                age * 0.61D + seed * 0.37D);
+        double pulse = Math.sin(age * 0.25D + seed * 0.13D);
         return safeNormal(basis, new Vec3(0.0D, 0.0D, 1.0D))
                 .scale(0.09D * pulse);
     }

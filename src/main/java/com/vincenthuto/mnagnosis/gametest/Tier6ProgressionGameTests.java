@@ -1812,6 +1812,47 @@ public final class Tier6ProgressionGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandStrikeEmergesAsACurvedTendril(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "curved_tendril")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 11, 3, 1);
+        net.minecraft.core.BlockPos source = helper.absolutePos(
+                new net.minecraft.core.BlockPos(2, 3, 1));
+        List<net.minecraft.core.BlockPos> sources = List.of(
+                source, source.below(), source.below(2), source.below(3), source.below(4));
+        for (net.minecraft.core.BlockPos position : sources) {
+            helper.getLevel().setBlock(position, Blocks.STONE.defaultBlockState(), 3);
+        }
+        LivingLandPillarPayload payload = LivingLandPillarPayload.acquire(
+                helper.getLevel(), caster, sources, true).orElseThrow();
+        LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
+                EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
+        strike.configure(caster, target, LivingLandMode.WALL_LANCES,
+                payload, 5.0F, 0.25F);
+        helper.assertTrue(strike.getSegmentPosition(0, 1.0F).equals(
+                        strike.getSegmentPosition(4, 1.0F)),
+                "A new Living Land tendril did not begin collapsed at its source");
+        for (int tick = 0; tick < 7; tick++) {
+            strike.tick();
+        }
+        Vec3 head = strike.getSegmentPosition(0, 1.0F);
+        Vec3 middle = strike.getSegmentPosition(1, 1.0F);
+        Vec3 tail = strike.getSegmentPosition(2, 1.0F);
+        helper.assertTrue(head.distanceTo(middle) <= 0.781D
+                        && middle.distanceTo(tail) <= 0.781D,
+                "Living Land tendril segments broke their articulated spacing");
+        helper.assertTrue(head.subtract(tail).cross(middle.subtract(tail))
+                        .lengthSqr() > 1.0E-6D,
+                "Living Land tendril remained a rigid straight pillar");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void livingLandRegistersItsSpellAndPresentation(GameTestHelper helper) {
         SpellEffect registered = Registries.SpellEffect.get()
                 .getValue(SpellComponentRegistry.LIVING_LAND_ID);
