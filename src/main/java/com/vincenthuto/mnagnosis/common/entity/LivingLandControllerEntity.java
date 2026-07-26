@@ -31,6 +31,7 @@ public final class LivingLandControllerEntity extends Entity {
     private float magnitude = 1.0F;
     private float speed = 1.0F;
     private boolean projected;
+    private int waveCooldown;
     private long createdAt;
 
     public LivingLandControllerEntity(EntityType<? extends LivingLandControllerEntity> type,
@@ -76,8 +77,9 @@ public final class LivingLandControllerEntity extends Entity {
             return;
         }
         setPos(target.position());
-        if (tickCount % 16 == 1) {
+        if (waveCooldown-- <= 0) {
             launchWave(serverLevel, owner, target);
+            waveCooldown = 15;
         }
     }
 
@@ -100,7 +102,7 @@ public final class LivingLandControllerEntity extends Entity {
                     LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                             EntityRegistry.LIVING_LAND_STRIKE.get(), level
                     );
-                    strike.configure(owner, target, scan.mode(), payload,
+                    strike.configure(owner, target, scan.mode(), source.approach(), payload,
                             4.0F + magnitude * 2.0F, 0.35F + speed * 0.15F);
                     if (!level.addFreshEntity(strike)) {
                         if (!payload.settle(
@@ -146,6 +148,7 @@ public final class LivingLandControllerEntity extends Entity {
         magnitude = clamp(tag.getFloat("Magnitude"), 0.5F, 3.0F);
         speed = clamp(tag.getFloat("Speed"), 0.5F, 3.0F);
         projected = tag.getBoolean("Projected");
+        waveCooldown = Math.max(0, Math.min(tag.getInt("WaveCooldown"), 15));
         createdAt = tag.getLong("CreatedAt");
     }
 
@@ -158,6 +161,7 @@ public final class LivingLandControllerEntity extends Entity {
         tag.putFloat("Magnitude", magnitude);
         tag.putFloat("Speed", speed);
         tag.putBoolean("Projected", projected);
+        tag.putInt("WaveCooldown", waveCooldown);
         tag.putLong("CreatedAt", createdAt);
     }
 

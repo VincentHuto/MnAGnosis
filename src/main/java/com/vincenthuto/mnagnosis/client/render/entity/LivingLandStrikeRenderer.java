@@ -31,6 +31,13 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
                 Mth.lerp(partialTick, entity.xOld, entity.getX()),
                 Mth.lerp(partialTick, entity.yOld, entity.getY()),
                 Mth.lerp(partialTick, entity.zOld, entity.getZ()));
+        if (entity.isProjected()) {
+            renderProjectedTendril(
+                    entity, partialTick, poseStack, buffers, packedLight, renderedHead);
+            poseStack.popPose();
+            super.render(entity, yaw, partialTick, poseStack, buffers, packedLight);
+            return;
+        }
         for (int index = 0; index < entity.getPayloadLength(); index++) {
             Vec3 segment = entity.getSegmentPosition(index, partialTick);
             Vec3 tangent = entity.getSegmentTangent(index, partialTick);
@@ -43,20 +50,7 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
             poseStack.mulPose(Axis.XP.rotationDegrees(segmentPitch));
             poseStack.mulPose(Axis.ZP.rotationDegrees(
                     (index & 1) == 0 ? 7.0F : -7.0F));
-            if (entity.isProjected()) {
-                poseStack.pushPose();
-                poseStack.scale(1.06F, 1.06F, 1.06F);
-                poseStack.translate(-0.5D, -0.5D, -0.5D);
-                context.getBlockRenderDispatcher().renderSingleBlock(
-                        (index & 1) == 0
-                                ? Blocks.BLACK_CONCRETE.defaultBlockState()
-                                : Blocks.WHITE_CONCRETE.defaultBlockState(),
-                        poseStack, buffers, packedLight, OverlayTexture.NO_OVERLAY);
-                poseStack.popPose();
-                poseStack.scale(0.86F, 0.86F, 0.86F);
-            } else {
-                poseStack.scale(0.94F, 0.94F, 0.94F);
-            }
+            poseStack.scale(0.94F, 0.94F, 0.94F);
             poseStack.translate(-0.5D, -0.5D, -0.5D);
             context.getBlockRenderDispatcher().renderSingleBlock(
                     entity.getCarriedState(index), poseStack, buffers,
@@ -65,6 +59,64 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
         }
         poseStack.popPose();
         super.render(entity, yaw, partialTick, poseStack, buffers, packedLight);
+    }
+
+    private void renderProjectedTendril(
+            LivingLandStrikeEntity entity,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource buffers,
+            int packedLight,
+            Vec3 renderedHead
+    ) {
+        for (int index = 0; index < entity.getPayloadLength() - 1; index++) {
+            Vec3 start = entity.getSegmentPosition(index, partialTick);
+            Vec3 end = entity.getSegmentPosition(index + 1, partialTick);
+            Vec3 span = end.subtract(start);
+            double length = span.length();
+            if (!Double.isFinite(length) || length < 1.0E-4D) {
+                continue;
+            }
+            Vec3 midpoint = start.add(end).scale(0.5D);
+            Vec3 direction = span.scale(1.0D / length);
+            float spanYaw = (float) Math.toDegrees(Math.atan2(direction.x, direction.z));
+            float spanPitch = (float) -Math.toDegrees(Math.asin(direction.y));
+
+            renderSpan(
+                    (index & 1) == 0
+                            ? Blocks.BLACK_CONCRETE.defaultBlockState()
+                            : Blocks.WHITE_CONCRETE.defaultBlockState(),
+                    midpoint.subtract(renderedHead), spanYaw, spanPitch,
+                    0.98F, (float) length + 0.16F,
+                    poseStack, buffers, packedLight);
+            renderSpan(
+                    entity.getCarriedState(index),
+                    midpoint.subtract(renderedHead), spanYaw, spanPitch,
+                    0.76F, (float) length + 0.06F,
+                    poseStack, buffers, packedLight);
+        }
+    }
+
+    private void renderSpan(
+            net.minecraft.world.level.block.state.BlockState state,
+            Vec3 offset,
+            float yaw,
+            float pitch,
+            float width,
+            float length,
+            PoseStack poseStack,
+            MultiBufferSource buffers,
+            int packedLight
+    ) {
+        poseStack.pushPose();
+        poseStack.translate(offset.x, offset.y, offset.z);
+        poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
+        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        poseStack.scale(width, width, length);
+        poseStack.translate(-0.5D, -0.5D, -0.5D);
+        context.getBlockRenderDispatcher().renderSingleBlock(
+                state, poseStack, buffers, packedLight, OverlayTexture.NO_OVERLAY);
+        poseStack.popPose();
     }
 
     @Override

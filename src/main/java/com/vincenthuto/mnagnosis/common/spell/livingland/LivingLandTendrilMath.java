@@ -58,6 +58,33 @@ public final class LivingLandTendrilMath {
         return leader.add(direction.scale(spacing));
     }
 
+    public static Vec3 anchoredPoint(
+            Vec3 head,
+            Vec3 root,
+            int index,
+            int count,
+            LivingLandMode mode,
+            int age,
+            int seed
+    ) {
+        if (count <= 1 || index <= 0) {
+            return head;
+        }
+        if (index >= count - 1) {
+            return root;
+        }
+        double progress = index / (double) (count - 1);
+        Vec3 axis = root.subtract(head);
+        Vec3 base = head.lerp(root, progress);
+        double envelope = Math.sin(Math.PI * progress);
+        double reach = Math.min(1.35D, axis.length() * 0.16D);
+        Vec3 bend = lateralAcceleration(
+                axis, mode, age - index * 3, seed + index * 17);
+        return base.add(safeNormal(
+                bend, new Vec3(0.0D, 1.0D, 0.0D))
+                .scale(reach * envelope));
+    }
+
     public static Vec3 localTangent(List<Vec3> segments) {
         if (segments.size() < 2) {
             return new Vec3(0.0D, 1.0D, 0.0D);

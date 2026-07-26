@@ -1727,6 +1727,94 @@ public final class Tier6ProgressionGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void precisionControllerLaunchesFromIntactTerrain(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "precision_launch")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 3, 1);
+        net.minecraft.core.BlockPos origin = target.blockPosition();
+        List<net.minecraft.core.BlockPos> sources = new java.util.ArrayList<>();
+        for (Direction horizontal : Direction.Plane.HORIZONTAL) {
+            net.minecraft.core.BlockPos column = origin.relative(horizontal);
+            for (int depth = 1; depth <= 5; depth++) {
+                net.minecraft.core.BlockPos source = column.below(depth);
+                helper.getLevel().setBlock(
+                        source, Blocks.MOSSY_COBBLESTONE.defaultBlockState(), 3);
+                sources.add(source);
+            }
+        }
+        LivingLandTerrain.ScanResult scan = LivingLandTerrain.scan(
+                helper.getLevel(), caster, target, 6).orElseThrow(
+                () -> new IllegalStateException(
+                        "Precision launch terrain did not produce a scan"));
+        helper.assertTrue(scan.mode() == LivingLandMode.FLOOR_TEETH
+                        && !scan.sources().isEmpty(),
+                "Precision launch terrain selected no usable floor sources");
+        LivingLandTerrain.SourceCandidate first = scan.sources().get(0);
+        List<net.minecraft.core.BlockPos> firstPillar = new java.util.ArrayList<>();
+        for (int index = 0; index < 3; index++) {
+            firstPillar.add(first.source().relative(
+                    first.approach().getOpposite(), index));
+        }
+        helper.assertTrue(LivingLandPillarPayload.acquire(
+                        helper.getLevel(), caster, firstPillar, true).isPresent(),
+                "Precision launch terrain could not produce a projected payload");
+        LivingLandControllerEntity controller = new LivingLandControllerEntity(
+                EntityRegistry.LIVING_LAND_CONTROLLER.get(), helper.getLevel());
+        controller.configure(caster, target, 6.0F, 80, 1.0F, 1.0F, true);
+        helper.assertTrue(helper.getLevel().addFreshEntity(controller),
+                "Precision controller could not enter the level");
+        controller.tick();
+        int ownedStrikes = LivingLandStrikeEntity.activeCount(
+                helper.getLevel(), caster.getUUID());
+        int allStrikes = countEntities(helper, LivingLandStrikeEntity.class);
+        helper.assertTrue(ownedStrikes == 1,
+                "Precision controller did not launch a tendril from valid intact terrain"
+                        + " (tick=" + controller.tickCount
+                        + ", owned=" + ownedStrikes + ", all=" + allStrikes + ")");
+        helper.assertTrue(sources.stream().allMatch(pos ->
+                        helper.getLevel().getBlockState(pos).is(Blocks.MOSSY_COBBLESTONE)),
+                "Precision controller removed its projected source terrain");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void precisionTendrilRemainsRootedAtTerrainFace(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "precision_root")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 6, 4, 1);
+        net.minecraft.core.BlockPos source = helper.absolutePos(
+                new net.minecraft.core.BlockPos(2, 1, 1));
+        List<net.minecraft.core.BlockPos> sources =
+                List.of(source, source.below(), source.below(2));
+        sources.forEach(pos -> helper.getLevel().setBlock(
+                pos, Blocks.STONE.defaultBlockState(), 3));
+        LivingLandPillarPayload payload = LivingLandPillarPayload.acquire(
+                helper.getLevel(), caster, sources, true).orElseThrow();
+        LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
+                EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
+        strike.configure(caster, target, LivingLandMode.FLOOR_TEETH, Direction.UP,
+                payload, 7.0F, 0.8F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(strike),
+                "Precision tendril could not enter the level");
+        strike.tick();
+        Vec3 expectedRoot = Vec3.atCenterOf(source)
+                .add(Vec3.atLowerCornerOf(Direction.UP.getNormal()).scale(0.501D));
+        Vec3 actualRoot = strike.getSegmentPosition(
+                strike.getPayloadLength() - 1, 1.0F);
+        helper.assertTrue(actualRoot.distanceToSqr(expectedRoot) < 1.0E-8D,
+                "Precision tendril detached from its terrain-face root");
+        helper.assertTrue(helper.getLevel().getBlockState(source).is(Blocks.STONE),
+                "Precision tendril disturbed its rooted source block");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void livingLandStrikePersistsItsConservedState(GameTestHelper helper) {
         FakePlayer caster = FakePlayerFactory.get(
                 helper.getLevel(), new GameProfile(UUID.randomUUID(), "living_land_strike")
@@ -1747,7 +1835,7 @@ public final class Tier6ProgressionGameTests {
                 helper.getLevel(), caster, sources, true).orElseThrow();
         LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                 EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
-        strike.configure(caster, target, LivingLandMode.WALL_LANCES,
+        strike.configure(caster, target, LivingLandMode.WALL_LANCES, Direction.EAST,
                 payload, 7.0F, 0.8F);
         CompoundTag saved = new CompoundTag();
         strike.saveWithoutId(saved);
@@ -1831,7 +1919,7 @@ public final class Tier6ProgressionGameTests {
                 helper.getLevel(), caster, sources, true).orElseThrow();
         LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                 EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
-        strike.configure(caster, target, LivingLandMode.WALL_LANCES,
+        strike.configure(caster, target, LivingLandMode.WALL_LANCES, Direction.EAST,
                 payload, 5.0F, 0.25F);
         helper.assertTrue(strike.getSegmentPosition(0, 1.0F).equals(
                         strike.getSegmentPosition(4, 1.0F)),

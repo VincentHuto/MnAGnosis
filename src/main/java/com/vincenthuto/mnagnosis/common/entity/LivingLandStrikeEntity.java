@@ -4,9 +4,11 @@ import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandPillarPayload;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTendrilMath;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -39,6 +41,10 @@ public final class LivingLandStrikeEntity extends Entity {
             SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> PROJECTED =
             SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<BlockPos> ROOT_SOURCE =
+            SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.BLOCK_POS);
+    private static final EntityDataAccessor<Integer> EMERGENCE =
+            SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> STATE_0 =
             SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> STATE_1 =
@@ -72,6 +78,8 @@ public final class LivingLandStrikeEntity extends Entity {
         entityData.define(MODE, LivingLandMode.FLOOR_TEETH.ordinal());
         entityData.define(LENGTH, 1);
         entityData.define(PROJECTED, false);
+        entityData.define(ROOT_SOURCE, BlockPos.ZERO);
+        entityData.define(EMERGENCE, Direction.UP.get3DDataValue());
         int stone = Block.getId(Blocks.STONE.defaultBlockState());
         for (EntityDataAccessor<Integer> accessor : STATES) {
             entityData.define(accessor, stone);
@@ -79,15 +87,20 @@ public final class LivingLandStrikeEntity extends Entity {
     }
 
     public void configure(ServerPlayer owner, LivingEntity target, LivingLandMode mode,
-                          LivingLandPillarPayload payload, float damage, float speed) {
+                          Direction emergence, LivingLandPillarPayload payload,
+                          float damage, float speed) {
         ownerId = owner.getUUID();
         targetId = target.getUUID();
         this.payload = payload;
         this.damage = clamp(damage, 1.0F, 40.0F);
         this.speed = clamp(speed, 0.25F, 2.0F);
         entityData.set(MODE, mode.ordinal());
+        entityData.set(ROOT_SOURCE, payload.entries().get(0).source());
+        entityData.set(EMERGENCE, emergence.get3DDataValue());
         syncPayload();
-        setPos(Vec3.atCenterOf(payload.entries().get(0).source()));
+        setPos(payload.projected()
+                ? getRootPosition()
+                : Vec3.atCenterOf(payload.entries().get(0).source()));
         initializeSegments(position());
         Vec3 direction = target.getBoundingBox().getCenter().subtract(position()).normalize();
         setDeltaMovement(direction.scale(this.speed));
@@ -192,6 +205,20 @@ public final class LivingLandStrikeEntity extends Entity {
             initializeSegments(position());
         }
         segmentPositions[0] = position();
+        if (isProjected()) {
+            int length = getPayloadLength();
+            Vec3 root = getRootPosition();
+            for (int index = 1; index < length - 1; index++) {
+                segmentPositions[index] = LivingLandTendrilMath.anchoredPoint(
+                        position(), root, index, length,
+                        getMode(), tendrilAge, getId());
+            }
+            segmentPositions[length - 1] = root;
+            for (int index = length; index < segmentPositions.length; index++) {
+                segmentPositions[index] = root;
+            }
+            return;
+        }
         double spacing = LivingLandTendrilMath.emergenceSpacing(tendrilAge);
         Vec3 forward = getDeltaMovement().lengthSqr() < 1.0E-8D
                 ? new Vec3(0.0D, 0.0D, 1.0D)
@@ -263,6 +290,12 @@ public final class LivingLandStrikeEntity extends Entity {
         targetId = tag.hasUUID("Target") ? tag.getUUID("Target") : null;
         int mode = tag.getInt("Mode");
         entityData.set(MODE, Math.max(0, Math.min(mode, LivingLandMode.values().length - 1)));
+        if (tag.contains("RootSource")) {
+            entityData.set(ROOT_SOURCE,
+                    NbtUtils.readBlockPos(tag.getCompound("RootSource")));
+        }
+        entityData.set(EMERGENCE, Math.max(0, Math.min(
+                tag.getInt("Emergence"), Direction.values().length - 1)));
         damage = clamp(tag.getFloat("Damage"), 1.0F, 40.0F);
         speed = clamp(tag.getFloat("Speed"), 0.25F, 2.0F);
         remainingTicks = Math.max(1, Math.min(tag.getInt("RemainingTicks"), 160));
@@ -279,6 +312,8 @@ public final class LivingLandStrikeEntity extends Entity {
         if (ownerId != null) tag.putUUID("Owner", ownerId);
         if (targetId != null) tag.putUUID("Target", targetId);
         tag.putInt("Mode", getMode().ordinal());
+        tag.put("RootSource", NbtUtils.writeBlockPos(entityData.get(ROOT_SOURCE)));
+        tag.putInt("Emergence", entityData.get(EMERGENCE));
         tag.putFloat("Damage", damage);
         tag.putFloat("Speed", speed);
         tag.putInt("RemainingTicks", remainingTicks);
@@ -302,6 +337,12 @@ public final class LivingLandStrikeEntity extends Entity {
 
     public boolean isProjected() {
         return entityData.get(PROJECTED);
+    }
+
+    public Vec3 getRootPosition() {
+        Direction emergence = Direction.from3DDataValue(entityData.get(EMERGENCE));
+        return Vec3.atCenterOf(entityData.get(ROOT_SOURCE))
+                .add(Vec3.atLowerCornerOf(emergence.getNormal()).scale(0.501D));
     }
 
     public BlockState getCarriedState(int index) {
