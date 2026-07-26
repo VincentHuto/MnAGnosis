@@ -52,6 +52,7 @@ import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTerrain;
+import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandConservation;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
 import net.minecraft.commands.CommandSourceStack;
@@ -1531,6 +1532,38 @@ public final class Tier6ProgressionGameTests {
                         && !LivingLandTerrain.isEligibleSource(
                         helper.getLevel(), caster, water),
                 "Living Land accepted protected or fluid terrain");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandConservesReservedTerrain(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "living_land_move")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        net.minecraft.core.BlockPos source = helper.absolutePos(
+                new net.minecraft.core.BlockPos(2, 1, 1)
+        );
+        net.minecraft.core.BlockPos destination = source.above();
+        helper.getLevel().setBlock(source, Blocks.MOSSY_COBBLESTONE.defaultBlockState(), 3);
+        LivingLandConservation.Reservation reservation =
+                LivingLandConservation.reserve(helper.getLevel(), caster, source)
+                        .orElseThrow();
+        helper.assertTrue(helper.getLevel().getBlockState(source).isAir()
+                        && reservation.state().is(Blocks.MOSSY_COBBLESTONE),
+                "Living Land did not reserve the exact source state");
+        helper.assertTrue(LivingLandConservation.settle(
+                        helper.getLevel(), caster, reservation, destination)
+                        == LivingLandConservation.SettlementResult.DEPOSITED,
+                "Living Land did not deposit reserved terrain");
+        helper.assertTrue(helper.getLevel().getBlockState(destination)
+                        .is(Blocks.MOSSY_COBBLESTONE),
+                "Living Land deposited a different block state");
+        helper.assertTrue(LivingLandConservation.settle(
+                        helper.getLevel(), caster, reservation, destination)
+                        == LivingLandConservation.SettlementResult.FAILED,
+                "Living Land settled the same reservation twice");
         helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
         helper.succeed();
     }
