@@ -30,4 +30,19 @@ public interface AuthoredLawHandler {
     boolean isPerfectClosure(Contradiction debt, AuthoredCastContext context);
 
     void vent(ServerPlayer player, Contradiction debt);
+
+    default float adjustedManaCost(
+            ServerPlayer player,
+            ISpellDefinition spell,
+            ResourceLocation interpretationId,
+            float baseCost
+    ) {
+        return baseCost;
+    }
+
+    default void onDebtCreated(ServerPlayer player, Contradiction debt) {
+    }
+
+    default void onClosed(ServerPlayer player, Contradiction debt) {
+    }
 }

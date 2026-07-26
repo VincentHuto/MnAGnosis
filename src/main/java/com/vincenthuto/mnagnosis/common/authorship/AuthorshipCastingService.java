@@ -176,10 +176,13 @@ public final class AuthorshipCastingService {
                         debt.paradox(), Config.FORCED_CLOSURE_MULTIPLIER.get()
                 ))
                 .orElse(0);
+        float adjustedCost = handler.adjustedManaCost(
+                player, spell, interpretation, baseCost
+        );
         PREPARED.put(player.getUUID(), new PreparedCast(
                 handler, interpretation, baseCost, forced.map(Contradiction::id)
         ));
-        return baseCost + surcharge;
+        return adjustedCost + surcharge;
     }
 
     public static boolean applyComponent(
@@ -301,6 +304,14 @@ public final class AuthorshipCastingService {
 
         CastLedgerResult resolution = resolveLedger(
                 state.ledger(), application, closures, mana.getMaxAmount()
+        );
+        resolution.closed().forEach(closed ->
+                AuthoredLawRegistry.get(closed.lawId())
+                        .ifPresent(handler -> handler.onClosed(player, closed))
+        );
+        resolution.created().ifPresent(created ->
+                AuthoredLawRegistry.get(created.lawId())
+                        .ifPresent(handler -> handler.onDebtCreated(player, created))
         );
         for (Contradiction vented : resolution.vented()) {
             AuthoredLawRegistry.get(vented.lawId())

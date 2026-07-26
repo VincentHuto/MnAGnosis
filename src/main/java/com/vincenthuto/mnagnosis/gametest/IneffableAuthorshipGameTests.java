@@ -32,6 +32,10 @@ import com.vincenthuto.mnagnosis.common.network.SelectInterpretationPacket;
 import com.vincenthuto.mnagnosis.client.authorship.CounterlawHudRenderer;
 import com.vincenthuto.mnagnosis.common.authorship.law.exchange.ExchangeLawHandler;
 import com.vincenthuto.mnagnosis.common.authorship.law.exchange.ExchangePayload;
+import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspendedAction;
+import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspensionLawHandler;
+import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspensionPayload;
+import com.vincenthuto.mnagnosis.common.authorship.law.suspension.SuspensionSavedData;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
@@ -1064,6 +1068,50 @@ public final class IneffableAuthorshipGameTests {
         helper.getLevel().removePlayerImmediately(
                 second, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
         );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void suspensionPayloadAndSchedulerAreVersionedAndOrdered(
+            GameTestHelper helper
+    ) {
+        UUID debtId = UUID.randomUUID();
+        CompoundTag consequence = new CompoundTag();
+        consequence.putFloat("deferred", 16.0F);
+        SuspensionPayload payload = new SuspensionPayload(
+                SuspensionPayload.VERSION,
+                SuspensionLawHandler.MANA,
+                UUID.randomUUID(),
+                helper.getLevel().dimension().location(),
+                consequence,
+                0.5F
+        );
+        helper.assertTrue(payload.equals(SuspensionPayload.load(payload.save())),
+                "Suspension payload did not round trip");
+
+        SuspensionSavedData data = new SuspensionSavedData();
+        SuspendedAction later = new SuspendedAction(
+                UUID.randomUUID(),
+                payload.ownerId(),
+                helper.getLevel().dimension(),
+                40L,
+                SuspensionLawHandler.MANA,
+                payload.save()
+        );
+        SuspendedAction first = new SuspendedAction(
+                debtId,
+                payload.ownerId(),
+                helper.getLevel().dimension(),
+                20L,
+                SuspensionLawHandler.MANA,
+                payload.save()
+        );
+        data.schedule(later);
+        data.schedule(first);
+        helper.assertTrue(data.due(20L).equals(List.of(first)),
+                "Suspension scheduler did not release in due-time order");
+        helper.assertTrue(data.actions().equals(List.of(later)),
+                "Suspension scheduler did not persist the remaining action");
         helper.succeed();
     }
 
