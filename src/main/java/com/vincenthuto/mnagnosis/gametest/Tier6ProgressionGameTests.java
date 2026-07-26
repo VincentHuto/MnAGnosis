@@ -7,6 +7,7 @@ import com.mna.api.spells.ComponentApplicationResult;
 import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.IDamageComponent;
 import com.mna.api.spells.base.ISpellDefinition;
+import com.mna.api.spells.collections.Shapes;
 import com.mna.api.spells.parts.SpellEffect;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
@@ -22,6 +23,7 @@ import com.mna.items.ItemInit;
 import com.mna.recipes.progression.ProgressionCondition;
 import com.mna.recipes.spells.ComponentRecipe;
 import com.mna.spells.crafting.ModifiedSpellPart;
+import com.mna.spells.crafting.SpellRecipe;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -45,6 +47,7 @@ import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
 import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
 import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
+import com.vincenthuto.mnagnosis.common.spell.ComponentGravityConvergence;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
@@ -1334,6 +1337,105 @@ public final class Tier6ProgressionGameTests {
         helper.succeed();
     }
 
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityConvergenceRegistersItsAuthoredAttributes(
+            GameTestHelper helper
+    ) {
+        SpellEffect component = Registries.SpellEffect.get()
+                .getValue(SpellComponentRegistry.GRAVITY_CONVERGENCE_ID);
+        helper.assertTrue(component == SpellComponentRegistry.GRAVITY_CONVERGENCE,
+                "Gravity Convergence was not registered in M&A's component registry");
+        helper.assertTrue(Registries.Modifier.get()
+                        .getValue(SpellComponentRegistry.POLARITY_ID)
+                        == SpellComponentRegistry.POLARITY,
+                "Polarity was not registered in M&A's modifier registry");
+        helper.assertTrue(component.getFactionRequirement()
+                        == IneffableFactionRegistry.INEFFABLE_FACTION,
+                "Gravity Convergence did not require the Ineffable faction");
+        helper.assertTrue(component.getModifiableAttributes().stream()
+                        .map(com.mna.api.spells.attributes.AttributeValuePair::getAttribute)
+                        .collect(java.util.stream.Collectors.toSet())
+                        .equals(java.util.Set.of(
+                                Attribute.RADIUS,
+                                Attribute.DURATION,
+                                Attribute.MAGNITUDE,
+                                Attribute.SPEED,
+                                Attribute.DELAY
+                        )),
+                "Gravity Convergence did not expose its four authored attributes "
+                        + "plus M&A's built-in Delay");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityConvergenceUsesTargetShapeAndPolarity(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "gravity_spell")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        ComponentGravityConvergence component =
+                SpellComponentRegistry.GRAVITY_CONVERGENCE;
+        ModifiedSpellPart<SpellEffect> modified = new ModifiedSpellPart<>(component);
+        SpellRecipe attractiveSpell = new SpellRecipe(Shapes.SELF, component);
+        net.minecraft.core.BlockPos anchor = helper.absolutePos(
+                new net.minecraft.core.BlockPos(3, 2, 1)
+        );
+
+        helper.assertTrue(component.ApplyEffect(
+                        new SpellSource(caster, InteractionHand.MAIN_HAND),
+                        new SpellTarget(anchor, net.minecraft.core.Direction.UP),
+                        modified,
+                        new SpellContext(helper.getLevel(), attractiveSpell)
+                ) == ComponentApplicationResult.SUCCESS,
+                "Gravity Convergence rejected a block anchor");
+        GravityFieldEntity fixed = newestGravityField(helper);
+        helper.assertTrue(fixed.getAnchorMode()
+                        == GravityFieldEntity.GravityAnchorMode.FIXED
+                        && fixed.getPolarity() == GravityPolarity.ATTRACT,
+                "Default Gravity Convergence did not create a fixed attractive field");
+
+        SpellRecipe repulsiveSpell = new SpellRecipe(Shapes.SELF, component);
+        repulsiveSpell.addModifier(SpellComponentRegistry.POLARITY);
+        helper.assertTrue(component.ApplyEffect(
+                        new SpellSource(caster, InteractionHand.MAIN_HAND),
+                        new SpellTarget(caster),
+                        modified,
+                        new SpellContext(helper.getLevel(), repulsiveSpell)
+                ) == ComponentApplicationResult.SUCCESS,
+                "Gravity Convergence rejected a self anchor");
+        GravityFieldEntity following = newestGravityField(helper);
+        helper.assertTrue(following.getAnchorMode()
+                        == GravityFieldEntity.GravityAnchorMode.CASTER
+                        && following.getPolarity() == GravityPolarity.REPEL,
+                "Polarity did not reverse the caster-following gravity field");
+
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 1);
+        component.ApplyEffect(
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                new SpellTarget(target),
+                modified,
+                new SpellContext(helper.getLevel(), attractiveSpell)
+        );
+        helper.assertTrue(newestGravityField(helper).getAnchorMode()
+                        == GravityFieldEntity.GravityAnchorMode.TARGET,
+                "Entity targeting did not create a target-following field");
+
+        component.ApplyEffect(
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                new SpellTarget(anchor, net.minecraft.core.Direction.UP),
+                modified,
+                new SpellContext(helper.getLevel(), attractiveSpell)
+        );
+        helper.assertTrue(countOwnedGravityFields(helper, caster.getUUID()) == 3,
+                "A fourth Gravity Convergence did not replace the oldest field");
+        helper.getLevel().removePlayerImmediately(
+                caster, Entity.RemovalReason.DISCARDED
+        );
+        helper.succeed();
+    }
+
     private static CommandNode<CommandSourceStack> child(
             CommandNode<CommandSourceStack> parent,
             String name
@@ -1349,6 +1451,33 @@ public final class Tier6ProgressionGameTests {
         int count = 0;
         for (Entity entity : helper.getLevel().getAllEntities()) {
             if (type.isInstance(entity) && !entity.isRemoved()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static GravityFieldEntity newestGravityField(GameTestHelper helper) {
+        GravityFieldEntity newest = null;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof GravityFieldEntity field
+                    && !field.isRemoved()
+                    && (newest == null || field.getId() > newest.getId())) {
+                newest = field;
+            }
+        }
+        if (newest == null) {
+            throw new IllegalStateException("No active gravity field");
+        }
+        return newest;
+    }
+
+    private static int countOwnedGravityFields(GameTestHelper helper, UUID ownerId) {
+        int count = 0;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof GravityFieldEntity field
+                    && !field.isRemoved()
+                    && ownerId.equals(field.getOwnerId())) {
                 count++;
             }
         }
