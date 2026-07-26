@@ -44,6 +44,8 @@ import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
 import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
 import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
+import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
+import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
 import net.minecraft.commands.CommandSourceStack;
@@ -1159,6 +1161,63 @@ public final class Tier6ProgressionGameTests {
         helper.assertTrue(truth.isRemoved(), "Truth did not disappear at its idle timeout");
         helper.assertTrue(truth.getCodexOffering().isEmpty(),
                 "Truth discarded without refunding its stored offering");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityFieldMathIsDirectionalAndBounded(GameTestHelper helper) {
+        Vec3 inward = GravityFieldMath.acceleration(
+                new Vec3(4.0D, 0.0D, 0.0D), 6.0D, 1.0D, 1.0D,
+                GravityPolarity.ATTRACT, Vec3.ZERO
+        );
+        Vec3 outward = GravityFieldMath.acceleration(
+                new Vec3(4.0D, 0.0D, 0.0D), 6.0D, 1.0D, 1.0D,
+                GravityPolarity.REPEL, Vec3.ZERO
+        );
+        helper.assertTrue(inward.x < 0.0D,
+                "Attraction did not point toward the field center");
+        helper.assertTrue(outward.x > 0.0D,
+                "Repulsion did not point away from the field center");
+        helper.assertTrue(inward.length() <= GravityFieldMath.MAX_ACCELERATION + 1.0E-9D
+                        && outward.length() <= GravityFieldMath.MAX_ACCELERATION + 1.0E-9D,
+                "Gravity acceleration exceeded its safety cap");
+
+        Vec3 fast = GravityFieldMath.clampVelocity(new Vec3(5.0D, 5.0D, 0.0D));
+        helper.assertTrue(fast.length() <= GravityFieldMath.MAX_VELOCITY + 1.0E-9D,
+                "Gravity velocity exceeded its safety cap");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityFieldMathHandlesShellEdgeAndCenter(GameTestHelper helper) {
+        Vec3 shellDamping = GravityFieldMath.acceleration(
+                new Vec3(0.25D, 0.0D, 0.0D), 6.0D, 3.0D, 3.0D,
+                GravityPolarity.ATTRACT, new Vec3(-0.4D, 0.0D, 0.0D)
+        );
+        helper.assertTrue(shellDamping.x > 0.0D,
+                "Attractive capture shell did not damp inward velocity");
+
+        Vec3 innerRepulsion = GravityFieldMath.acceleration(
+                new Vec3(3.0D, 0.0D, 0.0D), 6.0D, 1.0D, 1.0D,
+                GravityPolarity.REPEL, Vec3.ZERO
+        );
+        Vec3 edgeRepulsion = GravityFieldMath.acceleration(
+                new Vec3(5.9D, 0.0D, 0.0D), 6.0D, 1.0D, 1.0D,
+                GravityPolarity.REPEL, Vec3.ZERO
+        );
+        helper.assertTrue(edgeRepulsion.length() < innerRepulsion.length(),
+                "Repulsion did not fade near the field boundary");
+
+        Vec3 centered = GravityFieldMath.acceleration(
+                Vec3.ZERO, 6.0D, 3.0D, 3.0D,
+                GravityPolarity.ATTRACT, new Vec3(0.5D, -0.25D, 0.125D)
+        );
+        helper.assertTrue(Double.isFinite(centered.x)
+                        && Double.isFinite(centered.y)
+                        && Double.isFinite(centered.z),
+                "Exact-center gravity produced a non-finite vector");
+        helper.assertTrue(centered.dot(new Vec3(0.5D, -0.25D, 0.125D)) < 0.0D,
+                "Exact-center attraction did not damp current velocity");
         helper.succeed();
     }
 
