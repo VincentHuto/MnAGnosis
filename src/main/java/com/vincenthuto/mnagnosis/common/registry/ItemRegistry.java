@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.common.registry;
 
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
 import com.vincenthuto.mnagnosis.common.item.armor.IneffableArmorItem;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
 import net.minecraft.world.item.ArmorItem;
@@ -21,7 +22,7 @@ public class ItemRegistry {
 
     // Base Items
     public static final RegistryObject<Item> primal_mote = BASEITEMS.register("primal_mote",
-            () -> new Item(new Item.Properties()));
+            () -> new PrimalMoteItem(new Item.Properties()));
 
         public static final RegistryObject<Item> INEFFABLE_HOOD = BASEITEMS.register("ineffable_hood",
                 () -> new IneffableArmorItem(ArmorItem.Type.HELMET));

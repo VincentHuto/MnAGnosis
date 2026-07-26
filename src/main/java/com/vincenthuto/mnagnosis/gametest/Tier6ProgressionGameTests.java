@@ -42,6 +42,7 @@ import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
 import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
+import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
 import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
@@ -107,6 +108,8 @@ public final class Tier6ProgressionGameTests {
                 ForgeRegistries.ITEMS.containsKey(MnAGnosis.rloc("primal_mote")),
                 "Removing Primal armor also removed the Mote of Primal Mana"
         );
+        helper.assertTrue(ItemRegistry.primal_mote.get() instanceof PrimalMoteItem,
+                "The Mote of Primal Mana does not use its custom renderer item");
         helper.assertTrue(ItemRegistry.tesseract.get() instanceof TesseractItem,
                 "Removing Primal armor changed the existing Tesseract item");
         helper.succeed();
