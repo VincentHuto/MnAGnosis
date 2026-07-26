@@ -32,6 +32,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
+import com.vincenthuto.mnagnosis.common.entity.GravityFieldEntity;
 import com.vincenthuto.mnagnosis.common.event.CommontEvents;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
@@ -61,6 +62,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
@@ -1218,6 +1221,116 @@ public final class Tier6ProgressionGameTests {
                 "Exact-center gravity produced a non-finite vector");
         helper.assertTrue(centered.dot(new Vec3(0.5D, -0.25D, 0.125D)) < 0.0D,
                 "Exact-center attraction did not damp current velocity");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityFieldEntityPersistsAndTracksAnchors(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "gravity_anchor")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 4, 2, 1);
+        GravityFieldEntity field = new GravityFieldEntity(
+                EntityRegistry.GRAVITY_FIELD.get(), helper.getLevel()
+        );
+        field.configure(
+                caster,
+                GravityFieldEntity.GravityAnchorMode.TARGET,
+                target,
+                target.position(),
+                GravityPolarity.REPEL,
+                7.0F,
+                240,
+                2.0F,
+                1.5F
+        );
+
+        CompoundTag saved = new CompoundTag();
+        field.saveWithoutId(saved);
+        GravityFieldEntity restored = new GravityFieldEntity(
+                EntityRegistry.GRAVITY_FIELD.get(), helper.getLevel()
+        );
+        restored.load(saved);
+        helper.assertTrue(restored.getOwnerId().equals(caster.getUUID()),
+                "Gravity field NBT lost its owner");
+        helper.assertTrue(restored.getAnchorMode()
+                        == GravityFieldEntity.GravityAnchorMode.TARGET,
+                "Gravity field NBT lost its target anchor mode");
+        helper.assertTrue(restored.getPolarity() == GravityPolarity.REPEL
+                        && restored.getRadius() == 7.0F
+                        && restored.getRemainingTicks() == 240,
+                "Gravity field NBT lost authored values");
+
+        target.setPos(6.0D, 3.0D, 2.0D);
+        restored.tick();
+        helper.assertTrue(restored.position().distanceTo(target.position()) < 0.001D,
+                "Target-anchored gravity field did not follow its target");
+        target.discard();
+        restored.tick();
+        helper.assertTrue(restored.isRemoved(),
+                "Gravity field survived an invalid moving anchor");
+        helper.getLevel().removePlayerImmediately(
+                caster, Entity.RemovalReason.DISCARDED
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityFieldEntityMovesPhysicalTargetsWithoutDamage(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "gravity_force")
+        );
+        Zombie hostile = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 1);
+        Vec3 center = hostile.position().add(-2.0D, 0.0D, 0.0D);
+        caster.setPos(center.add(-2.0D, 0.0D, 0.0D));
+        helper.getLevel().addNewPlayer(caster);
+        ItemEntity item = new ItemEntity(
+                helper.getLevel(),
+                hostile.getX(),
+                hostile.getY(),
+                hostile.getZ() + 1.0D,
+                new ItemStack(Items.IRON_INGOT)
+        );
+        Snowball projectile = new Snowball(helper.getLevel(), hostile);
+        projectile.setPos(hostile.position().add(0.0D, 0.0D, -1.0D));
+        helper.getLevel().addFreshEntity(item);
+        helper.getLevel().addFreshEntity(projectile);
+        GravityFieldEntity field = new GravityFieldEntity(
+                EntityRegistry.GRAVITY_FIELD.get(), helper.getLevel()
+        );
+        field.configure(
+                caster,
+                GravityFieldEntity.GravityAnchorMode.FIXED,
+                null,
+                center,
+                GravityPolarity.ATTRACT,
+                6.0F,
+                20,
+                1.0F,
+                1.0F
+        );
+        helper.getLevel().addFreshEntity(field);
+        float health = hostile.getHealth();
+
+        field.tick();
+
+        helper.assertTrue(hostile.getDeltaMovement().x < 0.0D,
+                "Gravity field did not attract a hostile living target");
+        helper.assertTrue(item.getDeltaMovement().x < 0.0D,
+                "Gravity field did not attract a dropped item");
+        helper.assertTrue(projectile.getDeltaMovement().x < 0.0D,
+                "Gravity field did not attract a foreign projectile");
+        helper.assertTrue(hostile.getHealth() == health,
+                "Gravity field dealt direct damage");
+        helper.assertTrue(caster.getDeltaMovement().equals(Vec3.ZERO),
+                "Gravity field moved its owner");
+
+        helper.getLevel().removePlayerImmediately(
+                caster, Entity.RemovalReason.DISCARDED
+        );
         helper.succeed();
     }
 
