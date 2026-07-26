@@ -1,11 +1,14 @@
 package com.vincenthuto.mnagnosis.common.authorship.state;
 
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.common.network.NetworkHandler;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -39,5 +42,42 @@ public final class IneffableCastingStateEvents {
                         .ifPresent(newState -> newState.copyFrom(oldState))
         );
         original.invalidateCaps();
+    }
+
+    @SubscribeEvent
+    public static void login(PlayerEvent.PlayerLoggedInEvent event) {
+        sync(event.getEntity());
+    }
+
+    @SubscribeEvent
+    public static void respawn(PlayerEvent.PlayerRespawnEvent event) {
+        sync(event.getEntity());
+    }
+
+    @SubscribeEvent
+    public static void changedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        sync(event.getEntity());
+    }
+
+    @SubscribeEvent
+    public static void playerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END
+                && event.player instanceof ServerPlayer serverPlayer
+                && serverPlayer.tickCount % 10 == 0) {
+            NetworkHandler.syncAuthorship(serverPlayer);
+        }
+    }
+
+    @SubscribeEvent
+    public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            NetworkHandler.forgetAuthorship(serverPlayer);
+        }
+    }
+
+    private static void sync(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            NetworkHandler.syncAuthorship(serverPlayer);
+        }
     }
 }

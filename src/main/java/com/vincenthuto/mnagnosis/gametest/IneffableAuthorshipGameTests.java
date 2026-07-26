@@ -24,6 +24,10 @@ import com.vincenthuto.mnagnosis.common.authorship.law.AuthoredCastContext;
 import com.vincenthuto.mnagnosis.common.authorship.law.SpellFingerprint;
 import com.vincenthuto.mnagnosis.common.authorship.law.inversion.InversionLawHandler;
 import com.vincenthuto.mnagnosis.common.authorship.law.inversion.InversionRelationship;
+import com.vincenthuto.mnagnosis.common.authorship.AuthorshipControlService;
+import com.vincenthuto.mnagnosis.common.network.AuthorshipStatePacket;
+import com.vincenthuto.mnagnosis.common.network.DeclareClosurePacket;
+import com.vincenthuto.mnagnosis.common.network.SelectInterpretationPacket;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
@@ -34,12 +38,14 @@ import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import io.netty.buffer.Unpooled;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
@@ -656,6 +662,92 @@ public final class IneffableAuthorshipGameTests {
 
         helper.getLevel().removePlayerImmediately(
                 caster, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void authorshipPacketsRoundTripWithoutAuthorityLoss(GameTestHelper helper) {
+        UUID debtId = UUID.randomUUID();
+        AuthorshipStatePacket state = new AuthorshipStatePacket(
+                60.0F,
+                100.0F,
+                40.0F,
+                "fingerprint",
+                List.of(InversionLawHandler.VECTOR, InversionLawHandler.MOTION),
+                InversionLawHandler.MOTION,
+                List.of(new AuthorshipStatePacket.Debt(
+                        debtId,
+                        AuthorshipRegistry.INVERSION_LAW_ID,
+                        InversionLawHandler.VECTOR,
+                        20.0F,
+                        2
+                )),
+                debtId
+        );
+        FriendlyByteBuf stateBuffer = new FriendlyByteBuf(Unpooled.buffer());
+        AuthorshipStatePacket.encode(state, stateBuffer);
+        helper.assertTrue(state.equals(AuthorshipStatePacket.decode(stateBuffer)),
+                "Authorship state packet lost server-owned fields");
+
+        SelectInterpretationPacket selection = new SelectInterpretationPacket(
+                "fingerprint", InversionLawHandler.VECTOR
+        );
+        FriendlyByteBuf selectionBuffer = new FriendlyByteBuf(Unpooled.buffer());
+        SelectInterpretationPacket.encode(selection, selectionBuffer);
+        helper.assertTrue(selection.equals(
+                        SelectInterpretationPacket.decode(selectionBuffer)),
+                "Interpretation request changed during encoding");
+
+        DeclareClosurePacket closure = new DeclareClosurePacket(debtId);
+        FriendlyByteBuf closureBuffer = new FriendlyByteBuf(Unpooled.buffer());
+        DeclareClosurePacket.encode(closure, closureBuffer);
+        helper.assertTrue(closure.equals(DeclareClosurePacket.decode(closureBuffer)),
+                "Closure request changed during encoding");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void authorshipControlsValidateHeldSpellAndOwnedDebt(
+            GameTestHelper helper
+    ) {
+        FakePlayer player = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "authorship_controls")
+        );
+        helper.getLevel().addNewPlayer(player);
+        PlayerProgression progression = (PlayerProgression) player
+                .getCapability(PlayerProgressionProvider.PROGRESSION)
+                .orElseThrow(() -> new IllegalStateException("Missing progression"));
+        progression.setTier(6, player, false);
+
+        SpellRecipe spell = new SpellRecipe(Shapes.SELF, Components.FLING);
+        spell.setModifier(AuthorshipRegistry.LAW_INVERSION, 0);
+        player.setItemInHand(InteractionHand.MAIN_HAND, spell.createAsSpell());
+        String fingerprint = SpellFingerprint.of(spell);
+
+        helper.assertTrue(!AuthorshipControlService.selectInterpretation(
+                        player, "stale", InversionLawHandler.VECTOR),
+                "A stale spell fingerprint changed server state");
+        helper.assertTrue(!AuthorshipControlService.selectInterpretation(
+                        player, fingerprint, InversionLawHandler.VITALITY),
+                "An incompatible interpretation changed server state");
+        helper.assertTrue(AuthorshipControlService.selectInterpretation(
+                        player, fingerprint, InversionLawHandler.VECTOR),
+                "A compatible held-spell interpretation was rejected");
+
+        IIneffableCastingState state = player
+                .getCapability(IneffableCastingStateProvider.CAPABILITY)
+                .orElseThrow(() -> new IllegalStateException("Missing authorship state"));
+        Contradiction owned = contradiction("vector", 10.0F, 3, 1);
+        state.ledger().add(owned);
+        helper.assertTrue(!AuthorshipControlService.declareClosure(
+                        player, UUID.randomUUID()),
+                "A player declared Closure on debt they do not own");
+        helper.assertTrue(AuthorshipControlService.declareClosure(player, owned.id()),
+                "The server rejected Closure on an owned compatible debt");
+
+        helper.getLevel().removePlayerImmediately(
+                player, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
         );
         helper.succeed();
     }

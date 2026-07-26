@@ -23,6 +23,7 @@ import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStatePr
 import com.vincenthuto.mnagnosis.common.authorship.state.LedgerTransition;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
+import com.vincenthuto.mnagnosis.common.network.NetworkHandler;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -312,6 +313,7 @@ public final class AuthorshipCastingService {
             state.clearDeclaredClosure();
         }
         mana.setParadox(state.ledger().totalParadox());
+        NetworkHandler.syncAuthorship(player);
     }
 
     private static boolean isEligible(ServerPlayer player) {
