@@ -1,0 +1,17 @@
+{
+  "type": "mna:modifier",
+  "tier": 6,
+  "output": "mnagnosis:polarity",
+  "items": [
+    "mnagnosis:tesseract",
+    "minecraft:compass",
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:black_concrete",
+    "minecraft:white_concrete"
+  ],
+  "patterns": [
+    "mna:manaweave_patterns/diamond",
+    "mna:manaweave_patterns/inverted_triangle"
+  ]
+}

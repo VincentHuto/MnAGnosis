@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmorModel;
 import com.vincenthuto.mnagnosis.client.render.entity.TruthRenderer;
+import com.vincenthuto.mnagnosis.client.render.entity.GravityFieldRenderer;
 import com.vincenthuto.mnagnosis.client.truth.TruthSceneController;
 import com.vincenthuto.mnagnosis.client.render.item.*;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
@@ -132,6 +133,9 @@ public class ClientEvents {
 		@SubscribeEvent
 		public static void renderEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
 			event.registerEntityRenderer(EntityRegistry.TRUTH.get(), TruthRenderer::new);
+			event.registerEntityRenderer(
+					EntityRegistry.GRAVITY_FIELD.get(), GravityFieldRenderer::new
+			);
 		}
 
 		@SubscribeEvent

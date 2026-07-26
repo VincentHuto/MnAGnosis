@@ -1301,6 +1301,9 @@ public final class Tier6ProgressionGameTests {
         projectile.setPos(hostile.position().add(0.0D, 0.0D, -1.0D));
         helper.getLevel().addFreshEntity(item);
         helper.getLevel().addFreshEntity(projectile);
+        hostile.setDeltaMovement(Vec3.ZERO);
+        item.setDeltaMovement(Vec3.ZERO);
+        projectile.setDeltaMovement(Vec3.ZERO);
         GravityFieldEntity field = new GravityFieldEntity(
                 EntityRegistry.GRAVITY_FIELD.get(), helper.getLevel()
         );
@@ -1433,6 +1436,53 @@ public final class Tier6ProgressionGameTests {
         helper.getLevel().removePlayerImmediately(
                 caster, Entity.RemovalReason.DISCARDED
         );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityConvergenceShipsTierSixRecipesAndIcons(
+            GameTestHelper helper
+    ) {
+        ClassLoader resources = Tier6ProgressionGameTests.class.getClassLoader();
+        List<String> required = List.of(
+                "data/mnagnosis/recipes/components/gravity_convergence.json",
+                "data/mnagnosis/recipes/polarity.json",
+                "assets/mnagnosis/textures/spell/component/gravity_convergence.png",
+                "assets/mnagnosis/textures/spell/modifier/polarity.png",
+                "com/vincenthuto/mnagnosis/client/render/entity/GravityFieldRenderer.class"
+        );
+        helper.assertTrue(required.stream().allMatch(path ->
+                        resources.getResource(path) != null),
+                "Gravity Convergence was missing a recipe or icon resource");
+        try (InputStream componentStream = resources.getResourceAsStream(required.get(0));
+             InputStream modifierStream = resources.getResourceAsStream(required.get(1))) {
+            JsonObject componentRecipe = JsonParser.parseReader(new InputStreamReader(
+                    componentStream, StandardCharsets.UTF_8
+            )).getAsJsonObject();
+            JsonObject modifierRecipe = JsonParser.parseReader(new InputStreamReader(
+                    modifierStream, StandardCharsets.UTF_8
+            )).getAsJsonObject();
+            helper.assertTrue(componentRecipe.get("tier").getAsInt() == 6
+                            && SpellComponentRegistry.GRAVITY_CONVERGENCE_ID.toString()
+                            .equals(componentRecipe.get("output").getAsString()),
+                    "Gravity Convergence recipe was not its Tier 6 registry output");
+            helper.assertTrue(modifierRecipe.get("tier").getAsInt() == 6
+                            && SpellComponentRegistry.POLARITY_ID.toString()
+                            .equals(modifierRecipe.get("output").getAsString()),
+                    "Polarity recipe was not its Tier 6 registry output");
+        } catch (Exception exception) {
+            helper.fail("Could not read Gravity Convergence recipes: "
+                    + exception.getMessage());
+            return;
+        }
+        helper.assertTrue(helper.getLevel().getRecipeManager()
+                        .byKey(SpellComponentRegistry.GRAVITY_CONVERGENCE_ID)
+                        .filter(ComponentRecipe.class::isInstance)
+                        .map(ComponentRecipe.class::cast)
+                        .map(ComponentRecipe::getComponent)
+                        .filter(SpellComponentRegistry.GRAVITY_CONVERGENCE::equals)
+                        .isPresent(),
+                "M&A could not resolve the Gravity Convergence component recipe");
         helper.succeed();
     }
 

@@ -3,6 +3,8 @@ package com.vincenthuto.mnagnosis.common.entity;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -17,6 +19,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
@@ -91,6 +94,7 @@ public final class GravityFieldEntity extends Entity {
         super.tick();
         setDeltaMovement(Vec3.ZERO);
         if (level().isClientSide) {
+            spawnClientLattice();
             return;
         }
         if (!(level() instanceof ServerLevel serverLevel)) {
@@ -109,6 +113,43 @@ public final class GravityFieldEntity extends Entity {
             return;
         }
         applyForces(serverLevel);
+    }
+
+    private void spawnClientLattice() {
+        if ((tickCount & 1) != 0) {
+            return;
+        }
+        float radius = getRadius();
+        double angle = (level().getGameTime() * 0.19D + getId() * 0.71D)
+                % (Math.PI * 2.0D);
+        int sample = Math.floorMod(tickCount / 2 + getId(), 12);
+        double yBand = (sample % 5 - 2) * radius * 0.22D;
+        double horizontalRadius = Math.sqrt(Math.max(
+                0.0D, radius * radius - yBand * yBand
+        ));
+        Vec3 offset = new Vec3(
+                Math.cos(angle) * horizontalRadius,
+                yBand,
+                Math.sin(angle) * horizontalRadius
+        );
+        Vec3 direction = offset.normalize().scale(
+                getPolarity() == GravityPolarity.ATTRACT ? -0.055D : 0.055D
+        );
+        BlockParticleOption particle = new BlockParticleOption(
+                ParticleTypes.BLOCK,
+                (sample & 1) == 0
+                        ? Blocks.BLACK_CONCRETE.defaultBlockState()
+                        : Blocks.WHITE_CONCRETE.defaultBlockState()
+        );
+        level().addParticle(
+                particle,
+                getX() + offset.x,
+                getY() + offset.y,
+                getZ() + offset.z,
+                direction.x,
+                direction.y,
+                direction.z
+        );
     }
 
     private boolean updateAnchor(ServerLevel level) {
