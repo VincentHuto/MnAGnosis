@@ -71,6 +71,14 @@ public final class AuthorshipCastingService {
         context.getMeta().put(META_KEY, meta);
     }
 
+    public static Optional<CompoundTag> authoredPayload(SpellContext context) {
+        CompoundTag meta = context.getMeta().getCompound(META_KEY);
+        if (!meta.getBoolean(APPLIED_KEY) || !meta.contains(PAYLOAD_KEY)) {
+            return Optional.empty();
+        }
+        return Optional.of(meta.getCompound(PAYLOAD_KEY).copy());
+    }
+
     public static CastLedgerResult resolveLedger(
             ContradictionLedger ledger,
             Optional<LawApplication> application,
@@ -185,6 +193,9 @@ public final class AuthorshipCastingService {
         if (prepared == null || !isEligible(player)) {
             return false;
         }
+        if (context.getMeta().getCompound(META_KEY).getBoolean(APPLIED_KEY)) {
+            return false;
+        }
         ResourceLocation componentId =
                 com.mna.Registries.SpellEffect.get().getKey(component);
         if (componentId == null
@@ -249,6 +260,20 @@ public final class AuthorshipCastingService {
         PreparedCast prepared = PREPARED.remove(player.getUUID());
         Optional<LawApplication> application = Optional.empty();
         Set<UUID> closures = new HashSet<>();
+        for (Contradiction debt : state.ledger().entries()) {
+            AuthoredCastContext closureContext = new AuthoredCastContext(
+                    player,
+                    spell,
+                    source,
+                    context,
+                    ItemStack.EMPTY,
+                    debt.interpretationId(),
+                    prepared == null ? baseCost : prepared.baseCost()
+            );
+            AuthoredLawRegistry.get(debt.lawId())
+                    .filter(handler -> handler.isPerfectClosure(debt, closureContext))
+                    .ifPresent(handler -> closures.add(debt.id()));
+        }
         if (prepared != null) {
             AuthoredCastContext authored = new AuthoredCastContext(
                     player,
@@ -259,11 +284,6 @@ public final class AuthorshipCastingService {
                     prepared.interpretation(),
                     prepared.baseCost()
             );
-            for (Contradiction debt : state.ledger().entries()) {
-                AuthoredLawRegistry.get(debt.lawId())
-                        .filter(handler -> handler.isPerfectClosure(debt, authored))
-                        .ifPresent(handler -> closures.add(debt.id()));
-            }
             prepared.forcedClosure().ifPresent(closures::add);
 
             CompoundTag meta = context.getMeta().getCompound(META_KEY);

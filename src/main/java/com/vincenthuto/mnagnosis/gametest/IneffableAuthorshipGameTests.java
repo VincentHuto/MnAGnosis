@@ -2,17 +2,28 @@ package com.vincenthuto.mnagnosis.gametest;
 
 import com.mna.Registries;
 import com.mna.api.spells.SpellCraftingContext;
+import com.mna.api.spells.ComponentApplicationResult;
 import com.mna.api.spells.collections.Components;
 import com.mna.api.spells.collections.Shapes;
+import com.mna.api.spells.base.ISpellDefinition;
+import com.mna.api.spells.parts.SpellEffect;
+import com.mna.api.spells.targeting.SpellContext;
+import com.mna.api.spells.targeting.SpellSource;
+import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.capabilities.playerdata.progression.PlayerProgression;
 import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
+import com.mna.spells.crafting.ModifiedSpellPart;
 import com.mna.spells.crafting.SpellRecipe;
+import com.mna.tools.SummonUtils;
 import com.mojang.authlib.GameProfile;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.common.authorship.AuthorshipRegistry;
 import com.vincenthuto.mnagnosis.common.authorship.AuthorshipCastingService;
 import com.vincenthuto.mnagnosis.common.authorship.law.LawApplication;
+import com.vincenthuto.mnagnosis.common.authorship.law.AuthoredCastContext;
 import com.vincenthuto.mnagnosis.common.authorship.law.SpellFingerprint;
+import com.vincenthuto.mnagnosis.common.authorship.law.inversion.InversionLawHandler;
+import com.vincenthuto.mnagnosis.common.authorship.law.inversion.InversionRelationship;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
@@ -24,7 +35,11 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
@@ -32,6 +47,7 @@ import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -507,6 +523,145 @@ public final class IneffableAuthorshipGameTests {
         helper.assertTrue(!AuthorshipCastingService.canAfford(mana, 20.01F),
                 "An unaffordable Forced Closure was accepted");
         helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void inversionRelationshipsCoverEveryInitialPair(GameTestHelper helper) {
+        Map<ResourceLocation, ResourceLocation> expected = Map.of(
+                id("mna:components/fling"), id("mna:components/pull"),
+                id("mna:components/haste"), id("mna:components/slow"),
+                id("mna:components/heal"), id("mna:components/magic_damage"),
+                id("mna:components/divination"), id("mna:components/invisibility"),
+                id("mna:components/insect_swarm"), AuthorshipRegistry.BANISH_ID
+        );
+        for (Map.Entry<ResourceLocation, ResourceLocation> pair : expected.entrySet()) {
+            InversionRelationship relationship =
+                    InversionLawHandler.relationshipFor(pair.getKey()).orElseThrow();
+            helper.assertTrue(relationship.complementOf(pair.getKey()).equals(pair.getValue()),
+                    "Inversion did not map " + pair.getKey() + " to " + pair.getValue());
+            helper.assertTrue(relationship.complementOf(pair.getValue()).equals(pair.getKey()),
+                    "Inversion was not symmetric for " + pair.getValue());
+        }
+        helper.assertTrue(
+                Registries.SpellEffect.get().getValue(AuthorshipRegistry.BANISH_ID)
+                        == AuthorshipRegistry.BANISH,
+                "Banish was not registered under its stable component ID"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void banishOnlyDiscardsLoadedSummonsOwnedByCaster(GameTestHelper helper) {
+        FakePlayer owner = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "banish_owner")
+        );
+        FakePlayer stranger = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "banish_stranger")
+        );
+        helper.getLevel().addNewPlayer(owner);
+        helper.getLevel().addNewPlayer(stranger);
+        Zombie summon = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 1);
+        SummonUtils.tagAsSummon(summon, owner);
+        ModifiedSpellPart<SpellEffect> part =
+                new ModifiedSpellPart<>(AuthorshipRegistry.BANISH);
+        SpellTarget target = new SpellTarget(summon);
+        SpellContext context = new SpellContext(helper.getLevel(), ISpellDefinition.EMPTY);
+
+        helper.assertTrue(AuthorshipRegistry.BANISH.ApplyEffect(
+                        new SpellSource(stranger, InteractionHand.MAIN_HAND),
+                        target, part, context
+                ) == ComponentApplicationResult.FAIL,
+                "Banish discarded another caster's summon");
+        helper.assertTrue(summon.isAlive(),
+                "A rejected Banish still removed its target");
+        helper.assertTrue(AuthorshipRegistry.BANISH.ApplyEffect(
+                        new SpellSource(owner, InteractionHand.MAIN_HAND),
+                        target, part, context
+                ) == ComponentApplicationResult.SUCCESS,
+                "Banish rejected the caster's loaded summon");
+        helper.assertTrue(summon.isRemoved(),
+                "Successful Banish did not discard the owned summon");
+
+        helper.getLevel().removePlayerImmediately(
+                owner, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
+        helper.getLevel().removePlayerImmediately(
+                stranger, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void inversionAppliesComplementAndRecordsClosurePayload(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "inversion_cast")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 1);
+        target.setHealth(20.0F);
+        SpellRecipe spell = new SpellRecipe(Shapes.SELF, Components.HEAL);
+        SpellContext spellContext = new SpellContext(helper.getLevel(), spell);
+        AuthoredCastContext authored = new AuthoredCastContext(
+                caster,
+                spell,
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                spellContext,
+                ItemStack.EMPTY,
+                InversionLawHandler.VITALITY,
+                40.0F
+        );
+
+        ComponentApplicationResult result = AuthorshipRegistry.INVERSION.applyAuthored(
+                authored, spell.getComponent(0), new SpellTarget(target)
+        );
+        CompoundTag payload = spellContext.getMeta()
+                .getCompound("mnagnosis").getCompound("authored_payload");
+        helper.assertTrue(result == ComponentApplicationResult.SUCCESS,
+                "Vitality Inversion did not apply Magic Damage in place of Heal");
+        helper.assertTrue(target.getHealth() < 20.0F,
+                "The complementary harmful component did not affect its target");
+        helper.assertTrue(payload.getString("original").equals("mna:components/heal")
+                        && payload.getString("complement")
+                        .equals("mna:components/magic_damage"),
+                "Inversion did not record the realized relationship for Closure and Venting");
+        helper.assertTrue(
+                AuthorshipRegistry.INVERSION.paradox(authored) == 14.0F,
+                "Inversion Paradox did not use ceil(base mana * 0.35)"
+        );
+        Contradiction debt = new Contradiction(
+                UUID.randomUUID(),
+                AuthorshipRegistry.INVERSION_LAW_ID,
+                InversionLawHandler.VITALITY,
+                14.0F,
+                3,
+                1,
+                payload
+        );
+        SpellContext closureContext = new SpellContext(helper.getLevel(), spell);
+        helper.assertTrue(AuthorshipRegistry.INVERSION.isPerfectClosure(
+                        debt,
+                        new AuthoredCastContext(
+                                caster,
+                                spell,
+                                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                                closureContext,
+                                ItemStack.EMPTY,
+                                InversionLawHandler.VITALITY,
+                                40.0F
+                        )
+                ),
+                "Casting the recorded complementary relationship did not Perfectly Close debt");
+
+        helper.getLevel().removePlayerImmediately(
+                caster, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
+        helper.succeed();
+    }
+
+    private static ResourceLocation id(String value) {
+        return ResourceLocation.tryParse(value);
     }
 
     private static LawApplication lawApplication(String interpretation, float paradox) {
