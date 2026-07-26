@@ -10,6 +10,8 @@ import com.mna.spells.crafting.SpellRecipe;
 import com.mojang.authlib.GameProfile;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.common.authorship.AuthorshipRegistry;
+import com.vincenthuto.mnagnosis.common.authorship.AuthorshipCastingService;
+import com.vincenthuto.mnagnosis.common.authorship.law.LawApplication;
 import com.vincenthuto.mnagnosis.common.authorship.law.SpellFingerprint;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
@@ -30,6 +32,7 @@ import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -389,6 +392,133 @@ public final class IneffableAuthorshipGameTests {
                 player, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
         );
         helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void authoredCastRequiresExactlyOneLawInscription(GameTestHelper helper) {
+        SpellRecipe ordinary = new SpellRecipe(Shapes.SELF, Components.HEAL);
+        SpellRecipe authored = new SpellRecipe(Shapes.SELF, Components.HEAL);
+        authored.setModifier(AuthorshipRegistry.LAW_INVERSION, 0);
+        SpellRecipe invalid = new SpellRecipe(Shapes.SELF, Components.HEAL);
+        invalid.setModifier(AuthorshipRegistry.LAW_INVERSION, 0);
+        invalid.setModifier(AuthorshipRegistry.LAW_INVERSION, 1);
+
+        helper.assertTrue(AuthorshipCastingService.countLawInscriptions(ordinary) == 0,
+                "An ordinary spell was mistaken for an authored spell");
+        helper.assertTrue(AuthorshipCastingService.countLawInscriptions(authored) == 1,
+                "A single Law Inscription was not recognized");
+        helper.assertTrue(AuthorshipCastingService.countLawInscriptions(invalid) == 2,
+                "A spell with two Law Inscriptions escaped rejection");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ordinaryCastAgesDebtWithoutCreatingContradiction(
+            GameTestHelper helper
+    ) {
+        ContradictionLedger ledger = new ContradictionLedger();
+        ledger.add(contradiction("vector", 10.0F, 3, 1));
+
+        AuthorshipCastingService.CastLedgerResult result =
+                AuthorshipCastingService.resolveLedger(
+                        ledger, Optional.empty(), Set.of(), 100.0F
+                );
+
+        helper.assertTrue(result.created().isEmpty(),
+                "An ordinary cast created a Contradiction");
+        helper.assertTrue(ledger.entries().get(0).safeCasts() == 2,
+                "An ordinary completed cast did not advance the cast-count deadline");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void authoredCastClosesThenAgesAndCreatesDebt(GameTestHelper helper) {
+        ContradictionLedger ledger = new ContradictionLedger();
+        Contradiction closure = contradiction("vector", 10.0F, 2, 1);
+        Contradiction unresolved = contradiction("motion", 15.0F, 2, 2);
+        ledger.add(closure);
+        ledger.add(unresolved);
+        LawApplication application = lawApplication("vitality", 20.0F);
+
+        AuthorshipCastingService.CastLedgerResult result =
+                AuthorshipCastingService.resolveLedger(
+                        ledger, Optional.of(application), Set.of(closure.id()), 100.0F
+                );
+
+        helper.assertTrue(result.closed().equals(List.of(closure)),
+                "Closure did not remove its complete target before aging");
+        helper.assertTrue(ledger.entries().get(0).id().equals(unresolved.id())
+                        && ledger.entries().get(0).safeCasts() == 1,
+                "Closure did not age every other unresolved debt");
+        helper.assertTrue(result.created().isPresent()
+                        && result.created().orElseThrow().safeCasts() == 3,
+                "The creating cast aged its new Contradiction");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void fourthAndOversizedContradictionsVentDeterministically(
+            GameTestHelper helper
+    ) {
+        ContradictionLedger ledger = new ContradictionLedger();
+        Contradiction oldest = contradiction("vector", 10.0F, 3, 1);
+        ledger.add(oldest);
+        ledger.add(contradiction("motion", 10.0F, 3, 2));
+        ledger.add(contradiction("vitality", 10.0F, 3, 3));
+
+        AuthorshipCastingService.CastLedgerResult fourth =
+                AuthorshipCastingService.resolveLedger(
+                        ledger,
+                        Optional.of(lawApplication("revelation", 10.0F)),
+                        Set.of(),
+                        100.0F
+                );
+        helper.assertTrue(fourth.vented().size() == 1
+                        && fourth.vented().get(0).id().equals(oldest.id()),
+                "A fourth debt did not Vent the oldest unresolved Contradiction");
+
+        AuthorshipCastingService.CastLedgerResult oversized =
+                AuthorshipCastingService.resolveLedger(
+                        new ContradictionLedger(),
+                        Optional.of(lawApplication("presence", 101.0F)),
+                        Set.of(),
+                        100.0F
+                );
+        helper.assertTrue(oversized.created().isEmpty()
+                        && oversized.vented().size() == 1
+                        && Math.abs(oversized.vented().get(0).paradox() - 101.0F)
+                        < 0.0001F,
+                "A debt larger than total capacity did not Vent immediately");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void forcedClosureSurchargeAndAffordabilityAreExact(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(AuthorshipCastingService.forcedClosureSurcharge(10.1F, 1.25D)
+                        == 13,
+                "Forced Closure surcharge was not rounded up after multiplication");
+        IneffableMana mana = new IneffableMana();
+        mana.setMaxAmount(100.0F);
+        mana.setAmount(20.0F);
+        helper.assertTrue(AuthorshipCastingService.canAfford(mana, 20.0F),
+                "Exact available Mana was rejected");
+        helper.assertTrue(!AuthorshipCastingService.canAfford(mana, 20.01F),
+                "An unaffordable Forced Closure was accepted");
+        helper.succeed();
+    }
+
+    private static LawApplication lawApplication(String interpretation, float paradox) {
+        CompoundTag payload = new CompoundTag();
+        payload.putString("marker", "application-" + interpretation);
+        return new LawApplication(
+                MnAGnosis.rloc("inversion"),
+                MnAGnosis.rloc(interpretation),
+                paradox,
+                3,
+                payload
+        );
     }
 
     private static Contradiction contradiction(
