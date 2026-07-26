@@ -1247,6 +1247,67 @@ public final class IneffableAuthorshipGameTests {
         helper.succeed();
     }
 
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void suspensionPerfectClosureReleasesWithoutReplacementDebt(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "suspension_close")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        SpellRecipe heal = new SpellRecipe(Shapes.SELF, Components.HEAL);
+        CompoundTag consequence = new CompoundTag();
+        consequence.putString("fingerprint", SpellFingerprint.of(heal));
+        SuspensionPayload payload = new SuspensionPayload(
+                SuspensionPayload.VERSION,
+                SuspensionLawHandler.ACTIVATION,
+                caster.getUUID(),
+                helper.getLevel().dimension().location(),
+                consequence,
+                0.5F
+        );
+        Contradiction debt = new Contradiction(
+                UUID.randomUUID(),
+                AuthorshipRegistry.SUSPENSION_LAW_ID,
+                SuspensionLawHandler.ACTIVATION,
+                10.0F,
+                3,
+                1,
+                payload.save()
+        );
+        SpellContext context = new SpellContext(helper.getLevel(), heal);
+        AuthorshipCastingService.setAuthoredPayload(context, payload.save());
+        CompoundTag authoredMeta = context.getMeta().getCompound("mnagnosis");
+        authoredMeta.putBoolean("authored_applied", true);
+        context.getMeta().put("mnagnosis", authoredMeta);
+        AuthoredCastContext closingCast = new AuthoredCastContext(
+                caster,
+                heal,
+                new SpellSource(caster, InteractionHand.MAIN_HAND),
+                context,
+                ItemStack.EMPTY,
+                SuspensionLawHandler.ACTIVATION,
+                20.0F
+        );
+
+        helper.assertTrue(
+                AuthorshipRegistry.SUSPENSION.isPerfectClosure(debt, closingCast),
+                "Matching Suspension form and spell did not register Perfect Closure"
+        );
+        helper.assertTrue(
+                !AuthorshipCastingService.shouldCreateContradiction(true, true),
+                "A successful closing cast attempted to create a replacement debt"
+        );
+        helper.assertTrue(
+                AuthorshipCastingService.shouldCreateContradiction(true, false),
+                "An ordinary authored cast failed to create its Contradiction"
+        );
+        helper.getLevel().removePlayerImmediately(
+                caster, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+        );
+        helper.succeed();
+    }
+
     private static ResourceLocation id(String value) {
         return ResourceLocation.tryParse(value);
     }

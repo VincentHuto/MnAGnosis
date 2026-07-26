@@ -291,7 +291,9 @@ public final class AuthorshipCastingService {
             prepared.forcedClosure().ifPresent(closures::add);
 
             CompoundTag meta = context.getMeta().getCompound(META_KEY);
-            if (meta.getBoolean(APPLIED_KEY)) {
+            if (shouldCreateContradiction(
+                    meta.getBoolean(APPLIED_KEY), !closures.isEmpty()
+            )) {
                 application = Optional.of(new LawApplication(
                         prepared.handler().lawId(),
                         prepared.interpretation(),
@@ -325,6 +327,13 @@ public final class AuthorshipCastingService {
         }
         mana.setParadox(state.ledger().totalParadox());
         NetworkHandler.syncAuthorship(player);
+    }
+
+    public static boolean shouldCreateContradiction(
+            boolean authoredEffectApplied,
+            boolean closesExistingDebt
+    ) {
+        return authoredEffectApplied && !closesExistingDebt;
     }
 
     private static boolean isEligible(ServerPlayer player) {

@@ -119,7 +119,21 @@ public final class SuspensionLawHandler implements AuthoredLawHandler {
 
     @Override
     public boolean isPerfectClosure(Contradiction debt, AuthoredCastContext context) {
-        return false;
+        Optional<SuspensionPayload> original = parse(debt.payload());
+        Optional<SuspensionPayload> current =
+                AuthorshipCastingService.authoredPayload(context.spellContext())
+                        .flatMap(SuspensionLawHandler::parse);
+        if (original.isEmpty() || current.isEmpty()
+                || !original.orElseThrow().interpretationId()
+                        .equals(current.orElseThrow().interpretationId())) {
+            return false;
+        }
+        String recordedFingerprint =
+                original.orElseThrow().consequence().getString("fingerprint");
+        String currentFingerprint =
+                current.orElseThrow().consequence().getString("fingerprint");
+        return !recordedFingerprint.isBlank()
+                && recordedFingerprint.equals(currentFingerprint);
     }
 
     @Override
