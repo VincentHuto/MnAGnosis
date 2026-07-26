@@ -667,6 +667,106 @@ design decision.
 - Replace collision with observation: a block is solid only while watched.
 - Temporarily treat an entity's name, faction, or owner as an editable component.
 
+### Spell components and modifiers
+
+- **Exchange of Stations:** swap the player with an entity in line of sight,
+  preserving identity, health, inventory, and effects while exchanging position and
+  facing.
+- **Causal Bookmark:** mark an entity's position, dimension, rotation, and safe return
+  space, then recall that entity to the recorded location later. A stronger state-based
+  revision may also restore velocity and other selected properties without restoring
+  health or inventory.
+- **Axiom of Harm:** a damage component modifier that removes the target's relevant
+  resistance or immunity while preserving the component's original damage type; fire
+  can harm Blazes, drowning can affect undead, and physical damage can strike phased
+  entities.
+- **Gravity Collapse:** a gravity component that creates an inward pull toward a
+  selected point, gathering mobs, items, projectiles, or other valid entities.
+- **Gravity Convergence:** a controllable gravity-field component with attract and
+  repel polarity, allowing mobs to be drawn toward a point or expelled from it.
+- **Singularity:** manifest a block-absorbing gravity sphere that pulls nearby terrain
+  into a dense celestial mass. With the **Precision** modifier, the caster may choose
+  between true collection, which removes and gathers blocks, and projection, which
+  creates a visual clone of the terrain while leaving the source blocks in place.
+- **Thaumaturgic Link Biome Replacement:** use a thaumaturgic link to identify a source
+  biome and replace the biome identity of a linked destination, potentially changing
+  climate, weather, vegetation, ambient effects, and mob rules without requiring a
+  conventional world-generation event.
+- **Emanate Creature:** use a crystallized mob or phylactery mob as a reusable pattern
+  source without consuming the stored creature, then summon emanations of it in
+  alternate shapes such as an avatar, swarm, guardian, projectile, or temporary body.
+- **Population Edit:** rewrite one mob type into another across a selected target or
+  population, preserving or deliberately reauthoring selected traits such as size,
+  equipment, health, and allegiance.
+- **Predatory Principle:** impose a new behavioral law on normally peaceful mobs,
+  turning them into hostile allies, coordinated hunters, or creatures that attack
+  according to a chosen rule rather than their ordinary AI.
+- **True Self:** create an autonomous self-manifestation that uses the player's
+  available spells, equipment, and selected abilities, but acts through its own AI
+  instead of copying the player's exact movement and actions like a simulacrum or
+  decoy. The manifestation may choose targets, spells, positioning, and tactics
+  independently while remaining recognizably the player's authored counterpart.
+- **The Reassembled Land:** let the player define a shape or choose from authored
+  templates such as bridges, pyramids, pillars, walls, floors, and stairs, then pull
+  surrounding terrain from a configurable radius and depth into that shape. The land
+  is not simply placed from an item; nearby matter is coerced into the player's chosen
+  geometry.
+- **Living Land:** a terrain-aware combat component that makes the environment attack
+  a selected creature. In a cave, nearby walls can fire thin one-block pillars that
+  launch toward and pummel the target; on open ground, the floor can rise and snap at
+  the target; beneath a low ceiling, the ceiling can slam downward and crush it. The
+  component chooses or allows the player to select different attack modes based on
+  the available terrain, with each mode changing the surrounding land as part of the
+  attack.
+- **Gravitational Down:** mark an area by radius, depth, shape, and orientation, then
+  redefine its local gravitational down. Players and mobs can walk across walls and
+  ceilings as though those surfaces were floors, while the boundary determines how
+  entities enter, exit, fall, and reorient within the field.
+- **Worldline (Shape):** follow, record, or replay a path defined by a caster, entity,
+  projectile, or previous spell effect. Components applied through the shape can travel
+  along that path, leave a persistent trail, or retrace the path later.
+  - **Delay** controls when recording, movement, or replay begins.
+  - **Duration** controls how long the worldline records, remains active, or continues
+    replaying.
+  - **Range** controls the maximum spatial length or distance the worldline may travel
+    from its source.
+  - **Radius** may control the thickness of the path, while **Speed** may control the
+    rate of traversal or replay and **Precision** may control path fidelity.
+- **Stamp (Shape):** apply a component inside a geometric template selected by the
+  player, such as a bridge, pyramid, pillar, wall, floor, staircase, dome, or saved
+  custom form. The stamp defines the arrangement of the effect, while existing radius,
+  height, and width attributes define its overall bounds.
+  - **Subshape (Modifier):** determines the internal template or sub-shape used by the
+    stamp, allowing the player to choose, rotate, mirror, or author the specific form
+    without changing the spell's component.
+  - **Precision** may determine whether the stamp is a true terrain operation or a
+    projected preview, while **Magnitude** may determine how much surrounding matter
+    can be coerced into the selected form.
+- **Orbit (Shape):** cause a component, its manifestations, or its affected targets to
+  circle a selected entity or point. **Radius** controls orbital distance, **Speed**
+  controls angular velocity, **Magnitude** controls the number of orbiting instances,
+  and **Duration** controls how long the orbit persists.
+- **Proxy (Shape):** select an entity, block, simulacrum, projectile, or thaumaturgic
+  link as the spell's point of origin, allowing the component to be delivered from that
+  proxy rather than the caster. **Range** controls proxy selection distance,
+  **Duration** controls how long the proxy remains available, and **Precision**
+  determines whether the spell uses the proxy's facing or the caster's facing.
+- **Aspect Externalization:** extract an intangible property from a target and manifest
+  it as a physical magical object or entity that can be moved, stored, destroyed,
+  exchanged, or applied elsewhere. Candidate aspects include immunity, aggression,
+  gravity, poison, enchantment, allegiance, and other bounded properties.
+- **True Damage (Damage Component):** a prohibitively expensive Ineffable spell
+  component with its own damage type that bypasses ordinary armor, resistance effects,
+  damage reduction, and innate damage-type immunity. Unlike **Axiom of Harm**, it does
+  not preserve or revise another component's damage category; it authors harm directly.
+  The **Damage** modifier controls its output through sharply escalating mana costs,
+  keeping even modest increases consequential. Its visual language is a severe eruption
+  of black and white cubes that assemble around, intersect, and then withdraw from the
+  target, accompanied by brief monochrome television-static particles, frame-local
+  visual breakup, and a clipped burst of narrow-band static instead of a conventional
+  elemental impact. Absolute administrative or encounter protections may remain
+  outside its scope.
+
 ---
 
 # Book II - The Work
