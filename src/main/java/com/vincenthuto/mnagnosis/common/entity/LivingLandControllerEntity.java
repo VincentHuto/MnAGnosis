@@ -1,8 +1,9 @@
 package com.vincenthuto.mnagnosis.common.entity;
 
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
-import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandConservation;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTerrain;
+import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandPillarPayload;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 
 import java.util.ArrayList;
@@ -81,25 +83,39 @@ public final class LivingLandControllerEntity extends Entity {
                 - LivingLandStrikeEntity.activeCount(level, ownerId);
         if (capacity <= 0) return;
         LivingLandTerrain.scan(level, owner, target, Math.round(radius)).ifPresent(scan -> {
-            int count = Math.min(Math.min(2 + (int) Math.floor(magnitude), 5), capacity);
+            int count = Math.min(pillarsPerWave(magnitude), capacity);
+            int length = pillarLength(magnitude);
             for (LivingLandTerrain.SourceCandidate source
                     : scan.sources().subList(0, Math.min(count, scan.sources().size()))) {
-                LivingLandConservation.reserve(level, owner, source.source()).ifPresent(reservation -> {
+                List<BlockPos> sources = new ArrayList<>();
+                for (int index = 0; index < length; index++) {
+                    sources.add(source.source().relative(
+                            source.approach().getOpposite(), index));
+                }
+                LivingLandPillarPayload.acquire(level, owner, sources, false).ifPresent(payload -> {
                     LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                             EntityRegistry.LIVING_LAND_STRIKE.get(), level
                     );
-                    strike.configure(owner, target, scan.mode(), reservation,
-                            4.0F + magnitude * 2.0F, 0.45F + speed * 0.2F);
+                    strike.configure(owner, target, scan.mode(), payload,
+                            4.0F + magnitude * 2.0F, 0.35F + speed * 0.15F);
                     if (!level.addFreshEntity(strike)) {
-                        if (LivingLandConservation.settle(
-                                level, owner, reservation, source.source())
-                                == LivingLandConservation.SettlementResult.FAILED) {
-                            LivingLandConservation.emergencySettle(level, reservation);
+                        if (!payload.settle(
+                                level, owner, source.source(), Vec3.atLowerCornerOf(
+                                        source.approach().getNormal()))) {
+                            payload.emergencySettle(level);
                         }
                     }
                 });
             }
         });
+    }
+
+    public static int pillarsPerWave(float magnitude) {
+        return magnitude >= 2.0F ? 2 : 1;
+    }
+
+    public static int pillarLength(float magnitude) {
+        return Math.max(3, Math.min(5, 3 + (int) Math.floor(magnitude - 1.0F)));
     }
 
     public static void makeRoomFor(ServerLevel level, UUID ownerId) {

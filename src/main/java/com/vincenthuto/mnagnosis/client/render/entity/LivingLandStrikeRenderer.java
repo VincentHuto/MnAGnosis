@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.client.render.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandStrikeEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -8,6 +9,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 
 public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStrikeEntity> {
 
@@ -23,10 +25,20 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
     public void render(LivingLandStrikeEntity entity, float yaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource buffers, int packedLight) {
         poseStack.pushPose();
-        poseStack.translate(-0.5D, -0.5D, -0.5D);
-        context.getBlockRenderDispatcher().renderSingleBlock(
-                entity.getCarriedState(), poseStack, buffers,
-                packedLight, OverlayTexture.NO_OVERLAY);
+        Vec3 axis = entity.flightAxis();
+        float axisYaw = (float) Math.toDegrees(Math.atan2(axis.x, axis.z));
+        float pitch = (float) -Math.toDegrees(Math.asin(axis.y));
+        poseStack.mulPose(Axis.YP.rotationDegrees(axisYaw));
+        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        double center = (entity.getPayloadLength() - 1) * 0.5D;
+        for (int index = 0; index < entity.getPayloadLength(); index++) {
+            poseStack.pushPose();
+            poseStack.translate(-0.5D, -0.5D, index - center - 0.5D);
+            context.getBlockRenderDispatcher().renderSingleBlock(
+                    entity.getCarriedState(index), poseStack, buffers,
+                    packedLight, OverlayTexture.NO_OVERLAY);
+            poseStack.popPose();
+        }
         poseStack.popPose();
         super.render(entity, yaw, partialTick, poseStack, buffers, packedLight);
     }

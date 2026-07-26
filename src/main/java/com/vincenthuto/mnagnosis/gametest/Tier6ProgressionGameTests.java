@@ -1737,24 +1737,48 @@ public final class Tier6ProgressionGameTests {
         net.minecraft.world.level.block.state.BlockState state =
                 Blocks.STONE_BRICK_STAIRS.defaultBlockState()
                         .setValue(StairBlock.FACING, Direction.WEST);
+        List<net.minecraft.core.BlockPos> sources =
+                List.of(source, source.below(), source.below(2));
+        helper.getLevel().setBlock(sources.get(0), state, 3);
+        helper.getLevel().setBlock(sources.get(1), Blocks.ANDESITE.defaultBlockState(), 3);
+        helper.getLevel().setBlock(sources.get(2), Blocks.DEEPSLATE.defaultBlockState(), 3);
+        LivingLandPillarPayload payload = LivingLandPillarPayload.acquire(
+                helper.getLevel(), caster, sources, true).orElseThrow();
         LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                 EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
         strike.configure(caster, target, LivingLandMode.WALL_LANCES,
-                new LivingLandConservation.Reservation(source, state), 7.0F, 0.8F);
+                payload, 7.0F, 0.8F);
         CompoundTag saved = new CompoundTag();
         strike.saveWithoutId(saved);
         LivingLandStrikeEntity loaded = new LivingLandStrikeEntity(
                 EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
         loaded.load(saved);
         helper.assertTrue(loaded.getMode() == LivingLandMode.WALL_LANCES
-                        && loaded.getCarriedState().equals(state)
+                        && loaded.getPayloadLength() == 3
+                        && loaded.isProjected()
+                        && loaded.getCarriedState(0).equals(state)
+                        && loaded.getCarriedState(1).is(Blocks.ANDESITE)
+                        && loaded.getCarriedState(2).is(Blocks.DEEPSLATE)
                         && caster.getUUID().equals(loaded.getOwnerId()),
-                "Living Land strike did not preserve its mode, owner, and exact block state");
+                "Living Land strike did not preserve its projected multi-block payload");
         helper.assertTrue(helper.getLevel().addFreshEntity(strike)
                         && LivingLandStrikeEntity.activeCount(
                         helper.getLevel(), caster.getUUID()) == 1,
                 "Living Land did not count its active conserved strike");
         helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandScalesPillarFormationInsteadOfBlockSpray(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(LivingLandControllerEntity.pillarsPerWave(1.0F) == 1
+                        && LivingLandControllerEntity.pillarsPerWave(2.0F) == 2
+                        && LivingLandControllerEntity.pillarLength(0.5F) == 3
+                        && LivingLandControllerEntity.pillarLength(2.0F) == 4
+                        && LivingLandControllerEntity.pillarLength(3.0F) == 5,
+                "Living Land did not scale one or two three-to-five-block pillars");
         helper.succeed();
     }
 
