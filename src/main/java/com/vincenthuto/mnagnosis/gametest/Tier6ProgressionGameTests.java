@@ -381,6 +381,15 @@ public final class Tier6ProgressionGameTests {
                 "The custom Ineffable HUD channel is not the approved thin design");
         helper.assertTrue(IneffableHudRenderer.manaPixels(810.0F, 1620.0F) == 61,
                 "Mana no longer fills the Ineffable channel from the left");
+        var halfMana = IneffableHudRenderer.manaGeometry(810.0F, 1620.0F);
+        helper.assertTrue(halfMana.width() == 61
+                        && halfMana.topRailY() == 0
+                        && halfMana.bottomRailY() == 5
+                        && halfMana.leadingEdgeX() == 60,
+                "Mana no longer forms a hollow law channel");
+        helper.assertTrue(IneffableHudRenderer.manaGeometry(0.0F, 1620.0F)
+                        .leadingEdgeX() == -1,
+                "Empty Mana still drew a leading edge");
         helper.assertTrue(IneffableHudRenderer.paradoxPixels(405.0F, 1620.0F) == 30,
                 "Paradox no longer fills the Ineffable channel from the right");
         helper.assertTrue(IneffableHudRenderer.overlapPixels(
@@ -407,9 +416,11 @@ public final class Tier6ProgressionGameTests {
         helper.assertTrue(stableDetails.size() == 4,
                 "The stable frame lost its permanent circuit nodes");
         helper.assertTrue(stableDetails.get(0).x()
-                        == IneffableHudRenderer.FRAME_X + 24
+                        == IneffableHudRenderer.FRAME_X + 25
                         && stableDetails.get(2).x()
-                        == IneffableHudRenderer.FRAME_X + 119,
+                        == IneffableHudRenderer.FRAME_X + 120
+                        && stableDetails.get(0).size() == 3
+                        && stableDetails.get(1).size() == 2,
                 "The stable circuit nodes drifted from the frame");
         helper.assertTrue(shiftedDetails.get(0).x() == stableDetails.get(0).x() - 1
                         && shiftedDetails.get(2).x() == stableDetails.get(2).x() + 1,

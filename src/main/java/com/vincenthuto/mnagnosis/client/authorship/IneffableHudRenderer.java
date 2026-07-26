@@ -43,6 +43,16 @@ public final class IneffableHudRenderer {
         return resourcePixels(amount, maximum);
     }
 
+    public static ManaGeometry manaGeometry(float amount, float maximum) {
+        int width = manaPixels(amount, maximum);
+        return new ManaGeometry(
+                width,
+                0,
+                CHANNEL_HEIGHT - 1,
+                width > 0 ? width - 1 : -1
+        );
+    }
+
     public static int paradoxPixels(float amount, float maximum) {
         return resourcePixels(amount, maximum);
     }
@@ -60,12 +70,12 @@ public final class IneffableHudRenderer {
     public static List<DetailNode> detailNodes(FrameState state) {
         int displacement = state == FrameState.DESYNCHRONIZED ? 1 : 0;
         return List.of(
-                new DetailNode(FRAME_X + 24 - displacement, FRAME_Y - 3, 5),
-                new DetailNode(FRAME_X + 31 - displacement, FRAME_Y, 3),
-                new DetailNode(FRAME_X + 119 + displacement,
-                        FRAME_Y + FRAME_HEIGHT, 5),
+                new DetailNode(FRAME_X + 25 - displacement, FRAME_Y - 2, 3),
+                new DetailNode(FRAME_X + 31 - displacement, FRAME_Y, 2),
+                new DetailNode(FRAME_X + 120 + displacement,
+                        FRAME_Y + FRAME_HEIGHT - 1, 3),
                 new DetailNode(FRAME_X + 126 + displacement,
-                        FRAME_Y + FRAME_HEIGHT - 3, 3)
+                        FRAME_Y + FRAME_HEIGHT - 3, 2)
         );
     }
 
@@ -91,7 +101,7 @@ public final class IneffableHudRenderer {
         ClientAuthorshipState.Snapshot snapshot = ClientAuthorshipState.current();
         float paradox = Math.max(mana.getParadox(), snapshot.paradox());
         float maximum = mana.getMaxAmount();
-        int manaWidth = manaPixels(mana.getAmount(), maximum);
+        ManaGeometry manaGeometry = manaGeometry(mana.getAmount(), maximum);
         int paradoxWidth = paradoxPixels(paradox, maximum);
         FrameState state = frameState(paradox / maximum);
 
@@ -102,8 +112,7 @@ public final class IneffableHudRenderer {
 
         int channelLeft = FRAME_X + CHANNEL_X;
         int channelTop = FRAME_Y + CHANNEL_Y;
-        graphics.fill(channelLeft, channelTop,
-                channelLeft + manaWidth, channelTop + CHANNEL_HEIGHT, WHITE);
+        drawMana(graphics, channelLeft, channelTop, manaGeometry);
         drawParadox(graphics, channelLeft + CHANNEL_WIDTH - paradoxWidth,
                 channelTop, paradoxWidth);
         drawExperience(graphics, FRAME_X, FRAME_Y, magic);
@@ -213,6 +222,25 @@ public final class IneffableHudRenderer {
         }
     }
 
+    private static void drawMana(
+            GuiGraphics graphics,
+            int x,
+            int y,
+            ManaGeometry geometry
+    ) {
+        if (geometry.width() <= 0) {
+            return;
+        }
+        int endX = x + geometry.width();
+        graphics.fill(x, y + geometry.topRailY(),
+                endX, y + geometry.topRailY() + RAIL_THICKNESS, WHITE);
+        graphics.fill(x, y + geometry.bottomRailY(),
+                endX, y + geometry.bottomRailY() + RAIL_THICKNESS, WHITE);
+        graphics.fill(x + geometry.leadingEdgeX(), y,
+                x + geometry.leadingEdgeX() + RAIL_THICKNESS,
+                y + CHANNEL_HEIGHT, WHITE);
+    }
+
     private static void drawExperience(
             GuiGraphics graphics,
             int frameX,
@@ -246,23 +274,23 @@ public final class IneffableHudRenderer {
 
         // Upper-left rail folds down into the channel before rejoining the frame.
         graphics.fill(x + 13 + topShift, y + 3,
-                x + 40 + topShift, y + 6, BLACK);
+                x + 38 + topShift, y + 5, BLACK);
         graphics.fill(x + 14 + topShift, y + 3,
                 x + 17 + topShift, y + 4, WHITE);
         graphics.fill(x + 17 + topShift, y + 4,
-                x + 32 + topShift, y + 5, WHITE);
-        graphics.fill(x + 32 + topShift, y + 3,
-                x + 35 + topShift, y + 4, WHITE);
+                x + 31 + topShift, y + 5, WHITE);
+        graphics.fill(x + 31 + topShift, y + 3,
+                x + 34 + topShift, y + 4, WHITE);
 
         // Lower-right rail rises into the channel as an opposing law branch.
-        graphics.fill(x + 96 + bottomShift, y + 8,
-                x + 137 + bottomShift, y + 12, BLACK);
-        graphics.fill(x + 101 + bottomShift, y + 10,
-                x + 104 + bottomShift, y + 11, WHITE);
-        graphics.fill(x + 104 + bottomShift, y + 9,
-                x + 128 + bottomShift, y + 10, WHITE);
-        graphics.fill(x + 128 + bottomShift, y + 10,
-                x + 132 + bottomShift, y + 11, WHITE);
+        graphics.fill(x + 98 + bottomShift, y + 9,
+                x + 136 + bottomShift, y + 12, BLACK);
+        graphics.fill(x + 102 + bottomShift, y + 10,
+                x + 105 + bottomShift, y + 11, WHITE);
+        graphics.fill(x + 105 + bottomShift, y + 9,
+                x + 127 + bottomShift, y + 10, WHITE);
+        graphics.fill(x + 127 + bottomShift, y + 10,
+                x + 131 + bottomShift, y + 11, WHITE);
 
         for (DetailNode node : detailNodes(state)) {
             drawDetailNode(graphics, node);
@@ -278,9 +306,11 @@ public final class IneffableHudRenderer {
                 node.y() + node.size() + 1, BLACK);
         graphics.fill(node.x(), node.y(),
                 node.x() + node.size(), node.y() + node.size(), WHITE);
-        graphics.fill(node.x() + 1, node.y() + 1,
-                node.x() + node.size() - 1,
-                node.y() + node.size() - 1, BLACK);
+        if (node.size() >= 3) {
+            graphics.fill(node.x() + 1, node.y() + 1,
+                    node.x() + node.size() - 1,
+                    node.y() + node.size() - 1, BLACK);
+        }
     }
 
     private static void drawDesynchronization(
@@ -314,6 +344,14 @@ public final class IneffableHudRenderer {
     }
 
     public record DetailNode(int x, int y, int size) {
+    }
+
+    public record ManaGeometry(
+            int width,
+            int topRailY,
+            int bottomRailY,
+            int leadingEdgeX
+    ) {
     }
 
     public enum FrameState {
