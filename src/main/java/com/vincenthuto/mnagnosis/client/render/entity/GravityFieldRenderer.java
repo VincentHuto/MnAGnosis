@@ -34,6 +34,7 @@ public final class GravityFieldRenderer extends EntityRenderer<GravityFieldEntit
             int packedLight
     ) {
         poseStack.pushPose();
+        poseStack.translate(0,1.5,0);
         float horizonRadius = horizonRadius(entity.getRadius());
         renderEventHorizon(poseStack, buffers, horizonRadius);
         renderPhotonRings(entity, partialTick, poseStack, buffers, horizonRadius);
