@@ -7,6 +7,7 @@ import com.vincenthuto.mnagnosis.client.render.entity.TruthRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.GravityFieldRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.LivingLandControllerRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.LivingLandStrikeRenderer;
+import com.vincenthuto.mnagnosis.client.render.gravity.GravityLensController;
 import com.vincenthuto.mnagnosis.client.truth.TruthSceneController;
 import com.vincenthuto.mnagnosis.client.render.item.*;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
@@ -18,6 +19,7 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -48,6 +50,7 @@ public class ClientEvents {
 	@SubscribeEvent
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
 		TruthSceneController.reset(Minecraft.getInstance());
+		GravityLensController.reset();
 	}
 
 	public static boolean isKeyDown(KeyMapping keybind) {
@@ -67,7 +70,7 @@ public class ClientEvents {
 
 	@SubscribeEvent
 	public static void renderLevelLastEvent(RenderLevelStageEvent event) {
-
+		GravityLensController.render(event);
 	}
 
 
@@ -162,6 +165,16 @@ public class ClientEvents {
 					throw new UncheckedIOException(e);
 				}
 			});
+		}
+
+		@SubscribeEvent
+		public static void registerReloadListeners(
+				RegisterClientReloadListenersEvent event
+		) {
+			event.registerReloadListener(
+					(ResourceManagerReloadListener) resourceManager ->
+							GravityLensController.reset()
+			);
 		}
 
 		@SubscribeEvent

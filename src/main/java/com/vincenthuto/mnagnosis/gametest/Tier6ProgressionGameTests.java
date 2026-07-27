@@ -1585,12 +1585,19 @@ public final class Tier6ProgressionGameTests {
         ClassLoader resources = Tier6ProgressionGameTests.class.getClassLoader();
         String rendererClass =
                 "com/vincenthuto/mnagnosis/client/render/entity/GravityFieldRenderer.class";
+        String lensControllerClass =
+                "com/vincenthuto/mnagnosis/client/render/gravity/GravityLensController.class";
         List<String> required = List.of(
                 "data/mnagnosis/recipes/components/gravity_convergence.json",
                 "data/mnagnosis/recipes/polarity.json",
                 "assets/mnagnosis/textures/spell/component/gravity_convergence.png",
                 "assets/mnagnosis/textures/spell/modifier/polarity.png",
-                rendererClass
+                rendererClass,
+                lensControllerClass,
+                "assets/mnagnosis/shaders/post/gravity_lens.json",
+                "assets/mnagnosis/shaders/program/gravity_lens.json",
+                "assets/mnagnosis/shaders/program/gravity_lens.vsh",
+                "assets/mnagnosis/shaders/program/gravity_lens.fsh"
         );
         helper.assertTrue(required.stream().allMatch(path ->
                         resources.getResource(path) != null),
@@ -1622,6 +1629,25 @@ public final class Tier6ProgressionGameTests {
                         "Gravity Field renderer did not contain a spherical event "
                                 + "horizon and segmented photon ring"
                 );
+            }
+            try (InputStream programStream = resources.getResourceAsStream(
+                    "assets/mnagnosis/shaders/program/gravity_lens.json"
+            ); InputStream fragmentStream = resources.getResourceAsStream(
+                    "assets/mnagnosis/shaders/program/gravity_lens.fsh"
+            )) {
+                String program = new String(
+                        programStream.readAllBytes(), StandardCharsets.UTF_8
+                );
+                String fragment = new String(
+                        fragmentStream.readAllBytes(), StandardCharsets.UTF_8
+                );
+                helper.assertTrue(program.contains("\"Lens0\"")
+                                && program.contains("\"Lens1\"")
+                                && program.contains("\"Lens2\""),
+                        "Gravity lens shader did not expose all three field uniforms");
+                helper.assertTrue(fragment.contains("bendLens")
+                                && fragment.contains("DiffuseSampler"),
+                        "Gravity lens fragment program did not bend the scene sample");
             }
         } catch (Exception exception) {
             helper.fail("Could not read Gravity Convergence recipes: "

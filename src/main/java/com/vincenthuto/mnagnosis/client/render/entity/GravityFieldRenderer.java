@@ -41,7 +41,7 @@ public final class GravityFieldRenderer extends EntityRenderer<GravityFieldEntit
         super.render(entity, entityYaw, partialTick, poseStack, buffers, packedLight);
     }
 
-    private static float horizonRadius(float fieldRadius) {
+    public static float horizonRadius(float fieldRadius) {
         return 0.65F + fieldRadius * 0.035F;
     }
 
