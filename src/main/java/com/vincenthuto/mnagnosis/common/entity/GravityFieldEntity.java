@@ -2,6 +2,8 @@ package com.vincenthuto.mnagnosis.common.entity;
 
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
+import com.vincenthuto.mnagnosis.common.spell.gravity.GravityRuptureMath;
+import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -26,8 +28,11 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public final class GravityFieldEntity extends Entity {
@@ -105,6 +110,9 @@ public final class GravityFieldEntity extends Entity {
             discard();
             return;
         }
+        if (tryCollapseCluster(serverLevel)) {
+            return;
+        }
 
         int remaining = getRemainingTicks() - 1;
         entityData.set(REMAINING_TICKS, remaining);
@@ -113,6 +121,69 @@ public final class GravityFieldEntity extends Entity {
             return;
         }
         applyForces(serverLevel);
+    }
+
+    private boolean tryCollapseCluster(ServerLevel level) {
+        List<GravityFieldEntity> activeFields = new ArrayList<>();
+        for (Entity entity : level.getAllEntities()) {
+            if (entity instanceof GravityFieldEntity field
+                    && !field.isRemoved()
+                    && field.updateAnchor(level)) {
+                activeFields.add(field);
+            }
+        }
+
+        Set<GravityFieldEntity> cluster = new HashSet<>();
+        ArrayDeque<GravityFieldEntity> frontier = new ArrayDeque<>();
+        cluster.add(this);
+        frontier.add(this);
+        while (!frontier.isEmpty()) {
+            GravityFieldEntity current = frontier.removeFirst();
+            for (GravityFieldEntity candidate : activeFields) {
+                if (cluster.contains(candidate)
+                        || !coresCollide(current, candidate)) {
+                    continue;
+                }
+                cluster.add(candidate);
+                frontier.addLast(candidate);
+            }
+        }
+        if (cluster.size() < 2
+                || cluster.stream().mapToInt(Entity::getId).min().orElse(getId())
+                != getId()) {
+            return false;
+        }
+
+        double totalWeight = 0.0D;
+        Vec3 weightedCenter = Vec3.ZERO;
+        for (GravityFieldEntity field : cluster) {
+            double weight = field.getRadius();
+            totalWeight += weight;
+            weightedCenter = weightedCenter.add(field.position().scale(weight));
+        }
+        Vec3 ruptureCenter = totalWeight <= 0.0D
+                ? position()
+                : weightedCenter.scale(1.0D / totalWeight);
+        GravityRuptureEntity rupture = new GravityRuptureEntity(
+                EntityRegistry.GRAVITY_RUPTURE.get(), level
+        );
+        rupture.configure(ruptureCenter, cluster.size());
+        if (!level.addFreshEntity(rupture)) {
+            return false;
+        }
+        cluster.forEach(Entity::discard);
+        return true;
+    }
+
+    private static boolean coresCollide(
+            GravityFieldEntity first,
+            GravityFieldEntity second
+    ) {
+        float collisionDistance = GravityRuptureMath.collisionDistance(
+                first.getRadius(), second.getRadius()
+        );
+        return first.position().distanceToSqr(second.position())
+                <= collisionDistance * collisionDistance;
     }
 
     private void spawnClientLattice() {

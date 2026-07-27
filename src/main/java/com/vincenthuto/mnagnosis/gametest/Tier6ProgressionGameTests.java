@@ -37,6 +37,7 @@ import com.vincenthuto.mnagnosis.client.authorship.CounterlawHudRenderer;
 import com.vincenthuto.mnagnosis.client.authorship.IneffableHudRenderer;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityFieldEntity;
+import com.vincenthuto.mnagnosis.common.entity.GravityRuptureEntity;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandControllerEntity;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandStrikeEntity;
 import com.vincenthuto.mnagnosis.common.event.CommontEvents;
@@ -1529,6 +1530,166 @@ public final class Tier6ProgressionGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void collidingFixedGravityFieldsCreateOneRupture(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "fixed_rupture")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        int ruptureBaseline = highestGravityRuptureId(helper);
+        Vec3 center = helper.absolutePos(
+                new net.minecraft.core.BlockPos(3, 3, 3)
+        ).getCenter();
+        GravityFieldEntity first = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.FIXED,
+                null, center
+        );
+        GravityFieldEntity second = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.FIXED,
+                null, center.add(1.7D, 0.0D, 0.0D)
+        );
+        Vec3 expectedRupture = center.add(0.85D, 0.0D, 0.0D);
+
+        first.tick();
+
+        helper.assertTrue(first.isRemoved() && second.isRemoved(),
+                "Touching fixed gravity fields were not consumed");
+        int fixedRuptures =
+                countGravityRupturesNear(
+                        helper, expectedRupture, 0.2D, ruptureBaseline
+                );
+        helper.assertTrue(fixedRuptures == 1,
+                "A fixed/fixed collision created " + fixedRuptures
+                        + " ruptures instead of one; removed="
+                        + first.isRemoved() + "/" + second.isRemoved()
+                        + ", expected=" + expectedRupture);
+
+        GravityFieldEntity separatedFirst = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.FIXED,
+                null, center.add(0.0D, 0.0D, 8.0D)
+        );
+        GravityFieldEntity separatedSecond = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.FIXED,
+                null, center.add(4.0D, 0.0D, 8.0D)
+        );
+        separatedFirst.tick();
+        helper.assertTrue(!separatedFirst.isRemoved() && !separatedSecond.isRemoved()
+                        && countGravityRupturesNear(
+                        helper, expectedRupture, 0.2D, ruptureBaseline
+                ) == 1,
+                "Separated gravity cores ruptured without colliding");
+        separatedFirst.discard();
+        separatedSecond.discard();
+        discardGravityRupturesAfter(helper, ruptureBaseline);
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void attachedGravityFieldsCollideWithEveryAnchorType(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "moving_rupture")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        int ruptureBaseline = highestGravityRuptureId(helper);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 6, 3, 3);
+        caster.setPos(target.position().add(-1.6D, 0.0D, 0.0D));
+
+        GravityFieldEntity targetField = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.TARGET,
+                target, target.position().add(8.0D, 0.0D, 0.0D)
+        );
+        GravityFieldEntity fixedField = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.FIXED,
+                null, target.position().add(1.7D, 0.0D, 0.0D)
+        );
+        Vec3 targetFixedCenter = target.position().add(0.85D, 0.0D, 0.0D);
+        targetField.tick();
+        int targetFixedRuptures =
+                countGravityRupturesNear(
+                        helper, targetFixedCenter, 0.2D, ruptureBaseline
+                );
+        helper.assertTrue(targetField.isRemoved() && fixedField.isRemoved()
+                        && targetFixedRuptures == 1,
+                "A target-bound/stationary collision state was removed="
+                        + targetField.isRemoved() + "/" + fixedField.isRemoved()
+                        + ", ruptures=" + targetFixedRuptures
+                        + ", expected=" + targetFixedCenter);
+
+        GravityFieldEntity casterField = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.CASTER,
+                null, caster.position().add(9.0D, 0.0D, 0.0D)
+        );
+        GravityFieldEntity secondTargetField = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.TARGET,
+                target, target.position().add(-9.0D, 0.0D, 0.0D)
+        );
+        Vec3 attachedCenter = caster.position().add(target.position()).scale(0.5D);
+        casterField.tick();
+        helper.assertTrue(casterField.isRemoved() && secondTargetField.isRemoved()
+                        && countGravityRupturesNear(
+                        helper, attachedCenter, 0.2D, ruptureBaseline
+                ) == 1,
+                "Two entity-attached fields did not collide after anchor movement");
+        discardGravityRupturesAfter(helper, ruptureBaseline);
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void transitiveGravityCollisionCreatesOneScaledRupture(
+            GameTestHelper helper
+    ) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "cluster_rupture")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        int ruptureBaseline = highestGravityRuptureId(helper);
+        Vec3 center = helper.absolutePos(
+                new net.minecraft.core.BlockPos(3, 3, 3)
+        ).getCenter();
+        GravityFieldEntity first = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.FIXED,
+                null, center
+        );
+        GravityFieldEntity second = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.FIXED,
+                null, center.add(1.7D, 0.0D, 0.0D)
+        );
+        GravityFieldEntity third = configuredGravityField(
+                helper, caster, GravityFieldEntity.GravityAnchorMode.FIXED,
+                null, center.add(3.4D, 0.0D, 0.0D)
+        );
+
+        first.tick();
+
+        helper.assertTrue(first.isRemoved() && second.isRemoved() && third.isRemoved(),
+                "A transitive gravity collision did not consume its whole cluster");
+        Vec3 expectedRupture = center.add(1.7D, 0.0D, 0.0D);
+        GravityRuptureEntity rupture =
+                newestGravityRuptureNear(
+                        helper, expectedRupture, 0.2D, ruptureBaseline
+                );
+        int clusterRuptures =
+                countGravityRupturesNear(
+                        helper, expectedRupture, 0.2D, ruptureBaseline
+                );
+        helper.assertTrue(clusterRuptures == 1
+                        && rupture.getFieldCount() == 3
+                        && rupture.getMaximumRadius() == 12.0F,
+                "A three-field cluster resolved as ruptures=" + clusterRuptures
+                        + ", fields=" + rupture.getFieldCount()
+                        + ", radius=" + rupture.getMaximumRadius()
+                        + ", expected=" + expectedRupture);
+        discardGravityRupturesAfter(helper, ruptureBaseline);
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void gravityConvergenceRegistersItsAuthoredAttributes(
             GameTestHelper helper
     ) {
@@ -2332,6 +2493,88 @@ public final class Tier6ProgressionGameTests {
             throw new IllegalStateException("No active gravity field");
         }
         return newest;
+    }
+
+    private static GravityFieldEntity configuredGravityField(
+            GameTestHelper helper,
+            Entity owner,
+            GravityFieldEntity.GravityAnchorMode anchorMode,
+            Entity trackedTarget,
+            Vec3 position
+    ) {
+        GravityFieldEntity field = new GravityFieldEntity(
+                EntityRegistry.GRAVITY_FIELD.get(), helper.getLevel()
+        );
+        field.configure(
+                owner, anchorMode, trackedTarget, position,
+                GravityPolarity.ATTRACT, 5.0F, 200, 1.0F, 1.0F
+        );
+        helper.getLevel().addFreshEntity(field);
+        return field;
+    }
+
+    private static GravityRuptureEntity newestGravityRuptureNear(
+            GameTestHelper helper,
+            Vec3 center,
+            double radius,
+            int minimumExclusiveId
+    ) {
+        GravityRuptureEntity newest = null;
+        double radiusSquared = radius * radius;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof GravityRuptureEntity rupture
+                    && !rupture.isRemoved()
+                    && rupture.getId() > minimumExclusiveId
+                    && rupture.position().distanceToSqr(center) <= radiusSquared
+                    && (newest == null || rupture.getId() > newest.getId())) {
+                newest = rupture;
+            }
+        }
+        if (newest == null) {
+            throw new IllegalStateException("No active gravity rupture");
+        }
+        return newest;
+    }
+
+    private static int countGravityRupturesNear(
+            GameTestHelper helper,
+            Vec3 center,
+            double radius,
+            int minimumExclusiveId
+    ) {
+        int count = 0;
+        double radiusSquared = radius * radius;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof GravityRuptureEntity rupture
+                    && !rupture.isRemoved()
+                    && rupture.getId() > minimumExclusiveId
+                    && rupture.position().distanceToSqr(center) <= radiusSquared) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int highestGravityRuptureId(GameTestHelper helper) {
+        int highest = -1;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof GravityRuptureEntity rupture) {
+                highest = Math.max(highest, rupture.getId());
+            }
+        }
+        return highest;
+    }
+
+    private static void discardGravityRupturesAfter(
+            GameTestHelper helper,
+            int minimumExclusiveId
+    ) {
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof GravityRuptureEntity rupture
+                    && rupture.getId() > minimumExclusiveId) {
+                rupture.discard();
+            }
+        }
     }
 
     private static int countOwnedGravityFields(GameTestHelper helper, UUID ownerId) {

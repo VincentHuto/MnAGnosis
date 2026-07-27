@@ -3,6 +3,7 @@ package com.vincenthuto.mnagnosis.common.registry;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityFieldEntity;
+import com.vincenthuto.mnagnosis.common.entity.GravityRuptureEntity;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandControllerEntity;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandStrikeEntity;
 import net.minecraft.world.entity.EntityType;
@@ -34,6 +35,19 @@ public final class EntityRegistry {
                             .clientTrackingRange(16)
                             .updateInterval(1)
                             .build(MnAGnosis.rloc("gravity_field").toString())
+            );
+
+    public static final RegistryObject<EntityType<GravityRuptureEntity>>
+            GRAVITY_RUPTURE = ENTITIES.register(
+                    "gravity_rupture",
+                    () -> EntityType.Builder
+                            .<GravityRuptureEntity>of(
+                                    GravityRuptureEntity::new, MobCategory.MISC
+                            )
+                            .sized(0.1F, 0.1F)
+                            .clientTrackingRange(24)
+                            .updateInterval(1)
+                            .build(MnAGnosis.rloc("gravity_rupture").toString())
             );
 
     public static final RegistryObject<EntityType<LivingLandStrikeEntity>> LIVING_LAND_STRIKE =
