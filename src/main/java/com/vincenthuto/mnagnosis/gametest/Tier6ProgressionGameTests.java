@@ -69,6 +69,7 @@ import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTendrilMath;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
 import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleScale;
 import com.vincenthuto.mnagnosis.common.particle.IneffableSpellVisuals;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.gametest.framework.GameTest;
@@ -175,6 +176,22 @@ public final class Tier6ProgressionGameTests {
         assertClasspathResource(
                 helper,
                 "/assets/mnagnosis/textures/particle/ineffable_white_cube.png"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableCubeParticlesStayAtQuarterScale(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(
+                Math.abs(IneffableParticleScale.baseHalfSize(0.0F) - 0.019F)
+                        < 0.00001F,
+                "Minimum cube half-size must remain at quarter scale"
+        );
+        helper.assertTrue(
+                IneffableParticleScale.baseHalfSize(1.0F) * 2.0F <= 0.060F,
+                "Maximum cube width must not exceed 0.060 blocks"
         );
         helper.succeed();
     }

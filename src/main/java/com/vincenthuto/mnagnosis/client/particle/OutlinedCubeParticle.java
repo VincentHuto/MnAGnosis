@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.client.particle;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleScale;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
@@ -43,7 +44,7 @@ public final class OutlinedCubeParticle extends TextureSheetParticle {
         this.spinOffset = random.nextFloat() * ((float) Math.PI * 2.0F);
         this.spinRate = 0.10F + random.nextFloat() * 0.14F;
         this.lifetime = 18 + random.nextInt(11);
-        this.quadSize = 0.075F + random.nextFloat() * 0.045F;
+        this.quadSize = IneffableParticleScale.baseHalfSize(random.nextFloat());
         this.friction = 0.92F;
         this.gravity = 0.0F;
         this.hasPhysics = false;
