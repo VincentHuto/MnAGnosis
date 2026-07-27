@@ -1583,12 +1583,14 @@ public final class Tier6ProgressionGameTests {
             GameTestHelper helper
     ) {
         ClassLoader resources = Tier6ProgressionGameTests.class.getClassLoader();
+        String rendererClass =
+                "com/vincenthuto/mnagnosis/client/render/entity/GravityFieldRenderer.class";
         List<String> required = List.of(
                 "data/mnagnosis/recipes/components/gravity_convergence.json",
                 "data/mnagnosis/recipes/polarity.json",
                 "assets/mnagnosis/textures/spell/component/gravity_convergence.png",
                 "assets/mnagnosis/textures/spell/modifier/polarity.png",
-                "com/vincenthuto/mnagnosis/client/render/entity/GravityFieldRenderer.class"
+                rendererClass
         );
         helper.assertTrue(required.stream().allMatch(path ->
                         resources.getResource(path) != null),
@@ -1609,6 +1611,18 @@ public final class Tier6ProgressionGameTests {
                             && SpellComponentRegistry.POLARITY_ID.toString()
                             .equals(modifierRecipe.get("output").getAsString()),
                     "Polarity recipe was not its Tier 6 registry output");
+            try (InputStream rendererStream =
+                         resources.getResourceAsStream(rendererClass)) {
+                String rendererBytecode = new String(
+                        rendererStream.readAllBytes(), StandardCharsets.ISO_8859_1
+                );
+                helper.assertTrue(
+                        rendererBytecode.contains("HORIZON_LATITUDE_SEGMENTS")
+                                && rendererBytecode.contains("PHOTON_RING_SEGMENTS"),
+                        "Gravity Field renderer did not contain a spherical event "
+                                + "horizon and segmented photon ring"
+                );
+            }
         } catch (Exception exception) {
             helper.fail("Could not read Gravity Convergence recipes: "
                     + exception.getMessage());
