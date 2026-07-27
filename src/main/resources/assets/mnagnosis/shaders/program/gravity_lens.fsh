@@ -16,23 +16,30 @@ const float STABLE_LENS_STRENGTH = 1.0;
 
 vec2 bendLens(
         vec2 uv,
+        vec2 screenUv,
         vec4 lens,
         float phase,
         inout float ringLight,
         inout vec2 mirroredUv,
-        inout float mirrorMix
+        inout float mirrorMix,
+        inout float eventHorizonMask
 ) {
     if (lens.z <= 0.0) {
         return uv;
     }
 
-    vec2 deltaPixels = (uv - lens.xy) * InSize;
+    vec2 deltaPixels = (screenUv - lens.xy) * InSize;
     float distancePixels = length(deltaPixels);
     if (distancePixels < 0.001) {
+        eventHorizonMask = 1.0;
         return uv;
     }
 
     float normalizedDistance = distancePixels / lens.z;
+    eventHorizonMask = max(
+            eventHorizonMask,
+            1.0 - smoothstep(0.96, 1.005, normalizedDistance)
+    );
     if (normalizedDistance >= LENS_HALO_RADIUS) {
         return uv;
     }
@@ -105,18 +112,27 @@ void main() {
     vec2 warpedUv = texCoord;
     vec2 mirroredUv = texCoord;
     float mirrorMix = 0.0;
+    float eventHorizonMask = 0.0;
     float ringLight = 0.0;
     warpedUv = bendLens(
-            warpedUv, Lens0, 0.0, ringLight, mirroredUv, mirrorMix
+            warpedUv, texCoord, Lens0, 0.0, ringLight, mirroredUv, mirrorMix,
+            eventHorizonMask
     );
     warpedUv = bendLens(
-            warpedUv, Lens1, 2.0944, ringLight, mirroredUv, mirrorMix
+            warpedUv, texCoord, Lens1, 2.0944, ringLight, mirroredUv, mirrorMix,
+            eventHorizonMask
     );
     warpedUv = bendLens(
-            warpedUv, Lens2, 4.1888, ringLight, mirroredUv, mirrorMix
+            warpedUv, texCoord, Lens2, 4.1888, ringLight, mirroredUv, mirrorMix,
+            eventHorizonMask
     );
 
     vec4 scene = sampleBentSpace(warpedUv, mirroredUv, mirrorMix);
     scene.rgb = min(vec3(1.0), scene.rgb + vec3(min(ringLight, 0.82)));
+    scene.rgb = mix(
+            scene.rgb,
+            vec3(0.0),
+            clamp(eventHorizonMask, 0.0, 1.0)
+    );
     fragColor = scene;
 }

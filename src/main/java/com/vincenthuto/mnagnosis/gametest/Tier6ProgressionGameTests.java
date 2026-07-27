@@ -1978,6 +1978,7 @@ public final class Tier6ProgressionGameTests {
                         "Gravity lens shader did not expose all three field uniforms");
                 helper.assertTrue(fragment.contains("sampleBentSpace")
                                 && fragment.contains("mirroredUv")
+                                && fragment.contains("eventHorizonMask")
                                 && fragment.contains("LENS_HALO_RADIUS")
                                 && fragment.contains("STABLE_LENS_STRENGTH")
                                 && fragment.contains("DiffuseSampler"),
