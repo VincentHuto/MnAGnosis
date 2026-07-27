@@ -54,6 +54,7 @@ import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
 import com.vincenthuto.mnagnosis.common.spell.ComponentGravityConvergence;
 import com.vincenthuto.mnagnosis.common.spell.ComponentLivingLand;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
+import com.vincenthuto.mnagnosis.common.spell.gravity.GravityLensMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTerrain;
@@ -1337,6 +1338,31 @@ public final class Tier6ProgressionGameTests {
                 "Exact-center gravity produced a non-finite vector");
         helper.assertTrue(centered.dot(new Vec3(0.5D, -0.25D, 0.125D)) < 0.0D,
                 "Exact-center attraction did not damp current velocity");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityLensMathIsBoundedAndPolarityAware(GameTestHelper helper) {
+        float horizonAttraction = GravityLensMath.distortion(1.05F, false);
+        float outerAttraction = GravityLensMath.distortion(3.5F, false);
+        float horizonRepulsion = GravityLensMath.distortion(1.05F, true);
+
+        helper.assertTrue(Float.isFinite(horizonAttraction)
+                        && Float.isFinite(outerAttraction)
+                        && Float.isFinite(horizonRepulsion),
+                "Gravity lens falloff produced a non-finite value");
+        helper.assertTrue(horizonAttraction > outerAttraction
+                        && outerAttraction > 0.0F,
+                "Gravity lens falloff was not strongest near the horizon");
+        helper.assertTrue(horizonRepulsion < 0.0F
+                        && Math.abs(horizonRepulsion + horizonAttraction) < 1.0E-5F,
+                "Repulsive gravity did not reverse the lens sampling direction");
+        helper.assertTrue(GravityLensMath.distortion(4.0F, false) == 0.0F
+                        && GravityLensMath.distortion(8.0F, false) == 0.0F,
+                "Gravity lens distortion escaped its bounded halo");
+        helper.assertTrue(GravityLensMath.clampScreenRadius(-20.0F) == 2.0F
+                        && GravityLensMath.clampScreenRadius(900.0F) == 640.0F,
+                "Gravity lens screen radius did not clamp to safe bounds");
         helper.succeed();
     }
 
