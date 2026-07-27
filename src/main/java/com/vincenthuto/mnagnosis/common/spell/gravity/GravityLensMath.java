@@ -33,4 +33,16 @@ public final class GravityLensMath {
         }
         return Math.max(MIN_SCREEN_RADIUS, Math.min(screenRadius, MAX_SCREEN_RADIUS));
     }
+
+    public static float framebufferCoordinate(
+            float clipCoordinate,
+            float clipW
+    ) {
+        if (!Float.isFinite(clipCoordinate)
+                || !Float.isFinite(clipW)
+                || Math.abs(clipW) <= 1.0E-4F) {
+            return Float.NaN;
+        }
+        return 0.5F - clipCoordinate / clipW * 0.5F;
+    }
 }

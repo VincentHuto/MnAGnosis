@@ -262,15 +262,14 @@ public final class GravityLensController {
                 (float) relative.y,
                 (float) relative.z
         );
-        new Quaternionf(camera.rotation()).conjugate().transform(viewPosition);
+        new Quaternionf(camera.rotation()).transform(viewPosition);
         Vector4f clip = new Vector4f(viewPosition, 1.0F);
         projection.transform(clip);
         if (!Float.isFinite(clip.w()) || clip.w() <= 1.0E-4F) {
             return null;
         }
-        float inverseW = 1.0F / clip.w();
-        float x = clip.x() * inverseW * 0.5F + 0.5F;
-        float y = clip.y() * inverseW * 0.5F + 0.5F;
+        float x = GravityLensMath.framebufferCoordinate(clip.x(), clip.w());
+        float y = GravityLensMath.framebufferCoordinate(clip.y(), clip.w());
         if (!Float.isFinite(x) || !Float.isFinite(y)) {
             return null;
         }

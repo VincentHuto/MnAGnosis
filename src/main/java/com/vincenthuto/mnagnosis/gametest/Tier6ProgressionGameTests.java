@@ -1367,6 +1367,14 @@ public final class Tier6ProgressionGameTests {
         helper.assertTrue(GravityLensMath.clampScreenRadius(-20.0F) == 2.0F
                         && GravityLensMath.clampScreenRadius(900.0F) == 640.0F,
                 "Gravity lens screen radius did not clamp to safe bounds");
+        helper.assertTrue(
+                Math.abs(GravityLensMath.framebufferCoordinate(1.0F, 2.0F)
+                        - 0.25F) < 1.0E-5F
+                        && Math.abs(GravityLensMath.framebufferCoordinate(-1.0F, 2.0F)
+                        - 0.75F) < 1.0E-5F,
+                "Gravity lens clip coordinates were not mapped into the "
+                        + "framebuffer orientation"
+        );
         helper.succeed();
     }
 
