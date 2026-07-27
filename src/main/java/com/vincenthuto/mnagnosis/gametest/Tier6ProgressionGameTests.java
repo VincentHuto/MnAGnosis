@@ -69,6 +69,7 @@ import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTendrilMath;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
 import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
+import com.vincenthuto.mnagnosis.common.particle.IneffableCubeParticleOptions;
 import com.vincenthuto.mnagnosis.common.particle.IneffableParticleScale;
 import com.vincenthuto.mnagnosis.common.particle.IneffableSpellVisuals;
 import net.minecraft.commands.CommandSourceStack;
@@ -192,6 +193,43 @@ public final class Tier6ProgressionGameTests {
         helper.assertTrue(
                 IneffableParticleScale.baseHalfSize(1.0F) * 2.0F <= 0.060F,
                 "Maximum cube width must not exceed 0.060 blocks"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableCubeParticlePayloadCarriesRuntimeScale(
+            GameTestHelper helper
+    ) {
+        IneffableCubeParticleOptions enlarged =
+                ParticleRegistry.INEFFABLE_BLACK_CUBE.get().options(2.5F);
+        helper.assertTrue(
+                Math.abs(enlarged.scale() - 2.5F) < 0.00001F,
+                "Particle payload must preserve its runtime scale"
+        );
+        helper.assertTrue(
+                Math.abs(
+                        IneffableParticleScale.baseHalfSize(0.0F, enlarged.scale())
+                                - 0.0475F
+                ) < 0.00001F,
+                "Runtime scale must multiply the minimum cube half-size"
+        );
+        helper.assertTrue(
+                Math.abs(
+                        IneffableParticleScale.baseHalfSize(1.0F, enlarged.scale())
+                                - 0.075F
+                ) < 0.00001F,
+                "Runtime scale must multiply the maximum cube half-size"
+        );
+        helper.assertTrue(
+                ParticleRegistry.INEFFABLE_WHITE_CUBE.get().options(Float.NaN)
+                        .scale() == 1.0F,
+                "Non-finite particle scale must normalize to one"
+        );
+        helper.assertTrue(
+                ParticleRegistry.INEFFABLE_WHITE_CUBE.get().options(0.0F)
+                        .scale() == 1.0F,
+                "Non-positive particle scale must normalize to one"
         );
         helper.succeed();
     }

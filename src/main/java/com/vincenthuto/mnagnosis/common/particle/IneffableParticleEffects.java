@@ -1,7 +1,6 @@
 package com.vincenthuto.mnagnosis.common.particle;
 
 import com.vincenthuto.mnagnosis.common.registry.ParticleRegistry;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -12,10 +11,14 @@ public final class IneffableParticleEffects {
     private IneffableParticleEffects() {
     }
 
-    public static SimpleParticleType variant(int sample) {
+    public static IneffableCubeParticleType variant(int sample) {
         return (sample & 1) == 0
                 ? ParticleRegistry.INEFFABLE_BLACK_CUBE.get()
                 : ParticleRegistry.INEFFABLE_WHITE_CUBE.get();
+    }
+
+    public static IneffableCubeParticleOptions options(int sample, float scale) {
+        return variant(sample).options(scale);
     }
 
     public static void add(
@@ -24,8 +27,18 @@ public final class IneffableParticleEffects {
             Vec3 position,
             Vec3 velocity
     ) {
+        add(level, sample, position, velocity, 1.0F);
+    }
+
+    public static void add(
+            Level level,
+            int sample,
+            Vec3 position,
+            Vec3 velocity,
+            float scale
+    ) {
         level.addParticle(
-                variant(sample),
+                options(sample, scale),
                 position.x, position.y, position.z,
                 velocity.x, velocity.y, velocity.z
         );
@@ -40,13 +53,30 @@ public final class IneffableParticleEffects {
             double spreadZ,
             double speed
     ) {
+        cloud(
+                level, center, countPerVariant,
+                spreadX, spreadY, spreadZ, speed,
+                1.0F
+        );
+    }
+
+    public static void cloud(
+            ServerLevel level,
+            Vec3 center,
+            int countPerVariant,
+            double spreadX,
+            double spreadY,
+            double spreadZ,
+            double speed,
+            float scale
+    ) {
         level.sendParticles(
-                ParticleRegistry.INEFFABLE_BLACK_CUBE.get(),
+                ParticleRegistry.INEFFABLE_BLACK_CUBE.get().options(scale),
                 center.x, center.y, center.z,
                 countPerVariant, spreadX, spreadY, spreadZ, speed
         );
         level.sendParticles(
-                ParticleRegistry.INEFFABLE_WHITE_CUBE.get(),
+                ParticleRegistry.INEFFABLE_WHITE_CUBE.get().options(scale),
                 center.x, center.y, center.z,
                 countPerVariant, spreadX, spreadY, spreadZ, speed
         );
@@ -57,6 +87,16 @@ public final class IneffableParticleEffects {
             Vec3 origin,
             Vec3 forward,
             long phase
+    ) {
+        handParticle(level, origin, forward, phase, 1.0F);
+    }
+
+    public static void handParticle(
+            Level level,
+            Vec3 origin,
+            Vec3 forward,
+            long phase,
+            float scale
     ) {
         RandomSource random = level.random;
         double angle = phase * 0.43D + random.nextDouble() * 0.35D;
@@ -70,6 +110,6 @@ public final class IneffableParticleEffects {
                 0.008D + random.nextDouble() * 0.008D,
                 (random.nextDouble() - 0.5D) * 0.008D
         );
-        add(level, (int) phase, origin.add(orbit), velocity);
+        add(level, (int) phase, origin.add(orbit), velocity, scale);
     }
 }

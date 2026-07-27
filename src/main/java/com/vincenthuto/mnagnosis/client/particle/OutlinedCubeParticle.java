@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.client.particle;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.vincenthuto.mnagnosis.common.particle.IneffableCubeParticleOptions;
 import com.vincenthuto.mnagnosis.common.particle.IneffableParticleScale;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -9,7 +10,6 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -37,14 +37,17 @@ public final class OutlinedCubeParticle extends TextureSheetParticle {
             double velocityX,
             double velocityY,
             double velocityZ,
-            SpriteSet sprites
+            SpriteSet sprites,
+            float scale
     ) {
         super(level, x, y, z, velocityX, velocityY, velocityZ);
         this.sprites = sprites;
         this.spinOffset = random.nextFloat() * ((float) Math.PI * 2.0F);
         this.spinRate = 0.10F + random.nextFloat() * 0.14F;
         this.lifetime = 18 + random.nextInt(11);
-        this.quadSize = IneffableParticleScale.baseHalfSize(random.nextFloat());
+        this.quadSize = IneffableParticleScale.baseHalfSize(
+                random.nextFloat(), scale
+        );
         this.friction = 0.92F;
         this.gravity = 0.0F;
         this.hasPhysics = false;
@@ -130,7 +133,8 @@ public final class OutlinedCubeParticle extends TextureSheetParticle {
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 
-    public static final class Provider implements ParticleProvider<SimpleParticleType> {
+    public static final class Provider
+            implements ParticleProvider<IneffableCubeParticleOptions> {
 
         private final SpriteSet sprites;
 
@@ -140,7 +144,7 @@ public final class OutlinedCubeParticle extends TextureSheetParticle {
 
         @Override
         public Particle createParticle(
-                SimpleParticleType type,
+                IneffableCubeParticleOptions options,
                 ClientLevel level,
                 double x,
                 double y,
@@ -152,7 +156,8 @@ public final class OutlinedCubeParticle extends TextureSheetParticle {
             return new OutlinedCubeParticle(
                     level, x, y, z,
                     velocityX, velocityY, velocityZ,
-                    sprites
+                    sprites,
+                    options.scale()
             );
         }
     }
