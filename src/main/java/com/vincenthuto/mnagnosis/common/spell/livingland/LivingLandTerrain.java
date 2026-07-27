@@ -61,7 +61,8 @@ public final class LivingLandTerrain {
         List<SourceCandidate> ceilings = verticalSources(
                 level, caster, origin, Direction.UP, 2, 5
         );
-        List<SourceCandidate> floors = floorSources(level, caster, origin);
+        List<SourceCandidate> floors = floorSources(
+                level, caster, origin, Math.max(3, Math.min(radius, 12)));
         List<SourceCandidate> walls = new ArrayList<>();
         int wallSides = 0;
         for (Direction direction : Direction.Plane.HORIZONTAL) {
@@ -150,12 +151,13 @@ public final class LivingLandTerrain {
     private static List<SourceCandidate> floorSources(
             ServerLevel level,
             ServerPlayer caster,
-            BlockPos origin
+            BlockPos origin,
+            int maximumDepth
     ) {
         List<SourceCandidate> result = new ArrayList<>();
         for (Direction horizontal : Direction.Plane.HORIZONTAL) {
             BlockPos column = origin.relative(horizontal);
-            for (int depth = 1; depth <= 3; depth++) {
+            for (int depth = 1; depth <= maximumDepth; depth++) {
                 BlockPos source = column.below(depth);
                 if (isEligibleSource(level, caster, source)) {
                     result.add(new SourceCandidate(source, Direction.UP));

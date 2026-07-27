@@ -30,6 +30,10 @@ import net.minecraftforge.network.NetworkHooks;
 
 import java.util.List;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class LivingLandStrikeEntity extends Entity {
@@ -40,6 +44,8 @@ public final class LivingLandStrikeEntity extends Entity {
     private static final EntityDataAccessor<Integer> LENGTH =
             SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> PROJECTED =
+            SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> LATCHED =
             SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<BlockPos> ROOT_SOURCE =
             SynchedEntityData.defineId(LivingLandStrikeEntity.class, EntityDataSerializers.BLOCK_POS);
@@ -67,6 +73,7 @@ public final class LivingLandStrikeEntity extends Entity {
     private int tendrilAge;
     private final Vec3[] segmentPositions = new Vec3[5];
     private final Vec3[] previousSegmentPositions = new Vec3[5];
+    private final Map<UUID, Integer> lastContactDamage = new HashMap<>();
 
     public LivingLandStrikeEntity(EntityType<? extends LivingLandStrikeEntity> type, Level level) {
         super(type, level);
@@ -78,6 +85,7 @@ public final class LivingLandStrikeEntity extends Entity {
         entityData.define(MODE, LivingLandMode.FLOOR_TEETH.ordinal());
         entityData.define(LENGTH, 1);
         entityData.define(PROJECTED, false);
+        entityData.define(LATCHED, false);
         entityData.define(ROOT_SOURCE, BlockPos.ZERO);
         entityData.define(EMERGENCE, Direction.UP.get3DDataValue());
         int stone = Block.getId(Blocks.STONE.defaultBlockState());
@@ -88,12 +96,13 @@ public final class LivingLandStrikeEntity extends Entity {
 
     public void configure(ServerPlayer owner, LivingEntity target, LivingLandMode mode,
                           Direction emergence, LivingLandPillarPayload payload,
-                          float damage, float speed) {
+                          float damage, float speed, int lifetimeTicks) {
         ownerId = owner.getUUID();
         targetId = target.getUUID();
         this.payload = payload;
         this.damage = clamp(damage, 1.0F, 40.0F);
         this.speed = clamp(speed, 0.25F, 2.0F);
+        remainingTicks = Math.max(1, Math.min(lifetimeTicks, 600));
         entityData.set(MODE, mode.ordinal());
         entityData.set(ROOT_SOURCE, payload.entries().get(0).source());
         entityData.set(EMERGENCE, emergence.get3DDataValue());
@@ -135,9 +144,7 @@ public final class LivingLandStrikeEntity extends Entity {
         }
         Entity rawOwner = ownerId == null ? null : serverLevel.getPlayerByUUID(ownerId);
         ServerPlayer owner = rawOwner instanceof ServerPlayer player ? player : null;
-        Entity rawTarget = targetId == null ? null : serverLevel.getEntity(targetId);
-        if (owner == null || !(rawTarget instanceof LivingEntity target)
-                || !target.isAlive() || owner.isAlliedTo(target)) {
+        if (owner == null) {
             finish(serverLevel, owner, blockPosition());
             return;
         }
@@ -146,6 +153,19 @@ public final class LivingLandStrikeEntity extends Entity {
             return;
         }
         beginSegmentTick();
+        if (isLatched()) {
+            setDeltaMovement(Vec3.ZERO);
+            updateFollowerSegments();
+            damageContacts(serverLevel, owner);
+            return;
+        }
+        Entity rawTarget = targetId == null ? null : serverLevel.getEntity(targetId);
+        if (!(rawTarget instanceof LivingEntity target)
+                || !target.isAlive() || owner.isAlliedTo(target)
+                || target.isAlliedTo(owner)) {
+            finish(serverLevel, owner, blockPosition());
+            return;
+        }
         Vec3 oldPosition = position();
         Vec3 desired = target.getBoundingBox().getCenter().subtract(oldPosition);
         if (desired.lengthSqr() > 1.0E-6D) {
@@ -167,8 +187,11 @@ public final class LivingLandStrikeEntity extends Entity {
         updateFollowerSegments();
         if (intersectsTarget(target)) {
             target.hurt(serverLevel.damageSources().indirectMagic(this, owner), damage);
+            lastContactDamage.put(target.getUUID(), tendrilAge);
             applyKnockback(target);
-            finish(serverLevel, owner, target.blockPosition());
+            entityData.set(LATCHED, true);
+            setDeltaMovement(Vec3.ZERO);
+            updateFollowerSegments();
         }
     }
 
@@ -205,7 +228,7 @@ public final class LivingLandStrikeEntity extends Entity {
             initializeSegments(position());
         }
         segmentPositions[0] = position();
-        if (isProjected()) {
+        if (isProjected() || isLatched()) {
             int length = getPayloadLength();
             Vec3 root = getRootPosition();
             for (int index = 1; index < length - 1; index++) {
@@ -235,6 +258,34 @@ public final class LivingLandStrikeEntity extends Entity {
         }
         for (int index = getPayloadLength(); index < segmentPositions.length; index++) {
             segmentPositions[index] = segmentPositions[getPayloadLength() - 1];
+        }
+    }
+
+    private void damageContacts(ServerLevel level, ServerPlayer owner) {
+        Set<UUID> touched = new HashSet<>();
+        for (int index = 0; index < getPayloadLength() - 1; index++) {
+            AABB body = LivingLandTendrilMath.sweptBounds(
+                    segmentPositions[index], segmentPositions[index + 1]);
+            for (LivingEntity contact : level.getEntitiesOfClass(
+                    LivingEntity.class, body,
+                    entity -> entity.isAlive()
+                            && entity != owner
+                            && !owner.isAlliedTo(entity)
+                            && !entity.isAlliedTo(owner))) {
+                if (!touched.add(contact.getUUID())) {
+                    continue;
+                }
+                int lastDamage = lastContactDamage.getOrDefault(
+                        contact.getUUID(), Integer.MIN_VALUE / 2);
+                if (tendrilAge - lastDamage < 10) {
+                    continue;
+                }
+                if (contact.hurt(
+                        level.damageSources().indirectMagic(this, owner),
+                        Math.max(1.0F, damage * 0.5F))) {
+                    lastContactDamage.put(contact.getUUID(), tendrilAge);
+                }
+            }
         }
     }
 
@@ -290,6 +341,7 @@ public final class LivingLandStrikeEntity extends Entity {
         targetId = tag.hasUUID("Target") ? tag.getUUID("Target") : null;
         int mode = tag.getInt("Mode");
         entityData.set(MODE, Math.max(0, Math.min(mode, LivingLandMode.values().length - 1)));
+        entityData.set(LATCHED, tag.getBoolean("Latched"));
         if (tag.contains("RootSource")) {
             entityData.set(ROOT_SOURCE,
                     NbtUtils.readBlockPos(tag.getCompound("RootSource")));
@@ -304,6 +356,9 @@ public final class LivingLandStrikeEntity extends Entity {
                     serverLevel, tag.getCompound("Payload"));
             syncPayload();
             initializeSegments(position());
+            if (isLatched()) {
+                updateFollowerSegments();
+            }
         }
     }
 
@@ -312,6 +367,7 @@ public final class LivingLandStrikeEntity extends Entity {
         if (ownerId != null) tag.putUUID("Owner", ownerId);
         if (targetId != null) tag.putUUID("Target", targetId);
         tag.putInt("Mode", getMode().ordinal());
+        tag.putBoolean("Latched", isLatched());
         tag.put("RootSource", NbtUtils.writeBlockPos(entityData.get(ROOT_SOURCE)));
         tag.putInt("Emergence", entityData.get(EMERGENCE));
         tag.putFloat("Damage", damage);
@@ -337,6 +393,10 @@ public final class LivingLandStrikeEntity extends Entity {
 
     public boolean isProjected() {
         return entityData.get(PROJECTED);
+    }
+
+    public boolean isLatched() {
+        return entityData.get(LATCHED);
     }
 
     public Vec3 getRootPosition() {

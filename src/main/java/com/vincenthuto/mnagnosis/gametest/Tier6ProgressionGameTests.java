@@ -1618,6 +1618,45 @@ public final class Tier6ProgressionGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void livingLandRadiusFindsGroundBelowBoltTarget(GameTestHelper helper) {
+        FakePlayer caster = FakePlayerFactory.get(
+                helper.getLevel(), new GameProfile(UUID.randomUUID(), "bolt_floor_radius")
+        );
+        helper.getLevel().addNewPlayer(caster);
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 8, 1);
+        net.minecraft.core.BlockPos origin = target.blockPosition();
+        for (Direction horizontal : Direction.Plane.HORIZONTAL) {
+            net.minecraft.core.BlockPos column = origin.relative(horizontal);
+            for (int depth = 1; depth <= 8; depth++) {
+                helper.getLevel().setBlock(
+                        column.below(depth), Blocks.AIR.defaultBlockState(), 3);
+            }
+            helper.getLevel().setBlock(
+                    column.below(6), Blocks.STONE.defaultBlockState(), 3);
+            for (int height = 2; height <= 5; height++) {
+                helper.getLevel().setBlock(
+                        column.above(height), Blocks.AIR.defaultBlockState(), 3);
+            }
+            for (int distance = 2; distance <= 6; distance++) {
+                helper.getLevel().setBlock(
+                        origin.above().relative(horizontal, distance),
+                        Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+        LivingLandTerrain.ScanResult scan = LivingLandTerrain.scan(
+                helper.getLevel(), caster, target, 6).orElseThrow(
+                () -> new IllegalStateException(
+                        "Living Land could not find ground within Bolt radius"));
+        helper.assertTrue(scan.mode() == LivingLandMode.FLOOR_TEETH
+                        && scan.sources().size() >= 2
+                        && scan.sources().stream().allMatch(source ->
+                        origin.getY() - source.source().getY() == 6),
+                "Living Land did not use Radius to find deep floor terrain");
+        helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void livingLandRejectsProtectedAndUnstableSources(
             GameTestHelper helper
     ) {
@@ -1772,7 +1811,7 @@ public final class Tier6ProgressionGameTests {
                 "Precision fallback fixture did not put the shallow source first");
         LivingLandControllerEntity controller = new LivingLandControllerEntity(
                 EntityRegistry.LIVING_LAND_CONTROLLER.get(), helper.getLevel());
-        controller.configure(caster, target, 6.0F, 80, 1.0F, 1.0F, true);
+        controller.configure(caster, target, 6.0F, 220, 1.0F, 1.0F, true);
         helper.assertTrue(helper.getLevel().addFreshEntity(controller),
                 "Precision controller could not enter the level");
         controller.tick();
@@ -1780,6 +1819,21 @@ public final class Tier6ProgressionGameTests {
                 helper.getLevel(), caster.getUUID());
         helper.assertTrue(ownedStrikes == 1,
                 "Precision controller let an invalid first candidate cancel its wave");
+        LivingLandStrikeEntity launched = null;
+        for (Entity entity : helper.getLevel().getAllEntities()) {
+            if (entity instanceof LivingLandStrikeEntity strike
+                    && caster.getUUID().equals(strike.getOwnerId())) {
+                launched = strike;
+                break;
+            }
+        }
+        CompoundTag launchedTag = new CompoundTag();
+        if (launched != null) {
+            launched.saveWithoutId(launchedTag);
+        }
+        helper.assertTrue(launched != null
+                        && launchedTag.getInt("RemainingTicks") >= 200,
+                "Living Land tendril did not inherit the spell's remaining Duration");
         helper.assertTrue(sources.stream().allMatch(pos ->
                         helper.getLevel().getBlockState(pos).is(Blocks.MOSSY_COBBLESTONE)),
                 "Precision controller removed its projected source terrain");
@@ -1852,10 +1906,15 @@ public final class Tier6ProgressionGameTests {
         LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                 EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
         strike.configure(caster, target, LivingLandMode.FLOOR_TEETH, Direction.UP,
-                payload, 7.0F, 0.8F);
+                payload, 7.0F, 0.8F, 80);
         helper.assertTrue(helper.getLevel().addFreshEntity(strike),
                 "Precision tendril could not enter the level");
-        strike.tick();
+        float targetHealth = target.getHealth();
+        for (int tick = 0; tick < 20
+                && target.getHealth() >= targetHealth
+                && !strike.isRemoved(); tick++) {
+            strike.tick();
+        }
         Vec3 expectedRoot = Vec3.atCenterOf(source)
                 .add(Vec3.atLowerCornerOf(Direction.UP.getNormal()).scale(0.501D));
         Vec3 actualRoot = strike.getSegmentPosition(
@@ -1864,6 +1923,16 @@ public final class Tier6ProgressionGameTests {
                 "Precision tendril detached from its terrain-face root");
         helper.assertTrue(helper.getLevel().getBlockState(source).is(Blocks.STONE),
                 "Precision tendril disturbed its rooted source block");
+        helper.assertTrue(target.getHealth() < targetHealth && !strike.isRemoved(),
+                "Precision tendril disappeared on its first impact");
+        Zombie contact = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 6, 1);
+        Vec3 body = strike.getSegmentPosition(
+                Math.max(1, strike.getPayloadLength() / 2), 1.0F);
+        contact.setPos(body);
+        float contactHealth = contact.getHealth();
+        strike.tick();
+        helper.assertTrue(contact.getHealth() < contactHealth,
+                "The alive Precision tendril body dealt no contact damage");
         helper.getLevel().removePlayerImmediately(caster, Entity.RemovalReason.DISCARDED);
         helper.succeed();
     }
@@ -1890,7 +1959,7 @@ public final class Tier6ProgressionGameTests {
         LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                 EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
         strike.configure(caster, target, LivingLandMode.WALL_LANCES, Direction.EAST,
-                payload, 7.0F, 0.8F);
+                payload, 7.0F, 0.8F, 80);
         CompoundTag saved = new CompoundTag();
         strike.saveWithoutId(saved);
         LivingLandStrikeEntity loaded = new LivingLandStrikeEntity(
@@ -1974,7 +2043,7 @@ public final class Tier6ProgressionGameTests {
         LivingLandStrikeEntity strike = new LivingLandStrikeEntity(
                 EntityRegistry.LIVING_LAND_STRIKE.get(), helper.getLevel());
         strike.configure(caster, target, LivingLandMode.WALL_LANCES, Direction.EAST,
-                payload, 5.0F, 0.25F);
+                payload, 5.0F, 0.25F, 80);
         helper.assertTrue(strike.getSegmentPosition(0, 1.0F).equals(
                         strike.getSegmentPosition(4, 1.0F)),
                 "A new Living Land tendril did not begin collapsed at its source");

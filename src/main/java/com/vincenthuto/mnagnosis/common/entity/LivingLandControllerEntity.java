@@ -106,7 +106,8 @@ public final class LivingLandControllerEntity extends Entity {
                         EntityRegistry.LIVING_LAND_STRIKE.get(), level
                 );
                 strike.configure(owner, target, scan.mode(), source.approach(), payload,
-                        4.0F + magnitude * 2.0F, 0.35F + speed * 0.15F);
+                        4.0F + magnitude * 2.0F, 0.35F + speed * 0.15F,
+                        remainingTicks);
                 if (level.addFreshEntity(strike)) {
                     launched++;
                 } else if (!payload.settle(
