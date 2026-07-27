@@ -34,6 +34,9 @@
 
     { "name": "GameTime", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "BotaniaDisfiguration", "type": "float", "count": 1, "values": [ 0.025 ] },
-    { "name": "BotaniaGrainIntensity", "type": "float", "count": 1, "values": [ 0.05 ] }
+    { "name": "TriangleScale", "type": "float", "count": 1, "values": [ 24.0 ] },
+    { "name": "TriangleLineWidth", "type": "float", "count": 1, "values": [ 0.055 ] },
+    { "name": "TriangleBrightness", "type": "float", "count": 1, "values": [ 0.82 ] },
+    { "name": "TriangleSpeed", "type": "float", "count": 1, "values": [ 3600.0 ] }
   ]
 }

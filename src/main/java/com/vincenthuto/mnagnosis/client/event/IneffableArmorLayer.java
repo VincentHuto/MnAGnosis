@@ -24,7 +24,10 @@ public final class IneffableArmorLayer<T extends LivingEntity, M extends Humanoi
 
     private static final ResourceLocation STATIC_MASK =
             MnAGnosis.rloc("textures/models/armor/ineffable_static_mask.png");
-    private static final float GRAIN_INTENSITY = 0.85F;
+    private static final float TRIANGLE_SCALE = 24.0F;
+    private static final float TRIANGLE_LINE_WIDTH = 0.055F;
+    private static final float TRIANGLE_BRIGHTNESS = 0.82F;
+    private static final float TRIANGLE_SPEED = 3600.0F;
     private static final float DISFIGURATION = 0.001F;
 
     private final IneffableArmorModel<T> hood;
@@ -116,7 +119,10 @@ public final class IneffableArmorLayer<T extends LivingEntity, M extends Humanoi
     private static void configureShader() {
         ShaderInstance shader = CoreShaders.doppleganger();
         if (shader != null) {
-            shader.safeGetUniform("BotaniaGrainIntensity").set(GRAIN_INTENSITY);
+            shader.safeGetUniform("TriangleScale").set(TRIANGLE_SCALE);
+            shader.safeGetUniform("TriangleLineWidth").set(TRIANGLE_LINE_WIDTH);
+            shader.safeGetUniform("TriangleBrightness").set(TRIANGLE_BRIGHTNESS);
+            shader.safeGetUniform("TriangleSpeed").set(TRIANGLE_SPEED);
             shader.safeGetUniform("BotaniaDisfiguration").set(DISFIGURATION);
         }
     }
