@@ -1690,6 +1690,90 @@ public final class Tier6ProgressionGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityRuptureWavesDamageAndThrowWithoutBlockGrief(
+            GameTestHelper helper
+    ) {
+        Zombie target = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 3, 3);
+        Vec3 center = target.position().add(-2.0D, 0.0D, 0.0D);
+        ItemEntity item = new ItemEntity(
+                helper.getLevel(),
+                center.x,
+                center.y,
+                center.z + 2.0D,
+                new ItemStack(Items.IRON_INGOT)
+        );
+        Snowball projectile = new Snowball(helper.getLevel(), target);
+        projectile.setPos(center.add(0.0D, 0.0D, -2.0D));
+        helper.getLevel().addFreshEntity(item);
+        helper.getLevel().addFreshEntity(projectile);
+        net.minecraft.core.BlockPos marker =
+                new net.minecraft.core.BlockPos(2, 2, 2);
+        helper.setBlock(marker, Blocks.STONE);
+
+        GravityRuptureEntity rupture = new GravityRuptureEntity(
+                EntityRegistry.GRAVITY_RUPTURE.get(), helper.getLevel()
+        );
+        rupture.configure(center, 2);
+        helper.getLevel().addFreshEntity(rupture);
+        float health = target.getHealth();
+        for (int tick = 0; tick < 8; tick++) {
+            rupture.tick();
+        }
+
+        helper.assertTrue(target.getHealth() < health,
+                "Gravity rupture wave dealt no explosion damage");
+        helper.assertTrue(
+                target.getDeltaMovement().dot(target.position().subtract(center)) > 0.0D,
+                "Gravity rupture wave did not throw a living target outward"
+        );
+        helper.assertTrue(
+                item.getDeltaMovement().dot(item.position().subtract(center)) > 0.0D,
+                "Gravity rupture wave did not throw a dropped item outward"
+        );
+        helper.assertTrue(
+                projectile.getDeltaMovement().dot(
+                        projectile.position().subtract(center)
+                ) > 0.0D,
+                "Gravity rupture wave did not throw a projectile outward"
+        );
+        helper.assertTrue(helper.getBlockState(marker).is(Blocks.STONE),
+                "Gravity rupture wave destroyed terrain");
+        rupture.discard();
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityRuptureShipsAndRegistersItsClientRenderer(
+            GameTestHelper helper
+    ) {
+        ClassLoader resources = Tier6ProgressionGameTests.class.getClassLoader();
+        String rendererPath =
+                "com/vincenthuto/mnagnosis/client/render/entity/"
+                        + "GravityRuptureRenderer.class";
+        String eventsPath =
+                "com/vincenthuto/mnagnosis/client/event/"
+                        + "ClientEvents$ClientModBusEvents.class";
+        helper.assertTrue(resources.getResource(rendererPath) != null,
+                "Gravity rupture client renderer class was missing");
+        try (InputStream eventsStream =
+                     resources.getResourceAsStream(eventsPath)) {
+            String eventBytecode = new String(
+                    eventsStream.readAllBytes(), StandardCharsets.ISO_8859_1
+            );
+            helper.assertTrue(
+                    eventBytecode.contains("GRAVITY_RUPTURE")
+                            && eventBytecode.contains("GravityRuptureRenderer"),
+                    "Gravity rupture renderer was not registered with client events"
+            );
+        } catch (Exception exception) {
+            helper.fail("Could not inspect gravity rupture client registration: "
+                    + exception.getMessage());
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void gravityConvergenceRegistersItsAuthoredAttributes(
             GameTestHelper helper
     ) {
