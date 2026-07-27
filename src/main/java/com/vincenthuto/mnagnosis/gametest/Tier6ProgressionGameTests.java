@@ -1354,12 +1354,14 @@ public final class Tier6ProgressionGameTests {
                         && Float.isFinite(horizonRepulsion),
                 "Gravity lens falloff produced a non-finite value");
         helper.assertTrue(horizonAttraction > outerAttraction
+                        && horizonAttraction > 0.30F
                         && outerAttraction > 0.0F,
-                "Gravity lens falloff was not strongest near the horizon");
+                "Gravity lens falloff was not visibly strongest near the horizon");
         helper.assertTrue(horizonRepulsion < 0.0F
                         && Math.abs(horizonRepulsion + horizonAttraction) < 1.0E-5F,
                 "Repulsive gravity did not reverse the lens sampling direction");
-        helper.assertTrue(GravityLensMath.distortion(4.0F, false) == 0.0F
+        helper.assertTrue(GravityLensMath.distortion(
+                                GravityLensMath.HALO_RADIUS, false) == 0.0F
                         && GravityLensMath.distortion(8.0F, false) == 0.0F,
                 "Gravity lens distortion escaped its bounded halo");
         helper.assertTrue(GravityLensMath.clampScreenRadius(-20.0F) == 2.0F
