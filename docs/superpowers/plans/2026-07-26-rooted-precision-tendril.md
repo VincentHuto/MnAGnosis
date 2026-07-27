@@ -159,3 +159,47 @@ Run `.\gradlew.bat runGameTestServer --no-daemon` and require every GameTest
 to pass. Run `.\gradlew.bat build --no-daemon` and require
 `BUILD SUCCESSFUL`. Commit only the controller, renderer, tests, and these
 approved documentation amendments.
+
+### Task 5: Persist tendrils as Duration-bound contact hazards
+
+**Files:**
+- Modify: `src/main/java/com/vincenthuto/mnagnosis/common/spell/livingland/LivingLandTerrain.java`
+- Modify: `src/main/java/com/vincenthuto/mnagnosis/common/entity/LivingLandControllerEntity.java`
+- Modify: `src/main/java/com/vincenthuto/mnagnosis/common/entity/LivingLandStrikeEntity.java`
+- Modify: `src/main/java/com/vincenthuto/mnagnosis/gametest/Tier6ProgressionGameTests.java`
+
+**Interfaces:**
+- Consumes: spell Radius, controller `remainingTicks`, articulated segment positions
+- Produces: radius-depth floor discovery and a synchronized latched hazard phase
+
+- [ ] **Step 1: Reproduce airborne Bolt terrain loss**
+
+Place valid ground six blocks beneath a target, clear ceiling and walls, scan
+with Radius `6`, and assert that `FLOOR_TEETH` sources are returned.
+
+- [ ] **Step 2: Reproduce immediate impact deletion**
+
+Launch a projected strike at a nearby hostile target, tick through impact, and
+assert that the strike remains present and latched.
+
+- [ ] **Step 3: Reproduce missing Duration propagation**
+
+Launch a wave from a controller configured above the strike's old hard-coded
+80-tick lifetime. Save the new strike and assert its remaining lifetime
+matches the controller's remaining Duration.
+
+- [ ] **Step 4: Implement lifecycle and contact damage**
+
+Pass controller `remainingTicks` into strike configuration. Synchronize and
+persist a `LATCHED` flag. Growing strikes pursue their target; first collision
+freezes the articulated body and applies initial contact/knockback. Latched
+strikes query every adjacent segment span for living contacts, excluding
+caster and allies, and damage each eligible UUID no more than once every ten
+ticks. Settle only at lifetime expiry or invalid owner state.
+
+- [ ] **Step 5: Verify and commit**
+
+Run `.\gradlew.bat runGameTestServer --no-daemon` and require every GameTest
+to pass. Run `.\gradlew.bat build --no-daemon` and require
+`BUILD SUCCESSFUL`. Commit only the terrain scanner, controller, strike,
+GameTests, and these approved documentation amendments.

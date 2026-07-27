@@ -36,7 +36,19 @@ head, so even after emergence the visual detaches from the land.
   scaling where terrain supports it without making ordinary uneven terrain
   silently cancel the entire wave.
 - Non-Precision Living Land retains its existing traveling articulated pillar.
-- Impact, damage, duration, capacity limits, and non-destructive settlement
+- Floor discovery searches downward to the spell's configured Radius rather
+  than stopping at three blocks. This lets Bolt hits on airborne, jumping, or
+  ledge-standing targets still reach valid land.
+- Every strike inherits the controller's remaining Duration, so all tendrils
+  expire no later than the spell that authored them.
+- First impact changes a growing strike into an alive, latched hazard. It
+  freezes its articulated body instead of settling immediately.
+- While alive, every span of the visible body deals contact damage at most
+  once per entity every ten ticks. The caster and allied entities are immune.
+- Initial impact keeps its directional knockback. Terrain settlement occurs
+  only when Duration expires, the caster disappears, or the strike otherwise
+  becomes invalid.
+- Existing owner capacity limits and non-destructive Precision settlement
   remain unchanged.
 
 ## Verification
@@ -50,5 +62,8 @@ GameTests will prove that:
 5. the original terrain remains unchanged.
 6. invalid early candidates are skipped and shallow valid candidates fall
    back to a three-block tendril.
+7. Radius finds floor terrain more than three blocks below a Bolt target.
+8. impact leaves the tendril alive, its body damages later contacts, and it
+   settles only after inherited Duration expires.
 
 The full GameTest suite and Gradle build must pass.
