@@ -10,8 +10,12 @@ import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.tools.SummonUtils;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
+import com.mna.api.spells.base.ISpellDefinition;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public final class ComponentBanish extends SpellEffect {
 
@@ -43,6 +47,35 @@ public final class ComponentBanish extends SpellEffect {
     @Override
     public boolean targetsBlocks() {
         return false;
+    }
+
+    @Override
+    public void SpawnParticles(
+            Level level,
+            Vec3 position,
+            Vec3 motion,
+            int stage,
+            LivingEntity caster,
+            ISpellDefinition spell
+    ) {
+        if (stage > 4) {
+            return;
+        }
+        for (int sample = 0; sample < 20; sample++) {
+            double angle = Math.PI * 2.0D * sample / 20.0D + stage * 0.4D;
+            double radius = 0.25D + sample % 4 * 0.08D;
+            Vec3 offset = new Vec3(
+                    Math.cos(angle) * radius,
+                    (sample % 5 - 2) * 0.10D,
+                    Math.sin(angle) * radius
+            );
+            IneffableParticleEffects.add(
+                    level,
+                    sample + stage,
+                    position.add(offset),
+                    offset.normalize().scale(-0.035D)
+            );
+        }
     }
 
     @Override

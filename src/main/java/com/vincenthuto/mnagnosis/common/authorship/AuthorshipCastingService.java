@@ -23,6 +23,7 @@ import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStatePr
 import com.vincenthuto.mnagnosis.common.authorship.state.LedgerTransition;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
 import com.vincenthuto.mnagnosis.common.network.NetworkHandler;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -222,6 +223,13 @@ public final class AuthorshipCastingService {
         if (result != ComponentApplicationResult.SUCCESS) {
             return false;
         }
+        IneffableParticleEffects.cloud(
+                player.serverLevel(),
+                target.getPosition().add(0.0D, 0.5D, 0.0D),
+                10,
+                0.35D, 0.45D, 0.35D,
+                0.055D
+        );
         CompoundTag meta = context.getMeta().getCompound(META_KEY);
         meta.putBoolean(APPLIED_KEY, true);
         context.getMeta().put(META_KEY, meta);

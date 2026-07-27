@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.protocol.Packet;
@@ -326,13 +327,21 @@ public final class LivingLandStrikeEntity extends Entity {
         if ((tickCount & 1) != 0) {
             return;
         }
-        BlockState state = isProjected()
-                ? ((tickCount & 2) == 0
-                    ? Blocks.BLACK_CONCRETE.defaultBlockState()
-                    : Blocks.WHITE_CONCRETE.defaultBlockState())
-                : getCarriedState(Math.floorMod(tickCount / 2, getPayloadLength()));
-        level().addParticle(new BlockParticleOption(ParticleTypes.BLOCK, state),
-                getX(), getY(), getZ(), 0.0D, 0.02D, 0.0D);
+        IneffableParticleEffects.add(
+                level(),
+                tickCount / 2 + getId(),
+                position(),
+                new Vec3(0.0D, 0.025D, 0.0D)
+        );
+        if (!isProjected()) {
+            BlockState state = getCarriedState(
+                    Math.floorMod(tickCount / 2, getPayloadLength())
+            );
+            level().addParticle(
+                    new BlockParticleOption(ParticleTypes.BLOCK, state),
+                    getX(), getY(), getZ(), 0.0D, 0.02D, 0.0D
+            );
+        }
     }
 
     @Override

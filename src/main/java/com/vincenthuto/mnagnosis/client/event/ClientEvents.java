@@ -9,9 +9,11 @@ import com.vincenthuto.mnagnosis.client.render.entity.GravityRuptureRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.LivingLandControllerRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.LivingLandStrikeRenderer;
 import com.vincenthuto.mnagnosis.client.render.gravity.GravityLensController;
+import com.vincenthuto.mnagnosis.client.particle.OutlinedCubeParticle;
 import com.vincenthuto.mnagnosis.client.truth.TruthSceneController;
 import com.vincenthuto.mnagnosis.client.render.item.*;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
+import com.vincenthuto.mnagnosis.common.registry.ParticleRegistry;
 import com.vincenthuto.mnagnosis.client.shader.core.CoreShaders;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -151,6 +153,18 @@ public class ClientEvents {
 			);
 			event.registerEntityRenderer(
 					EntityRegistry.LIVING_LAND_STRIKE.get(), LivingLandStrikeRenderer::new
+			);
+		}
+
+		@SubscribeEvent
+		public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
+			event.registerSpriteSet(
+					ParticleRegistry.INEFFABLE_BLACK_CUBE.get(),
+					OutlinedCubeParticle.Provider::new
+			);
+			event.registerSpriteSet(
+					ParticleRegistry.INEFFABLE_WHITE_CUBE.get(),
+					OutlinedCubeParticle.Provider::new
 			);
 		}
 

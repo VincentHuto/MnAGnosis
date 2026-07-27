@@ -8,6 +8,7 @@ import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.IDamageComponent;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.collections.Shapes;
+import com.mna.api.spells.collections.Components;
 import com.mna.api.spells.parts.SpellEffect;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
@@ -40,6 +41,7 @@ import com.vincenthuto.mnagnosis.common.entity.GravityFieldEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityRuptureEntity;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandControllerEntity;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandStrikeEntity;
+import com.vincenthuto.mnagnosis.common.authorship.AuthorshipRegistry;
 import com.vincenthuto.mnagnosis.common.event.CommontEvents;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
@@ -48,6 +50,7 @@ import com.vincenthuto.mnagnosis.common.progression.Tier6Progression;
 import com.vincenthuto.mnagnosis.common.progression.TruthEncounterService;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
+import com.vincenthuto.mnagnosis.common.registry.ParticleRegistry;
 import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
 import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
@@ -65,6 +68,8 @@ import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandPillarPayload
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTendrilMath;
 import com.vincenthuto.mnagnosis.common.spell.SpellComponentRegistry;
 import com.vincenthuto.mnagnosis.common.spell.TrueDamageTypes;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
+import com.vincenthuto.mnagnosis.common.particle.IneffableSpellVisuals;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -115,6 +120,76 @@ public final class Tier6ProgressionGameTests {
             ResourceLocation.fromNamespaceAndPath("mna", "boss/defeat_odin");
     private static final ResourceLocation ODIN_PROGRESSION =
             MnAGnosis.rloc("progression/tier_5/defeat_odin");
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void ineffableParticlePairIsRegisteredAndAlternates(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(
+                ForgeRegistries.PARTICLE_TYPES.getKey(
+                        ParticleRegistry.INEFFABLE_BLACK_CUBE.get()
+                ).equals(MnAGnosis.rloc("ineffable_black_cube")),
+                "Black Ineffable cube particle must be registered"
+        );
+        helper.assertTrue(
+                ForgeRegistries.PARTICLE_TYPES.getKey(
+                        ParticleRegistry.INEFFABLE_WHITE_CUBE.get()
+                ).equals(MnAGnosis.rloc("ineffable_white_cube")),
+                "White Ineffable cube particle must be registered"
+        );
+        helper.assertTrue(
+                IneffableParticleEffects.variant(0)
+                        == ParticleRegistry.INEFFABLE_BLACK_CUBE.get(),
+                "Even visual samples must use the black cube"
+        );
+        helper.assertTrue(
+                IneffableParticleEffects.variant(1)
+                        == ParticleRegistry.INEFFABLE_WHITE_CUBE.get(),
+                "Odd visual samples must use the white cube"
+        );
+        SpellRecipe componentSpell = new SpellRecipe(
+                Shapes.SELF, SpellComponentRegistry.TRUE_DAMAGE
+        );
+        helper.assertTrue(
+                IneffableSpellVisuals.containsIneffableComponent(componentSpell),
+                "Standalone Ineffable components must select held-hand cube particles"
+        );
+        SpellRecipe authoredSpell = new SpellRecipe(Shapes.SELF, Components.HEAL);
+        authoredSpell.addModifier(AuthorshipRegistry.LAW_INVERSION);
+        helper.assertTrue(
+                IneffableSpellVisuals.containsIneffableComponent(authoredSpell),
+                "Authored law spells must select held-hand cube particles"
+        );
+        assertClasspathResource(
+                helper,
+                "/assets/mnagnosis/particles/ineffable_black_cube.json"
+        );
+        assertClasspathResource(
+                helper,
+                "/assets/mnagnosis/particles/ineffable_white_cube.json"
+        );
+        assertClasspathResource(
+                helper,
+                "/assets/mnagnosis/textures/particle/ineffable_black_cube.png"
+        );
+        assertClasspathResource(
+                helper,
+                "/assets/mnagnosis/textures/particle/ineffable_white_cube.png"
+        );
+        helper.succeed();
+    }
+
+    private static void assertClasspathResource(
+            GameTestHelper helper,
+            String path
+    ) {
+        try (InputStream stream =
+                     Tier6ProgressionGameTests.class.getResourceAsStream(path)) {
+            helper.assertTrue(stream != null, "Missing particle resource " + path);
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("Could not close resource " + path, exception);
+        }
+    }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
     public static void temporaryPrimalArmorIsAbsentFromTheItemRegistry(

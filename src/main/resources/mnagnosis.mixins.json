@@ -15,7 +15,9 @@
   ],
   "client": [
     "client.GuiOcculusMixin",
+    "client.HandParticleLayerMixin",
     "client.MixinHUDOverlayRenderer",
+    "client.WorldRenderUtilsMixin",
     "core.RenderTypeAccessor"
   ],
   "injectors": {

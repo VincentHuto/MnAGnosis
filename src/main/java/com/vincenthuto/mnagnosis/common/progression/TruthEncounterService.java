@@ -4,16 +4,13 @@ import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.core.particles.ItemParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -95,16 +92,13 @@ public final class TruthEncounterService {
     }
 
     private static void emitInterceptionShards(ServerLevel level, Vec3 position) {
-        ItemParticleOption black = new ItemParticleOption(
-                ParticleTypes.ITEM, new ItemStack(Items.BLACK_CONCRETE)
+        IneffableParticleEffects.cloud(
+                level,
+                position.add(0.0D, 1.0D, 0.0D),
+                48,
+                0.75D, 0.9D, 0.75D,
+                0.22D
         );
-        ItemParticleOption white = new ItemParticleOption(
-                ParticleTypes.ITEM, new ItemStack(Items.WHITE_CONCRETE)
-        );
-        level.sendParticles(black, position.x, position.y + 1.0D, position.z,
-                48, 0.75D, 0.9D, 0.75D, 0.22D);
-        level.sendParticles(white, position.x, position.y + 1.0D, position.z,
-                48, 0.75D, 0.9D, 0.75D, 0.22D);
     }
 
     public static TruthEntity summonOrReplace(Player player, Vec3 sourcePosition, float sourceYaw) {

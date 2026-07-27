@@ -1,8 +1,8 @@
 package com.vincenthuto.mnagnosis.common.entity;
 
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityRuptureMath;
-import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -16,7 +16,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.sounds.SoundEvents;
@@ -244,18 +243,13 @@ public final class GravityRuptureEntity extends Entity {
                     case 1 -> new Vec3(cosine, 0.0D, sine);
                     default -> new Vec3(0.0D, cosine, sine);
                 };
-                BlockParticleOption particle = new BlockParticleOption(
-                        ParticleTypes.BLOCK,
-                        ((sample + plane + wave) & 1) == 0
-                                ? Blocks.BLACK_CONCRETE.defaultBlockState()
-                                : Blocks.WHITE_CONCRETE.defaultBlockState()
-                );
                 Vec3 point = position().add(direction.scale(radius));
                 Vec3 velocity = direction.scale(0.025D);
-                level().addParticle(
-                        particle,
-                        point.x, point.y, point.z,
-                        velocity.x, velocity.y, velocity.z
+                IneffableParticleEffects.add(
+                        level(),
+                        sample + plane + wave,
+                        point,
+                        velocity
                 );
             }
         }

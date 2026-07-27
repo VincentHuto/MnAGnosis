@@ -8,6 +8,7 @@ import com.vincenthuto.mnagnosis.common.registry.BlockRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
 import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
+import com.vincenthuto.mnagnosis.common.registry.ParticleRegistry;
 import com.vincenthuto.mnagnosis.common.network.NetworkHandler;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.registries.Registries;
@@ -56,6 +57,7 @@ public class MnAGnosis {
         BlockEntityRegistry.BLOCK_ENTITIES.register(modEventBus);
         EntityRegistry.ENTITIES.register(modEventBus);
         SoundRegistry.SOUNDS.register(modEventBus);
+        ParticleRegistry.PARTICLES.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(this);
         modEventBus.addListener(this::addCreative);
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);

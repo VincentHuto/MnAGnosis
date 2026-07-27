@@ -15,15 +15,13 @@ import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.config.GeneralConfig;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
+import com.vincenthuto.mnagnosis.common.particle.IneffableParticleEffects;
 import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
-import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public final class ComponentTrueDamage extends SpellEffect implements IDamageComponent {
@@ -84,12 +82,6 @@ public final class ComponentTrueDamage extends SpellEffect implements IDamageCom
                 ^ level.getGameTime()
                 ^ stage;
         RandomSource random = RandomSource.create(seed);
-        BlockParticleOption black = new BlockParticleOption(
-                ParticleTypes.BLOCK, Blocks.BLACK_CONCRETE.defaultBlockState()
-        );
-        BlockParticleOption white = new BlockParticleOption(
-                ParticleTypes.BLOCK, Blocks.WHITE_CONCRETE.defaultBlockState()
-        );
         for (int i = 0; i < 28; i++) {
             double x = position.x + (random.nextDouble() - 0.5D) * 1.5D;
             double y = position.y + 0.15D + random.nextInt(7) * 0.22D;
@@ -97,7 +89,12 @@ public final class ComponentTrueDamage extends SpellEffect implements IDamageCom
             double speedX = (random.nextDouble() - 0.5D) * 0.12D;
             double speedY = (random.nextDouble() - 0.5D) * 0.06D;
             double speedZ = (random.nextDouble() - 0.5D) * 0.12D;
-            level.addParticle((i & 1) == 0 ? black : white, x, y, z, speedX, speedY, speedZ);
+            IneffableParticleEffects.add(
+                    level,
+                    i + stage,
+                    new Vec3(x, y, z),
+                    new Vec3(speedX, speedY, speedZ)
+            );
         }
     }
 
