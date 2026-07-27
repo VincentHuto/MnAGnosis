@@ -1926,6 +1926,17 @@ public final class Tier6ProgressionGameTests {
                                 + "horizon and segmented photon ring"
                 );
             }
+            try (InputStream controllerStream =
+                         resources.getResourceAsStream(lensControllerClass)) {
+                String controllerBytecode = new String(
+                        controllerStream.readAllBytes(),
+                        StandardCharsets.ISO_8859_1
+                );
+                helper.assertTrue(
+                        controllerBytecode.contains("VISUAL_CENTER_Y_OFFSET"),
+                        "Gravity lens projection was not aligned to the rendered core"
+                );
+            }
             try (InputStream programStream = resources.getResourceAsStream(
                     "assets/mnagnosis/shaders/program/gravity_lens.json"
             ); InputStream fragmentStream = resources.getResourceAsStream(
@@ -1941,9 +1952,11 @@ public final class Tier6ProgressionGameTests {
                                 && program.contains("\"Lens1\"")
                                 && program.contains("\"Lens2\""),
                         "Gravity lens shader did not expose all three field uniforms");
-                helper.assertTrue(fragment.contains("bendLens")
+                helper.assertTrue(fragment.contains("sampleBentSpace")
+                                && fragment.contains("mirroredUv")
                                 && fragment.contains("DiffuseSampler"),
-                        "Gravity lens fragment program did not bend the scene sample");
+                        "Gravity lens fragment program did not multi-sample "
+                                + "the bent scene");
             }
         } catch (Exception exception) {
             helper.fail("Could not read Gravity Convergence recipes: "

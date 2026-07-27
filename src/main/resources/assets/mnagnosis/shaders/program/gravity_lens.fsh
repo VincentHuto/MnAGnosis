@@ -11,7 +11,14 @@ in vec2 texCoord;
 
 out vec4 fragColor;
 
-vec2 bendLens(vec2 uv, vec4 lens, float phase, inout float ringLight) {
+vec2 bendLens(
+        vec2 uv,
+        vec4 lens,
+        float phase,
+        inout float ringLight,
+        inout vec2 mirroredUv,
+        inout float mirrorMix
+) {
     if (lens.z <= 0.0) {
         return uv;
     }
@@ -23,19 +30,24 @@ vec2 bendLens(vec2 uv, vec4 lens, float phase, inout float ringLight) {
     }
 
     float normalizedDistance = distancePixels / lens.z;
-    if (normalizedDistance >= 4.0) {
+    if (normalizedDistance >= 4.5) {
         return uv;
     }
 
     float clampedDistance = max(1.0, normalizedDistance);
-    float progress = clamp((4.0 - clampedDistance) / 3.0, 0.0, 1.0);
+    float progress = clamp((4.5 - clampedDistance) / 3.5, 0.0, 1.0);
     float falloff = progress * progress * (3.0 - 2.0 * progress);
+    float inverseFalloff = max(0.0,
+            (1.0 / clampedDistance - 1.0 / 4.5)
+            / (1.0 - 1.0 / 4.5));
+    float distortion = 0.46
+            * (0.7 * inverseFalloff + 0.3 * falloff);
     float polarity = lens.w < 0.0 ? -1.0 : 1.0;
-    float pulse = 0.88 + 0.12 * sin(Time * 125.6637 + phase + polarity);
-    float horizonGuard = smoothstep(0.72, 1.03, normalizedDistance);
+    float pulse = 0.92 + 0.08 * sin(Time * 125.6637 + phase + polarity);
+    float horizonGuard = smoothstep(0.78, 1.02, normalizedDistance);
     vec2 direction = deltaPixels / distancePixels;
     vec2 offsetPixels = direction
-            * falloff * 0.18 * lens.z * polarity * pulse * horizonGuard;
+            * distortion * lens.z * polarity * pulse * horizonGuard;
 
     float primaryRing = exp(
             -pow((normalizedDistance - 1.16) / 0.075, 2.0)
@@ -45,17 +57,55 @@ vec2 bendLens(vec2 uv, vec4 lens, float phase, inout float ringLight) {
     ) * 0.18;
     ringLight += (primaryRing + outerRing)
             * (0.72 + 0.18 * sin(Time * 188.4956 + phase));
+
+    float einsteinBand = exp(
+            -pow((normalizedDistance - 1.20) / 0.19, 2.0)
+    ) * horizonGuard;
+    if (einsteinBand > mirrorMix) {
+        float mirroredRadius = max(0.88, 2.25 - normalizedDistance)
+                * lens.z;
+        mirroredUv = lens.xy
+                - direction * mirroredRadius / InSize;
+        mirrorMix = einsteinBand;
+    }
     return uv - offsetPixels / InSize;
+}
+
+vec4 sampleBentSpace(
+        vec2 primaryUv,
+        vec2 mirroredUv,
+        float mirrorMix
+) {
+    vec4 primary = texture(
+            DiffuseSampler,
+            clamp(primaryUv, vec2(0.0), vec2(1.0))
+    );
+    if (mirrorMix <= 0.001) {
+        return primary;
+    }
+    vec4 mirrored = texture(
+            DiffuseSampler,
+            clamp(mirroredUv, vec2(0.0), vec2(1.0))
+    );
+    return mix(primary, mirrored, min(0.68, mirrorMix * 0.68));
 }
 
 void main() {
     vec2 warpedUv = texCoord;
+    vec2 mirroredUv = texCoord;
+    float mirrorMix = 0.0;
     float ringLight = 0.0;
-    warpedUv = bendLens(warpedUv, Lens0, 0.0, ringLight);
-    warpedUv = bendLens(warpedUv, Lens1, 2.0944, ringLight);
-    warpedUv = bendLens(warpedUv, Lens2, 4.1888, ringLight);
+    warpedUv = bendLens(
+            warpedUv, Lens0, 0.0, ringLight, mirroredUv, mirrorMix
+    );
+    warpedUv = bendLens(
+            warpedUv, Lens1, 2.0944, ringLight, mirroredUv, mirrorMix
+    );
+    warpedUv = bendLens(
+            warpedUv, Lens2, 4.1888, ringLight, mirroredUv, mirrorMix
+    );
 
-    vec4 scene = texture(DiffuseSampler, clamp(warpedUv, vec2(0.0), vec2(1.0)));
+    vec4 scene = sampleBentSpace(warpedUv, mirroredUv, mirrorMix);
     scene.rgb = min(vec3(1.0), scene.rgb + vec3(min(ringLight, 0.82)));
     fragColor = scene;
 }

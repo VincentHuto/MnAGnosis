@@ -37,6 +37,7 @@ public final class GravityLensController {
             MnAGnosis.rloc("shaders/post/gravity_lens.json");
     private static final String[] LENS_UNIFORMS = {"Lens0", "Lens1", "Lens2"};
     private static final float VIEWPORT_MARGIN = 0.25F;
+    private static final double VISUAL_CENTER_Y_OFFSET = 1.5D;
 
     private static PostChain postChain;
     private static int targetWidth;
@@ -147,7 +148,9 @@ public final class GravityLensController {
             if (entity instanceof GravityFieldEntity field
                     && !field.isRemoved()
                     && event.getFrustum().isVisible(
-                    field.getBoundingBox().inflate(
+                    field.getBoundingBox()
+                            .move(0.0D, VISUAL_CENTER_Y_OFFSET, 0.0D)
+                            .inflate(
                             GravityFieldRenderer.horizonRadius(field.getRadius())
                                     * GravityLensMath.HALO_RADIUS
                     ))
@@ -156,7 +159,8 @@ public final class GravityLensController {
             }
         }
         fields.sort(Comparator.comparingDouble(
-                field -> field.distanceToSqr(cameraPosition)
+                field -> visualCenter(field, event.getPartialTick())
+                        .distanceToSqr(cameraPosition)
         ));
 
         List<Lens> lenses = new ArrayList<>(LENS_UNIFORMS.length);
@@ -181,7 +185,7 @@ public final class GravityLensController {
             GravityFieldEntity field
     ) {
         Vec3 cameraPosition = camera.getPosition();
-        Vec3 fieldPosition = field.position();
+        Vec3 fieldPosition = visualCenter(field, 1.0F);
         HitResult hit = minecraft.level.clip(new ClipContext(
                 cameraPosition,
                 fieldPosition,
@@ -202,11 +206,7 @@ public final class GravityLensController {
             int screenWidth,
             int screenHeight
     ) {
-        Vec3 center = new Vec3(
-                Mth.lerp(partialTick, field.xOld, field.getX()),
-                Mth.lerp(partialTick, field.yOld, field.getY()),
-                Mth.lerp(partialTick, field.zOld, field.getZ())
-        );
+        Vec3 center = visualCenter(field, partialTick);
         ScreenPoint projectedCenter = projectPoint(center, camera, projection);
         if (projectedCenter == null
                 || projectedCenter.x() < -VIEWPORT_MARGIN
@@ -236,6 +236,18 @@ public final class GravityLensController {
                 projectedCenter.y(),
                 radius,
                 polarity
+        );
+    }
+
+    private static Vec3 visualCenter(
+            GravityFieldEntity field,
+            float partialTick
+    ) {
+        return new Vec3(
+                Mth.lerp(partialTick, field.xOld, field.getX()),
+                Mth.lerp(partialTick, field.yOld, field.getY())
+                        + VISUAL_CENTER_Y_OFFSET,
+                Mth.lerp(partialTick, field.zOld, field.getZ())
         );
     }
 
