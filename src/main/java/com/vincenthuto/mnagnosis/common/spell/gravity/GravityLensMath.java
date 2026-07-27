@@ -1,5 +1,8 @@
 package com.vincenthuto.mnagnosis.common.spell.gravity;
 
+import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
+
 /**
  * Shared, client-independent bounds for the Gravity Convergence lens.
  */
@@ -43,6 +46,30 @@ public final class GravityLensMath {
                 || Math.abs(clipW) <= 1.0E-4F) {
             return Float.NaN;
         }
-        return 0.5F - clipCoordinate / clipW * 0.5F;
+        return 0.5F + clipCoordinate / clipW * 0.5F;
+    }
+
+    public static Vector3f toViewSpace(
+            Vec3 cameraRelativePosition,
+            Vector3f forward,
+            Vector3f up,
+            Vector3f left
+    ) {
+        float x = -(float) (
+                cameraRelativePosition.x * left.x()
+                        + cameraRelativePosition.y * left.y()
+                        + cameraRelativePosition.z * left.z()
+        );
+        float y = (float) (
+                cameraRelativePosition.x * up.x()
+                        + cameraRelativePosition.y * up.y()
+                        + cameraRelativePosition.z * up.z()
+        );
+        float z = -(float) (
+                cameraRelativePosition.x * forward.x()
+                        + cameraRelativePosition.y * forward.y()
+                        + cameraRelativePosition.z * forward.z()
+        );
+        return new Vector3f(x, y, z);
     }
 }

@@ -93,6 +93,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.core.Direction;
 import net.minecraftforge.gametest.GameTestHolder;
+import org.joml.Vector3f;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.common.util.FakePlayer;
@@ -1367,11 +1368,23 @@ public final class Tier6ProgressionGameTests {
         helper.assertTrue(GravityLensMath.clampScreenRadius(-20.0F) == 2.0F
                         && GravityLensMath.clampScreenRadius(900.0F) == 640.0F,
                 "Gravity lens screen radius did not clamp to safe bounds");
+        Vector3f viewSpace = GravityLensMath.toViewSpace(
+                new Vec3(5.0D, 2.0D, 3.0D),
+                new Vector3f(1.0F, 0.0F, 0.0F),
+                new Vector3f(0.0F, 1.0F, 0.0F),
+                new Vector3f(0.0F, 0.0F, -1.0F)
+        );
+        helper.assertTrue(
+                Math.abs(viewSpace.x() - 3.0F) < 1.0E-5F
+                        && Math.abs(viewSpace.y() - 2.0F) < 1.0E-5F
+                        && Math.abs(viewSpace.z() + 5.0F) < 1.0E-5F,
+                "Gravity lens camera basis did not produce stable view space"
+        );
         helper.assertTrue(
                 Math.abs(GravityLensMath.framebufferCoordinate(1.0F, 2.0F)
-                        - 0.25F) < 1.0E-5F
+                        - 0.75F) < 1.0E-5F
                         && Math.abs(GravityLensMath.framebufferCoordinate(-1.0F, 2.0F)
-                        - 0.75F) < 1.0E-5F,
+                        - 0.25F) < 1.0E-5F,
                 "Gravity lens clip coordinates were not mapped into the "
                         + "framebuffer orientation"
         );
@@ -1962,9 +1975,10 @@ public final class Tier6ProgressionGameTests {
                         "Gravity lens shader did not expose all three field uniforms");
                 helper.assertTrue(fragment.contains("sampleBentSpace")
                                 && fragment.contains("mirroredUv")
+                                && fragment.contains("STABLE_LENS_STRENGTH")
                                 && fragment.contains("DiffuseSampler"),
                         "Gravity lens fragment program did not multi-sample "
-                                + "the bent scene");
+                                + "the stable bent scene");
             }
         } catch (Exception exception) {
             helper.fail("Could not read Gravity Convergence recipes: "

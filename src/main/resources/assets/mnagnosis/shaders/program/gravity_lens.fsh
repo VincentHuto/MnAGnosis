@@ -11,6 +11,8 @@ in vec2 texCoord;
 
 out vec4 fragColor;
 
+const float STABLE_LENS_STRENGTH = 1.0;
+
 vec2 bendLens(
         vec2 uv,
         vec4 lens,
@@ -43,11 +45,11 @@ vec2 bendLens(
     float distortion = 0.46
             * (0.7 * inverseFalloff + 0.3 * falloff);
     float polarity = lens.w < 0.0 ? -1.0 : 1.0;
-    float pulse = 0.92 + 0.08 * sin(Time * 125.6637 + phase + polarity);
-    float horizonGuard = smoothstep(0.78, 1.02, normalizedDistance);
+    float horizonGuard = smoothstep(1.0, 1.10, normalizedDistance);
     vec2 direction = deltaPixels / distancePixels;
     vec2 offsetPixels = direction
-            * distortion * lens.z * polarity * pulse * horizonGuard;
+            * distortion * lens.z * polarity
+            * STABLE_LENS_STRENGTH * horizonGuard;
 
     float primaryRing = exp(
             -pow((normalizedDistance - 1.16) / 0.075, 2.0)
@@ -56,7 +58,7 @@ vec2 bendLens(
             -pow((normalizedDistance - 1.62) / 0.16, 2.0)
     ) * 0.18;
     ringLight += (primaryRing + outerRing)
-            * (0.72 + 0.18 * sin(Time * 188.4956 + phase));
+            * (0.78 + 0.04 * sin(Time * 62.8319 + phase));
 
     float einsteinBand = exp(
             -pow((normalizedDistance - 1.20) / 0.19, 2.0)

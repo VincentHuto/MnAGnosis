@@ -20,7 +20,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.slf4j.Logger;
@@ -257,12 +256,12 @@ public final class GravityLensController {
             Matrix4f projection
     ) {
         Vec3 relative = worldPosition.subtract(camera.getPosition());
-        Vector3f viewPosition = new Vector3f(
-                (float) relative.x,
-                (float) relative.y,
-                (float) relative.z
+        Vector3f viewPosition = GravityLensMath.toViewSpace(
+                relative,
+                camera.getLookVector(),
+                camera.getUpVector(),
+                camera.getLeftVector()
         );
-        new Quaternionf(camera.rotation()).transform(viewPosition);
         Vector4f clip = new Vector4f(viewPosition, 1.0F);
         projection.transform(clip);
         if (!Float.isFinite(clip.w()) || clip.w() <= 1.0E-4F) {
