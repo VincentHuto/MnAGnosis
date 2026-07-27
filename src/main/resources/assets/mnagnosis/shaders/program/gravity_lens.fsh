@@ -11,6 +11,7 @@ in vec2 texCoord;
 
 out vec4 fragColor;
 
+const float LENS_HALO_RADIUS = 6.5;
 const float STABLE_LENS_STRENGTH = 1.0;
 
 vec2 bendLens(
@@ -32,18 +33,26 @@ vec2 bendLens(
     }
 
     float normalizedDistance = distancePixels / lens.z;
-    if (normalizedDistance >= 4.5) {
+    if (normalizedDistance >= LENS_HALO_RADIUS) {
         return uv;
     }
 
     float clampedDistance = max(1.0, normalizedDistance);
-    float progress = clamp((4.5 - clampedDistance) / 3.5, 0.0, 1.0);
+    float progress = clamp(
+            (LENS_HALO_RADIUS - clampedDistance)
+            / (LENS_HALO_RADIUS - 1.0),
+            0.0,
+            1.0
+    );
     float falloff = progress * progress * (3.0 - 2.0 * progress);
+    float broadFalloff = pow(progress, 1.35);
     float inverseFalloff = max(0.0,
-            (1.0 / clampedDistance - 1.0 / 4.5)
-            / (1.0 - 1.0 / 4.5));
+            (1.0 / clampedDistance - 1.0 / LENS_HALO_RADIUS)
+            / (1.0 - 1.0 / LENS_HALO_RADIUS));
     float distortion = 0.46
-            * (0.7 * inverseFalloff + 0.3 * falloff);
+            * (0.55 * inverseFalloff
+            + 0.25 * falloff
+            + 0.20 * broadFalloff);
     float polarity = lens.w < 0.0 ? -1.0 : 1.0;
     float horizonGuard = smoothstep(1.0, 1.10, normalizedDistance);
     vec2 direction = deltaPixels / distancePixels;

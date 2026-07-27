@@ -8,7 +8,7 @@ import org.joml.Vector3f;
  */
 public final class GravityLensMath {
 
-    public static final float HALO_RADIUS = 4.5F;
+    public static final float HALO_RADIUS = 6.5F;
     public static final float MIN_SCREEN_RADIUS = 2.0F;
     public static final float MAX_SCREEN_RADIUS = 640.0F;
     private static final float MAX_DISTORTION = 0.46F;
@@ -25,8 +25,11 @@ public final class GravityLensMath {
         float smooth = progress * progress * (3.0F - 2.0F * progress);
         float inverse = (1.0F / distance - 1.0F / HALO_RADIUS)
                 / (1.0F - 1.0F / HALO_RADIUS);
+        float broad = (float) Math.pow(progress, 1.35D);
         float distortion = MAX_DISTORTION
-                * (0.7F * Math.max(0.0F, inverse) + 0.3F * smooth);
+                * (0.55F * Math.max(0.0F, inverse)
+                + 0.25F * smooth
+                + 0.20F * broad);
         return repelling ? -distortion : distortion;
     }
 

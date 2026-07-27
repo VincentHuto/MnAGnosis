@@ -1348,15 +1348,18 @@ public final class Tier6ProgressionGameTests {
     public static void gravityLensMathIsBoundedAndPolarityAware(GameTestHelper helper) {
         float horizonAttraction = GravityLensMath.distortion(1.05F, false);
         float outerAttraction = GravityLensMath.distortion(3.5F, false);
+        float farAttraction = GravityLensMath.distortion(5.5F, false);
         float horizonRepulsion = GravityLensMath.distortion(1.05F, true);
 
         helper.assertTrue(Float.isFinite(horizonAttraction)
                         && Float.isFinite(outerAttraction)
+                        && Float.isFinite(farAttraction)
                         && Float.isFinite(horizonRepulsion),
                 "Gravity lens falloff produced a non-finite value");
         helper.assertTrue(horizonAttraction > outerAttraction
                         && horizonAttraction > 0.30F
-                        && outerAttraction > 0.0F,
+                        && outerAttraction > farAttraction
+                        && farAttraction > 0.015F,
                 "Gravity lens falloff was not visibly strongest near the horizon");
         helper.assertTrue(horizonRepulsion < 0.0F
                         && Math.abs(horizonRepulsion + horizonAttraction) < 1.0E-5F,
@@ -1975,6 +1978,7 @@ public final class Tier6ProgressionGameTests {
                         "Gravity lens shader did not expose all three field uniforms");
                 helper.assertTrue(fragment.contains("sampleBentSpace")
                                 && fragment.contains("mirroredUv")
+                                && fragment.contains("LENS_HALO_RADIUS")
                                 && fragment.contains("STABLE_LENS_STRENGTH")
                                 && fragment.contains("DiffuseSampler"),
                         "Gravity lens fragment program did not multi-sample "
