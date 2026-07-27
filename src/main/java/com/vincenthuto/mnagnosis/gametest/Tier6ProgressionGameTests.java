@@ -56,6 +56,7 @@ import com.vincenthuto.mnagnosis.common.spell.ComponentLivingLand;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityFieldMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityLensMath;
 import com.vincenthuto.mnagnosis.common.spell.gravity.GravityPolarity;
+import com.vincenthuto.mnagnosis.common.spell.gravity.GravityRuptureMath;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandMode;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTerrain;
 import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandConservation;
@@ -1363,6 +1364,54 @@ public final class Tier6ProgressionGameTests {
         helper.assertTrue(GravityLensMath.clampScreenRadius(-20.0F) == 2.0F
                         && GravityLensMath.clampScreenRadius(900.0F) == 640.0F,
                 "Gravity lens screen radius did not clamp to safe bounds");
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void gravityRuptureMathDefinesCoreCollisionsAndRipples(
+            GameTestHelper helper
+    ) {
+        helper.assertTrue(
+                Math.abs(GravityRuptureMath.collisionDistance(5.0F, 5.0F)
+                        - 1.8F) < 1.0E-5F,
+                "Gravity core collision distance did not scale with field radius"
+        );
+        helper.assertTrue(
+                GravityRuptureMath.collisionDistance(3.0F, 3.0F) == 1.5F,
+                "Gravity core collision distance ignored its safe minimum"
+        );
+        helper.assertTrue(
+                GravityRuptureMath.maximumRadius(2) == 10.0F
+                        && GravityRuptureMath.maximumRadius(6) == 18.0F,
+                "Gravity rupture radius did not scale and cap with field count"
+        );
+        helper.assertTrue(
+                GravityRuptureMath.waveRadius(0, 0, 10.0F) == 0.0F
+                        && GravityRuptureMath.waveRadius(24, 0, 10.0F) == 10.0F
+                        && GravityRuptureMath.waveRadius(5, 1, 10.0F) < 0.0F,
+                "Gravity rupture wave timing was not staged and bounded"
+        );
+
+        float nearDamage = GravityRuptureMath.waveDamage(0, 2.0F, 10.0F);
+        float farDamage = GravityRuptureMath.waveDamage(0, 9.0F, 10.0F);
+        float laterDamage = GravityRuptureMath.waveDamage(2, 2.0F, 10.0F);
+        float nearKnockback =
+                GravityRuptureMath.waveKnockback(0, 2.0F, 10.0F);
+        float laterKnockback =
+                GravityRuptureMath.waveKnockback(2, 2.0F, 10.0F);
+        helper.assertTrue(
+                Float.isFinite(nearDamage) && Float.isFinite(farDamage)
+                        && Float.isFinite(laterDamage)
+                        && nearDamage > farDamage
+                        && nearDamage > laterDamage,
+                "Gravity rupture damage did not diminish by distance and wave"
+        );
+        helper.assertTrue(
+                Float.isFinite(nearKnockback)
+                        && nearKnockback > laterKnockback
+                        && laterKnockback > 0.0F,
+                "Gravity rupture knockback did not diminish across waves"
+        );
         helper.succeed();
     }
 
