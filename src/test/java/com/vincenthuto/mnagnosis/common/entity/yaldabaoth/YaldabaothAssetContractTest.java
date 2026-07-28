@@ -104,6 +104,62 @@ class YaldabaothAssetContractTest {
         );
     }
 
+    @Test
+    void sunIdleRotatesInItsVisiblePlaneInsteadOfTurningEdgeOn()
+            throws IOException {
+        JsonObject root = json(
+                "animations/entity/yaldabaoth_sun.animation.json"
+        );
+        JsonObject rotations = root.getAsJsonObject("animations")
+                .getAsJsonObject("animation.yaldabaoth_sun.idle")
+                .getAsJsonObject("bones")
+                .getAsJsonObject("root")
+                .getAsJsonObject("rotation");
+
+        boolean rotatesAroundVisibleAxis = false;
+        for (var keyframe : rotations.entrySet()) {
+            var vector = keyframe.getValue().getAsJsonObject()
+                    .getAsJsonArray("vector");
+            assertEquals(
+                    0.0D,
+                    vector.get(1).getAsDouble(),
+                    0.0001D,
+                    "Sun idle turned the disc edge-on at " + keyframe.getKey()
+            );
+            rotatesAroundVisibleAxis |= Math.abs(vector.get(2).getAsDouble()) > 1.0D;
+        }
+        assertTrue(rotatesAroundVisibleAxis, "Sun idle did not rotate in its plane");
+    }
+
+    @Test
+    void lionHeadFrontUsesTheCoherentFacialTextureTile() throws IOException {
+        JsonObject root = json("geo/entity/yaldabaoth.geo.json");
+        var bones = root.getAsJsonArray("minecraft:geometry")
+                .get(0).getAsJsonObject()
+                .getAsJsonArray("bones");
+        JsonObject head = null;
+        for (var element : bones) {
+            JsonObject bone = element.getAsJsonObject();
+            if ("head".equals(bone.get("name").getAsString())) {
+                head = bone;
+                break;
+            }
+        }
+        assertNotNull(head, "Yaldabaoth head bone was missing");
+        JsonObject headUv = head.getAsJsonArray("cubes")
+                .get(0).getAsJsonObject()
+                .getAsJsonObject("uv");
+        for (String face : new String[]{"north", "south"}) {
+            var faceUv = headUv.getAsJsonObject(face).getAsJsonArray("uv");
+            var faceSize =
+                    headUv.getAsJsonObject(face).getAsJsonArray("uv_size");
+            assertEquals(0, faceUv.get(0).getAsInt(), face + " facial tile U");
+            assertEquals(0, faceUv.get(1).getAsInt(), face + " facial tile V");
+            assertEquals(64, faceSize.get(0).getAsInt(), face + " facial width");
+            assertEquals(64, faceSize.get(1).getAsInt(), face + " facial height");
+        }
+    }
+
     private static void assertGeometry(
             String assetName,
             String expectedIdentifier,
