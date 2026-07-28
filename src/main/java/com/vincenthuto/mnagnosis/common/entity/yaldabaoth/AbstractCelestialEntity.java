@@ -4,22 +4,37 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.Optional;
+import java.util.UUID;
 
 public abstract class AbstractCelestialEntity
         extends AbstractYaldabaothEncounterEntity {
 
     public static final int COMBAT_ANIMATION_DURATION = 24;
     private static final String ALLEGIANCE_TAG = "Allegiance";
+    private static final String OWNER_TAG = "YaldabaothOwner";
+    private static final int OWNER_MISSING_GRACE_TICKS = 20;
     private static final EntityDataAccessor<Integer> ALLEGIANCE =
             SynchedEntityData.defineId(
                     AbstractCelestialEntity.class,
                     EntityDataSerializers.INT
             );
+    private static final EntityDataAccessor<Optional<UUID>> OWNER =
+            SynchedEntityData.defineId(
+                    AbstractCelestialEntity.class,
+                    EntityDataSerializers.OPTIONAL_UUID
+            );
+
+    private int ownerMissingTicks;
 
     protected AbstractCelestialEntity(
             EntityType<? extends AbstractCelestialEntity> type,
@@ -41,6 +56,7 @@ public abstract class AbstractCelestialEntity
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(ALLEGIANCE, CelestialAllegiance.HOSTILE.ordinal());
+        this.entityData.define(OWNER, Optional.empty());
     }
 
     public final CelestialAllegiance getAllegiance() {
@@ -58,10 +74,61 @@ public abstract class AbstractCelestialEntity
         );
     }
 
+    public final Optional<UUID> getOwnerId() {
+        return this.entityData.get(OWNER);
+    }
+
+    public final void setOwner(YaldabaothEntity owner) {
+        this.entityData.set(
+                OWNER,
+                owner == null ? Optional.empty() : Optional.of(owner.getUUID())
+        );
+    }
+
+    public abstract CelestialRole getCelestialRole();
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        Optional<UUID> ownerId = this.getOwnerId();
+        if (ownerId.isEmpty()) {
+            this.ownerMissingTicks = 0;
+            return;
+        }
+        Entity rawOwner = serverLevel.getEntity(ownerId.get());
+        if (rawOwner instanceof YaldabaothEntity owner && owner.isAlive()) {
+            this.ownerMissingTicks = 0;
+            CelestialFormation.Offset offset = CelestialFormation.offset(
+                    owner.getYRot(),
+                    owner.tickCount,
+                    this.getCelestialRole()
+            );
+            Vec3 target = owner.position().add(
+                    offset.x(),
+                    offset.y(),
+                    offset.z()
+            );
+            this.setDeltaMovement(Vec3.ZERO);
+            this.setPos(target);
+            this.setYRot(owner.getYRot());
+            this.setYHeadRot(owner.getYRot());
+            this.yBodyRot = owner.getYRot();
+            return;
+        }
+        if (rawOwner instanceof YaldabaothEntity
+                || ++this.ownerMissingTicks >= OWNER_MISSING_GRACE_TICKS) {
+            this.discard();
+        }
+    }
+
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putString(ALLEGIANCE_TAG, this.getAllegiance().serializedName());
+        this.getOwnerId().ifPresent(owner -> tag.putUUID(OWNER_TAG, owner));
     }
 
     @Override
@@ -70,6 +137,11 @@ public abstract class AbstractCelestialEntity
         this.setAllegiance(
                 CelestialAllegiance.fromSerializedName(tag.getString(ALLEGIANCE_TAG))
         );
+        if (tag.hasUUID(OWNER_TAG)) {
+            this.entityData.set(OWNER, Optional.of(tag.getUUID(OWNER_TAG)));
+        } else {
+            this.entityData.set(OWNER, Optional.empty());
+        }
     }
 
     @Override

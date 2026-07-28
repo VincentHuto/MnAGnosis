@@ -29,4 +29,9 @@ public final class YaldabaothMoonEntity extends AbstractCelestialEntity {
     protected RawAnimation combatAnimation() {
         return OMISSION_SLASH;
     }
+
+    @Override
+    public CelestialRole getCelestialRole() {
+        return CelestialRole.MOON;
+    }
 }

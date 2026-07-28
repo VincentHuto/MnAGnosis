@@ -27,4 +27,9 @@ public final class YaldabaothSunEntity extends AbstractCelestialEntity {
     protected RawAnimation combatAnimation() {
         return JUDGMENT;
     }
+
+    @Override
+    public CelestialRole getCelestialRole() {
+        return CelestialRole.SUN;
+    }
 }

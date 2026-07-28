@@ -3,7 +3,10 @@ package com.vincenthuto.mnagnosis.gametest;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.common.entity.yaldabaoth.AbstractCelestialEntity;
 import com.vincenthuto.mnagnosis.common.entity.yaldabaoth.AbstractYaldabaothEncounterEntity;
+import com.vincenthuto.mnagnosis.common.entity.yaldabaoth.CelestialRole;
 import com.vincenthuto.mnagnosis.common.entity.yaldabaoth.YaldabaothEntity;
+import com.vincenthuto.mnagnosis.common.entity.yaldabaoth.YaldabaothMoonEntity;
+import com.vincenthuto.mnagnosis.common.entity.yaldabaoth.YaldabaothSunEntity;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +17,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.Optional;
 
 @GameTestHolder(MnAGnosis.MODID)
 @PrefixGameTestTemplate(false)
@@ -90,6 +95,54 @@ public final class YaldabaothEntityGameTests {
             helper.assertTrue(output.getInt("CombatAnimationTicks") == 24,
                     path + " did not clamp loaded combat animation time");
         }
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void celestialOwnershipPersistsWithoutAdoptingOwnerlessSummons(
+            GameTestHelper helper
+    ) {
+        YaldabaothEntity owner = (YaldabaothEntity) requireType(
+                helper,
+                "yaldabaoth"
+        ).create(helper.getLevel());
+        YaldabaothSunEntity owned = (YaldabaothSunEntity) requireType(
+                helper,
+                "yaldabaoth_sun"
+        ).create(helper.getLevel());
+        YaldabaothMoonEntity ownerless = (YaldabaothMoonEntity) requireType(
+                helper,
+                "yaldabaoth_moon"
+        ).create(helper.getLevel());
+        helper.assertTrue(owner != null && owned != null && ownerless != null,
+                "Celestial ownership fixtures could not be created");
+
+        owned.setOwner(owner);
+        CompoundTag saved = new CompoundTag();
+        owned.saveWithoutId(saved);
+        YaldabaothSunEntity loaded = (YaldabaothSunEntity) requireType(
+                helper,
+                "yaldabaoth_sun"
+        ).create(helper.getLevel());
+        helper.assertTrue(loaded != null, "Owned Sun could not be reloaded");
+        loaded.load(saved);
+
+        helper.assertTrue(
+                loaded.getOwnerId().equals(Optional.of(owner.getUUID())),
+                "Owned Sun did not preserve Yaldabaoth UUID"
+        );
+        helper.assertTrue(
+                loaded.getCelestialRole() == CelestialRole.SUN,
+                "Sun reported the wrong formation role"
+        );
+        helper.assertTrue(
+                ownerless.getOwnerId().isEmpty(),
+                "Ownerless Moon adopted an owner"
+        );
+        helper.assertTrue(
+                ownerless.getCelestialRole() == CelestialRole.MOON,
+                "Moon reported the wrong formation role"
+        );
         helper.succeed();
     }
 
