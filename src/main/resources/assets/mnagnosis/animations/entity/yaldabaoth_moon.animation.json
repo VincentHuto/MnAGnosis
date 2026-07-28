@@ -1,0 +1,71 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.yaldabaoth_moon.idle": {
+      "loop": true,
+      "animation_length": 3.2,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0.0": {"vector": [0, -8, -4]},
+            "1.6": {"vector": [0, 8, 4]},
+            "3.2": {"vector": [0, -8, -4]}
+          }
+        },
+        "crescent": {
+          "position": {
+            "0.0": {"vector": [-0.35, 0, 0]},
+            "1.6": {"vector": [0.35, 0, 0]},
+            "3.2": {"vector": [-0.35, 0, 0]}
+          }
+        },
+        "cut": {
+          "position": {
+            "0.0": {"vector": [0.3, 0, 0]},
+            "1.6": {"vector": [-0.3, 0, 0]},
+            "3.2": {"vector": [0.3, 0, 0]}
+          }
+        }
+      }
+    },
+    "animation.yaldabaoth_moon.combat.omission_slash": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "root": {
+          "position": {
+            "0.0": {"vector": [0, 0, 0]},
+            "0.28": {"vector": [-3, 0, 1]},
+            "0.58": {"vector": [5, 0, -2]},
+            "0.9": {"vector": [1, 0, 0]},
+            "1.2": {"vector": [0, 0, 0]}
+          },
+          "rotation": {
+            "0.0": {"vector": [0, 0, 0]},
+            "0.28": {"vector": [0, 78, -18]},
+            "0.48": {"vector": [0, 90, -28]},
+            "0.68": {"vector": [0, -18, 34]},
+            "0.92": {"vector": [0, 8, 8]},
+            "1.2": {"vector": [0, 0, 0]}
+          }
+        },
+        "crescent": {
+          "scale": {
+            "0.0": {"vector": [1, 1, 1]},
+            "0.28": {"vector": [0.82, 1.12, 1]},
+            "0.58": {"vector": [1.24, 0.92, 1]},
+            "1.2": {"vector": [1, 1, 1]}
+          }
+        },
+        "cut": {
+          "position": {
+            "0.0": {"vector": [0, 0, 0]},
+            "0.58": {"vector": [2.5, 0, -0.4]},
+            "1.2": {"vector": [0, 0, 0]}
+          }
+        }
+      }
+    }
+  },
+  "geckolib_format_version": 2
+}
