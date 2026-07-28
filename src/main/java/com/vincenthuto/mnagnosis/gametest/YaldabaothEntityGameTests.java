@@ -14,11 +14,15 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @GameTestHolder(MnAGnosis.MODID)
 @PrefixGameTestTemplate(false)
@@ -146,9 +150,212 @@ public final class YaldabaothEntityGameTests {
         helper.succeed();
     }
 
+    @GameTest(
+            templateNamespace = MnAGnosis.MODID,
+            template = "empty",
+            timeoutTicks = 40
+    )
+    public static void yaldabaothCreatesOneFacingLockedCelestialPair(
+            GameTestHelper helper
+    ) {
+        YaldabaothEntity boss = spawnBoss(helper, 0.0F);
+
+        helper.runAfterDelay(2, () -> {
+            List<AbstractCelestialEntity> companions =
+                    ownedCompanions(helper, boss);
+            helper.assertTrue(companions.size() == 2,
+                    "Yaldabaoth did not create exactly two companions");
+            YaldabaothSunEntity sun = requireOwned(
+                    helper,
+                    companions,
+                    CelestialRole.SUN
+            );
+            YaldabaothMoonEntity moon = requireOwned(
+                    helper,
+                    companions,
+                    CelestialRole.MOON
+            );
+            helper.assertTrue(sun.getX() < boss.getX(),
+                    "Sun was not on Yaldabaoth's right at yaw zero");
+            helper.assertTrue(moon.getX() > boss.getX(),
+                    "Moon was not on Yaldabaoth's left at yaw zero");
+
+            boss.setYRot(90.0F);
+            boss.setPos(
+                    boss.getX() + 2.0D,
+                    boss.getY(),
+                    boss.getZ() + 3.0D
+            );
+            helper.runAfterDelay(2, () -> {
+                helper.assertTrue(sun.getZ() < boss.getZ(),
+                        "Sun did not rotate with Yaldabaoth");
+                helper.assertTrue(moon.getZ() > boss.getZ(),
+                        "Moon did not rotate with Yaldabaoth");
+                helper.assertTrue(ownedCompanions(helper, boss).size() == 2,
+                        "Repeated maintenance duplicated a companion");
+                helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(
+            templateNamespace = MnAGnosis.MODID,
+            template = "empty",
+            timeoutTicks = 430
+    )
+    public static void destroyedSunReturnsAfterIndependentFourHundredTickDelay(
+            GameTestHelper helper
+    ) {
+        YaldabaothEntity boss = spawnBoss(helper, 0.0F);
+
+        helper.runAfterDelay(2, () -> {
+            List<AbstractCelestialEntity> initial =
+                    ownedCompanions(helper, boss);
+            YaldabaothSunEntity sun =
+                    requireOwned(helper, initial, CelestialRole.SUN);
+            YaldabaothMoonEntity moon =
+                    requireOwned(helper, initial, CelestialRole.MOON);
+            UUID originalSun = sun.getUUID();
+            UUID originalMoon = moon.getUUID();
+
+            sun.kill();
+            helper.assertTrue(
+                    boss.getCompanionRespawnTicks(CelestialRole.SUN)
+                            == 400,
+                    "Sun respawn did not start at 400 ticks"
+            );
+            helper.assertTrue(
+                    boss.getCompanionRespawnTicks(CelestialRole.MOON) == 0,
+                    "Sun destruction changed Moon respawn state"
+            );
+
+            helper.runAfterDelay(398, () -> {
+                helper.assertTrue(
+                        ownedCompanions(helper, boss).stream()
+                                .noneMatch(entity ->
+                                        entity.getCelestialRole()
+                                                == CelestialRole.SUN),
+                        "Sun returned before the 400-tick delay elapsed"
+                );
+                helper.assertTrue(
+                        boss.getCompanionId(CelestialRole.MOON)
+                                .filter(originalMoon::equals)
+                                .isPresent(),
+                        "Surviving Moon was replaced"
+                );
+            });
+
+            helper.runAfterDelay(402, () -> {
+                YaldabaothSunEntity returned = requireOwned(
+                        helper,
+                        ownedCompanions(helper, boss),
+                        CelestialRole.SUN
+                );
+                helper.assertTrue(!returned.getUUID().equals(originalSun),
+                        "Destroyed Sun did not receive a new identity");
+                helper.assertTrue(
+                        boss.getCompanionRespawnTicks(CelestialRole.SUN) == 0,
+                        "Sun respawn timer did not clear"
+                );
+                helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void companionStatePersistsAndOwnerCleanupIsScoped(
+            GameTestHelper helper
+    ) {
+        YaldabaothEntity boss = spawnBoss(helper, 0.0F);
+        YaldabaothMoonEntity ownerless = (YaldabaothMoonEntity) requireType(
+                helper,
+                "yaldabaoth_moon"
+        ).create(helper.getLevel());
+        helper.assertTrue(ownerless != null, "Ownerless Moon could not be created");
+        ownerless.setPos(boss.position().add(0.0D, 1.0D, 0.0D));
+        helper.getLevel().addFreshEntity(ownerless);
+
+        helper.runAfterDelay(2, () -> {
+            YaldabaothSunEntity sun = requireOwned(
+                    helper,
+                    ownedCompanions(helper, boss),
+                    CelestialRole.SUN
+            );
+            sun.kill();
+
+            CompoundTag saved = new CompoundTag();
+            boss.saveWithoutId(saved);
+            YaldabaothEntity loaded = (YaldabaothEntity) requireType(
+                    helper,
+                    "yaldabaoth"
+            ).create(helper.getLevel());
+            helper.assertTrue(loaded != null, "Yaldabaoth could not be reloaded");
+            loaded.load(saved);
+            helper.assertTrue(
+                    loaded.getCompanionRespawnTicks(CelestialRole.SUN) > 0,
+                    "Sun respawn timer did not survive NBT"
+            );
+            helper.assertTrue(
+                    loaded.getCompanionId(CelestialRole.MOON).isPresent(),
+                    "Moon UUID did not survive NBT"
+            );
+
+            boss.discard();
+            helper.runAfterDelay(2, () -> {
+                helper.assertTrue(ownedCompanions(helper, boss).isEmpty(),
+                        "Owned companions survived Yaldabaoth removal");
+                helper.assertTrue(ownerless.isAlive(),
+                        "Cleanup removed an ownerless celestial");
+                helper.succeed();
+            });
+        });
+    }
+
     private static EntityType<?> requireType(GameTestHelper helper, String path) {
         EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(MnAGnosis.rloc(path));
         helper.assertTrue(type != null, "Missing entity type mnagnosis:" + path);
         return type;
+    }
+
+    private static YaldabaothEntity spawnBoss(
+            GameTestHelper helper,
+            float yaw
+    ) {
+        YaldabaothEntity boss = (YaldabaothEntity) requireType(
+                helper,
+                "yaldabaoth"
+        ).create(helper.getLevel());
+        helper.assertTrue(boss != null, "Yaldabaoth could not be created");
+        Vec3 spawn = helper.absoluteVec(new Vec3(5.0D, 2.0D, 5.0D));
+        boss.moveTo(spawn.x(), spawn.y(), spawn.z(), yaw, 0.0F);
+        helper.getLevel().addFreshEntity(boss);
+        return boss;
+    }
+
+    private static List<AbstractCelestialEntity> ownedCompanions(
+            GameTestHelper helper,
+            YaldabaothEntity boss
+    ) {
+        return helper.getLevel().getEntitiesOfClass(
+                AbstractCelestialEntity.class,
+                new AABB(boss.blockPosition()).inflate(16.0D),
+                entity -> entity.getOwnerId()
+                        .filter(boss.getUUID()::equals)
+                        .isPresent()
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends AbstractCelestialEntity> T requireOwned(
+            GameTestHelper helper,
+            List<AbstractCelestialEntity> companions,
+            CelestialRole role
+    ) {
+        AbstractCelestialEntity match = companions.stream()
+                .filter(entity -> entity.getCelestialRole() == role)
+                .findFirst()
+                .orElse(null);
+        helper.assertTrue(match != null, "Missing owned " + role);
+        return (T) match;
     }
 }

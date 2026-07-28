@@ -5,6 +5,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -122,6 +123,22 @@ public abstract class AbstractCelestialEntity
                 || ++this.ownerMissingTicks >= OWNER_MISSING_GRACE_TICKS) {
             this.discard();
         }
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        if (this.level() instanceof ServerLevel serverLevel) {
+            this.getOwnerId()
+                    .map(serverLevel::getEntity)
+                    .filter(YaldabaothEntity.class::isInstance)
+                    .map(YaldabaothEntity.class::cast)
+                    .filter(YaldabaothEntity::isAlive)
+                    .ifPresent(owner -> owner.onOwnedCelestialKilled(
+                            this.getCelestialRole(),
+                            this.getUUID()
+                    ));
+        }
+        super.die(source);
     }
 
     @Override
