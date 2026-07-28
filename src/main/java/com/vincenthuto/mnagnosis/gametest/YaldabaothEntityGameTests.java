@@ -201,6 +201,85 @@ public final class YaldabaothEntityGameTests {
     @GameTest(
             templateNamespace = MnAGnosis.MODID,
             template = "empty",
+            timeoutTicks = 40
+    )
+    public static void yaldabaothReconcilesDuplicateOwnedCompanions(
+            GameTestHelper helper
+    ) {
+        YaldabaothEntity boss = spawnBoss(helper, 0.0F);
+
+        helper.runAfterDelay(2, () -> {
+            YaldabaothSunEntity duplicate = (YaldabaothSunEntity) requireType(
+                    helper,
+                    "yaldabaoth_sun"
+            ).create(helper.getLevel());
+            helper.assertTrue(duplicate != null,
+                    "Duplicate Sun fixture could not be created");
+            duplicate.setOwner(boss);
+            duplicate.setPos(boss.position());
+            helper.getLevel().addFreshEntity(duplicate);
+
+            helper.runAfterDelay(2, () -> {
+                long suns = ownedCompanions(helper, boss).stream()
+                        .filter(entity ->
+                                entity.getCelestialRole() == CelestialRole.SUN)
+                        .count();
+                helper.assertTrue(suns == 1,
+                        "Yaldabaoth did not reconcile duplicate owned Suns");
+                helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(
+            templateNamespace = MnAGnosis.MODID,
+            template = "empty",
+            timeoutTicks = 60
+    )
+    public static void celestialWaitsForStaggeredOwnerLoadWithoutDuplication(
+            GameTestHelper helper
+    ) {
+        YaldabaothEntity boss = (YaldabaothEntity) requireType(
+                helper,
+                "yaldabaoth"
+        ).create(helper.getLevel());
+        YaldabaothSunEntity sun = (YaldabaothSunEntity) requireType(
+                helper,
+                "yaldabaoth_sun"
+        ).create(helper.getLevel());
+        helper.assertTrue(boss != null && sun != null,
+                "Staggered-load fixtures could not be created");
+        Vec3 spawn = helper.absoluteVec(new Vec3(5.0D, 2.0D, 5.0D));
+        boss.moveTo(spawn.x(), spawn.y(), spawn.z(), 0.0F, 0.0F);
+        sun.setOwner(boss);
+        sun.setPos(spawn.add(1.0D, 0.0D, 0.0D));
+        helper.getLevel().addFreshEntity(sun);
+
+        helper.runAfterDelay(25, () -> {
+            helper.assertTrue(sun.isAlive(),
+                    "Celestial discarded itself while its owner was loading");
+            helper.getLevel().addFreshEntity(boss);
+            helper.runAfterDelay(2, () -> {
+                long suns = ownedCompanions(helper, boss).stream()
+                        .filter(entity ->
+                                entity.getCelestialRole() == CelestialRole.SUN)
+                        .count();
+                helper.assertTrue(suns == 1,
+                        "Staggered owner load created a duplicate Sun");
+                helper.assertTrue(
+                        boss.getCompanionId(CelestialRole.SUN)
+                                .filter(sun.getUUID()::equals)
+                                .isPresent(),
+                        "Yaldabaoth did not recover the preloaded Sun"
+                );
+                helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(
+            templateNamespace = MnAGnosis.MODID,
+            template = "empty",
             timeoutTicks = 430
     )
     public static void destroyedSunReturnsAfterIndependentFourHundredTickDelay(

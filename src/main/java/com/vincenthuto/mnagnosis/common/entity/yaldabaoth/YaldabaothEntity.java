@@ -12,6 +12,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.core.animation.RawAnimation;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -89,10 +92,15 @@ public final class YaldabaothEntity extends AbstractYaldabaothEncounterEntity {
     }
 
     private void maintainCompanion(ServerLevel level, CelestialRole role) {
-        AbstractCelestialEntity companion = this.resolveCompanion(level, role);
+        CompanionResolution resolution = this.resolveCompanion(level, role);
+        AbstractCelestialEntity companion = resolution.companion();
         if (companion != null) {
             this.setCompanionId(role, companion.getUUID());
             this.setCompanionRespawnTicks(role, 0);
+            return;
+        }
+
+        if (resolution.awaitingStoredCompanion()) {
             return;
         }
 
@@ -116,22 +124,25 @@ public final class YaldabaothEntity extends AbstractYaldabaothEncounterEntity {
         this.spawnCompanion(level, role);
     }
 
-    private AbstractCelestialEntity resolveCompanion(
+    private CompanionResolution resolveCompanion(
             ServerLevel level,
             CelestialRole role
     ) {
-        Entity byId = this.getCompanionId(role)
+        Optional<UUID> storedId = this.getCompanionId(role);
+        Entity byId = storedId
                 .map(level::getEntity)
                 .orElse(null);
-        if (byId instanceof AbstractCelestialEntity celestial
+        AbstractCelestialEntity storedCompanion =
+                byId instanceof AbstractCelestialEntity celestial
                 && celestial.getCelestialRole() == role
                 && celestial.getOwnerId()
                         .filter(this.getUUID()::equals)
                         .isPresent()
-                && celestial.isAlive()) {
-            return celestial;
-        }
-        return level.getEntitiesOfClass(
+                && celestial.isAlive()
+                        ? celestial
+                        : null;
+        List<AbstractCelestialEntity> matches = new ArrayList<>(
+                level.getEntitiesOfClass(
                 AbstractCelestialEntity.class,
                 this.getBoundingBox().inflate(RECOVERY_RADIUS),
                 celestial -> celestial.isAlive()
@@ -139,7 +150,31 @@ public final class YaldabaothEntity extends AbstractYaldabaothEncounterEntity {
                         && celestial.getOwnerId()
                                 .filter(this.getUUID()::equals)
                                 .isPresent()
-        ).stream().findFirst().orElse(null);
+                )
+        );
+        if (storedCompanion != null
+                && matches.stream().noneMatch(entity ->
+                        entity.getUUID().equals(storedCompanion.getUUID()))) {
+            matches.add(storedCompanion);
+        }
+
+        if (storedId.isPresent() && byId == null) {
+            matches.forEach(Entity::discard);
+            return new CompanionResolution(null, true);
+        }
+
+        AbstractCelestialEntity canonical = storedCompanion != null
+                ? storedCompanion
+                : matches.stream()
+                        .min(Comparator.comparing(entity ->
+                                entity.getUUID().toString()))
+                        .orElse(null);
+        if (canonical != null) {
+            matches.stream()
+                    .filter(entity -> entity != canonical)
+                    .forEach(Entity::discard);
+        }
+        return new CompanionResolution(canonical, false);
     }
 
     private void spawnCompanion(ServerLevel level, CelestialRole role) {
@@ -273,5 +308,11 @@ public final class YaldabaothEntity extends AbstractYaldabaothEncounterEntity {
     @Override
     protected RawAnimation combatAnimation() {
         return ROAR_SWEEP;
+    }
+
+    private record CompanionResolution(
+            AbstractCelestialEntity companion,
+            boolean awaitingStoredCompanion
+    ) {
     }
 }

@@ -23,7 +23,6 @@ public abstract class AbstractCelestialEntity
     public static final int COMBAT_ANIMATION_DURATION = 24;
     private static final String ALLEGIANCE_TAG = "Allegiance";
     private static final String OWNER_TAG = "YaldabaothOwner";
-    private static final int OWNER_MISSING_GRACE_TICKS = 20;
     private static final EntityDataAccessor<Integer> ALLEGIANCE =
             SynchedEntityData.defineId(
                     AbstractCelestialEntity.class,
@@ -35,7 +34,7 @@ public abstract class AbstractCelestialEntity
                     EntityDataSerializers.OPTIONAL_UUID
             );
 
-    private int ownerMissingTicks;
+    private boolean ownerRemovalReported;
 
     protected AbstractCelestialEntity(
             EntityType<? extends AbstractCelestialEntity> type,
@@ -96,12 +95,10 @@ public abstract class AbstractCelestialEntity
         }
         Optional<UUID> ownerId = this.getOwnerId();
         if (ownerId.isEmpty()) {
-            this.ownerMissingTicks = 0;
             return;
         }
         Entity rawOwner = serverLevel.getEntity(ownerId.get());
         if (rawOwner instanceof YaldabaothEntity owner && owner.isAlive()) {
-            this.ownerMissingTicks = 0;
             CelestialFormation.Offset offset = CelestialFormation.offset(
                     owner.getYRot(),
                     owner.tickCount,
@@ -119,14 +116,30 @@ public abstract class AbstractCelestialEntity
             this.yBodyRot = owner.getYRot();
             return;
         }
-        if (rawOwner instanceof YaldabaothEntity
-                || ++this.ownerMissingTicks >= OWNER_MISSING_GRACE_TICKS) {
+        if (rawOwner instanceof YaldabaothEntity) {
             this.discard();
         }
     }
 
     @Override
     public void die(DamageSource source) {
+        this.reportDestructionToOwner();
+        super.die(source);
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        if (!this.level().isClientSide && reason.shouldDestroy()) {
+            this.reportDestructionToOwner();
+        }
+        super.remove(reason);
+    }
+
+    private void reportDestructionToOwner() {
+        if (this.ownerRemovalReported) {
+            return;
+        }
+        this.ownerRemovalReported = true;
         if (this.level() instanceof ServerLevel serverLevel) {
             this.getOwnerId()
                     .map(serverLevel::getEntity)
@@ -138,7 +151,6 @@ public abstract class AbstractCelestialEntity
                             this.getUUID()
                     ));
         }
-        super.die(source);
     }
 
     @Override
