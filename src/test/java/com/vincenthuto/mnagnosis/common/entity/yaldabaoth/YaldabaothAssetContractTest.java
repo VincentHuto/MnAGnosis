@@ -87,6 +87,23 @@ class YaldabaothAssetContractTest {
         assertTrue(containsNear(moon, 0xF5F5EF, 8), "Moon has no white outline");
     }
 
+    @Test
+    void localizationNamesAllThreeEncounterEntities() throws IOException {
+        JsonObject language = json("lang/en_us.json");
+        assertEquals(
+                "Yaldabaoth",
+                language.get("entity.mnagnosis.yaldabaoth").getAsString()
+        );
+        assertEquals(
+                "The Counterfeit Sun",
+                language.get("entity.mnagnosis.yaldabaoth_sun").getAsString()
+        );
+        assertEquals(
+                "The Counterfeit Moon",
+                language.get("entity.mnagnosis.yaldabaoth_moon").getAsString()
+        );
+    }
+
     private static void assertGeometry(
             String assetName,
             String expectedIdentifier,
