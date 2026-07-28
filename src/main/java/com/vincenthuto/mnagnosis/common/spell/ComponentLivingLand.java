@@ -13,10 +13,13 @@ import com.mna.api.spells.targeting.SpellTarget;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandControllerEntity;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import com.vincenthuto.mnagnosis.common.registry.EntityRegistry;
+import com.vincenthuto.mnagnosis.common.spell.livingland.LivingLandTarget;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 public final class ComponentLivingLand extends SpellEffect {
 
@@ -41,12 +44,26 @@ public final class ComponentLivingLand extends SpellEffect {
                     ? ComponentApplicationResult.SUCCESS : ComponentApplicationResult.FAIL;
         }
         if (!(context.getLevel() instanceof ServerLevel level)
-                || target == null || !target.isLivingEntity()) {
+                || target == null || target == SpellTarget.NONE) {
             return ComponentApplicationResult.FAIL;
         }
-        LivingEntity victim = target.getLivingEntity();
-        if (victim == player || !victim.isAlive()
-                || player.isAlliedTo(victim) || victim.isAlliedTo(player)) {
+        LivingLandTarget livingLandTarget;
+        if (target.isLivingEntity()) {
+            LivingEntity victim = target.getLivingEntity();
+            if (victim == player || !victim.isAlive()
+                    || player.isAlliedTo(victim) || victim.isAlliedTo(player)) {
+                return ComponentApplicationResult.FAIL;
+            }
+            livingLandTarget = LivingLandTarget.entity(victim);
+        } else if (target.isBlock()) {
+            Direction face = target.getBlockFace(this);
+            if (face == null) {
+                return ComponentApplicationResult.FAIL;
+            }
+            Vec3 anchor = Vec3.atCenterOf(target.getBlock()).add(
+                    Vec3.atLowerCornerOf(face.getNormal()).scale(0.501D));
+            livingLandTarget = LivingLandTarget.fixed(anchor);
+        } else {
             return ComponentApplicationResult.FAIL;
         }
         LivingLandControllerEntity.makeRoomFor(level, player.getUUID());
@@ -55,7 +72,7 @@ public final class ComponentLivingLand extends SpellEffect {
         boolean projected = modifiedPart.getValue(Attribute.PRECISION) >= 1.0F
                 || context.getSpell().getModifiers().stream()
                 .anyMatch(SpellComponentRegistry::isPrecision);
-        controller.configure(player, victim,
+        controller.configure(player, livingLandTarget,
                 modifiedPart.getValue(Attribute.RADIUS),
                 Math.round(modifiedPart.getValue(Attribute.DURATION) * 20.0F),
                 modifiedPart.getValue(Attribute.MAGNITUDE),
@@ -71,7 +88,7 @@ public final class ComponentLivingLand extends SpellEffect {
 
     @Override
     public boolean targetsBlocks() {
-        return false;
+        return true;
     }
 
     @Override

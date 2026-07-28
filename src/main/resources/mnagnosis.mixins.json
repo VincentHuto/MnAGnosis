@@ -11,7 +11,8 @@
     "core.FeyLightMixin",
     "core.ProgressionEventHandlerMixin",
     "core.PlayerProgressionMixin",
-    "core.SummonCommandMixin"
+    "core.SummonCommandMixin",
+    "core.ShapeRaytraceLivingLandMixin"
   ],
   "client": [
     "client.GuiOcculusMixin",

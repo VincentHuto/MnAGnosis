@@ -30,37 +30,13 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
                 Mth.lerp(partialTick, entity.xOld, entity.getX()),
                 Mth.lerp(partialTick, entity.yOld, entity.getY()),
                 Mth.lerp(partialTick, entity.zOld, entity.getZ()));
-        if (entity.isProjected()) {
-            renderProjectedTendril(
-                    entity, partialTick, poseStack, buffers, packedLight, renderedHead);
-            poseStack.popPose();
-            super.render(entity, yaw, partialTick, poseStack, buffers, packedLight);
-            return;
-        }
-        for (int index = 0; index < entity.getPayloadLength(); index++) {
-            Vec3 segment = entity.getSegmentPosition(index, partialTick);
-            Vec3 tangent = entity.getSegmentTangent(index, partialTick);
-            Vec3 offset = segment.subtract(renderedHead);
-            float segmentYaw = (float) Math.toDegrees(Math.atan2(tangent.x, tangent.z));
-            float segmentPitch = (float) -Math.toDegrees(Math.asin(tangent.y));
-            poseStack.pushPose();
-            poseStack.translate(offset.x, offset.y, offset.z);
-            poseStack.mulPose(Axis.YP.rotationDegrees(segmentYaw));
-            poseStack.mulPose(Axis.XP.rotationDegrees(segmentPitch));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(
-                    (index & 1) == 0 ? 7.0F : -7.0F));
-            poseStack.scale(0.94F, 0.94F, 0.94F);
-            poseStack.translate(-0.5D, -0.5D, -0.5D);
-            context.getBlockRenderDispatcher().renderSingleBlock(
-                    entity.getCarriedState(index), poseStack, buffers,
-                    packedLight, OverlayTexture.NO_OVERLAY);
-            poseStack.popPose();
-        }
+        renderTendril(
+                entity, partialTick, poseStack, buffers, packedLight, renderedHead);
         poseStack.popPose();
         super.render(entity, yaw, partialTick, poseStack, buffers, packedLight);
     }
 
-    private void renderProjectedTendril(
+    private void renderTendril(
             LivingLandStrikeEntity entity,
             float partialTick,
             PoseStack poseStack,
@@ -68,9 +44,9 @@ public final class LivingLandStrikeRenderer extends EntityRenderer<LivingLandStr
             int packedLight,
             Vec3 renderedHead
     ) {
-        for (int index = 0; index < entity.getPayloadLength() - 1; index++) {
-            Vec3 start = entity.getSegmentPosition(index, partialTick);
-            Vec3 end = entity.getSegmentPosition(index + 1, partialTick);
+        for (int index = 0; index < entity.getBodySpanCount(); index++) {
+            Vec3 start = entity.getControlPointPosition(index, partialTick);
+            Vec3 end = entity.getControlPointPosition(index + 1, partialTick);
             Vec3 span = end.subtract(start);
             double length = span.length();
             if (!Double.isFinite(length) || length < 1.0E-4D) {

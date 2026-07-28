@@ -57,7 +57,15 @@ public final class LivingLandTerrain {
             LivingEntity target,
             int radius
     ) {
-        BlockPos origin = target.blockPosition();
+        return scan(level, caster, target.blockPosition(), radius);
+    }
+
+    public static Optional<ScanResult> scan(
+            ServerLevel level,
+            ServerPlayer caster,
+            BlockPos origin,
+            int radius
+    ) {
         List<SourceCandidate> ceilings = verticalSources(
                 level, caster, origin, Direction.UP, 2, 5
         );

@@ -93,23 +93,36 @@ public final class LivingLandPillarPayload {
             BlockPos preferred,
             Vec3 axis
     ) {
-        if (settled) {
+        Vec3 direction = axis.lengthSqr() < 1.0E-8D
+                ? new Vec3(0.0D, 1.0D, 0.0D) : axis.normalize();
+        double center = (reservations.size() - 1) * 0.5D;
+        List<BlockPos> preferredPositions = new ArrayList<>(reservations.size());
+        for (int index = 0; index < reservations.size(); index++) {
+            BlockPos offset = BlockPos.containing(direction.scale(index - center));
+            preferredPositions.add(preferred.offset(offset));
+        }
+        return settleAt(level, caster, preferredPositions);
+    }
+
+    public boolean settleAt(
+            ServerLevel level,
+            ServerPlayer caster,
+            List<BlockPos> preferredPositions
+    ) {
+        if (settled || preferredPositions.size() != reservations.size()) {
             return false;
         }
         if (projected) {
             settled = true;
             return true;
         }
-        Vec3 direction = axis.lengthSqr() < 1.0E-8D
-                ? new Vec3(0.0D, 1.0D, 0.0D) : axis.normalize();
-        double center = (reservations.size() - 1) * 0.5D;
         boolean complete = true;
-        for (int index = 0; index < reservations.size(); index++) {
+        for (int index = reservations.size() - 1; index >= 0; index--) {
             LivingLandConservation.Reservation reservation = reservations.get(index);
-            BlockPos offset = BlockPos.containing(direction.scale(index - center));
             LivingLandConservation.SettlementResult result =
                     LivingLandConservation.settle(
-                            level, caster, reservation, preferred.offset(offset));
+                            level, caster, reservation,
+                            preferredPositions.get(index));
             if (result == LivingLandConservation.SettlementResult.FAILED) {
                 result = LivingLandConservation.emergencySettle(level, reservation);
             }
