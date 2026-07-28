@@ -10,8 +10,11 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 public final class YaldabaothEntity extends AbstractYaldabaothEncounterEntity {
 
     public static final int COMBAT_ANIMATION_DURATION = 36;
+    private static final int BASE_ANIMATION_TRANSITION_TICKS = 10;
     private static final RawAnimation IDLE =
             RawAnimation.begin().thenLoop("animation.yaldabaoth.idle");
+    private static final RawAnimation MOVEMENT =
+            RawAnimation.begin().thenLoop("animation.yaldabaoth.move");
     private static final RawAnimation ROAR_SWEEP =
             RawAnimation.begin().thenPlay("animation.yaldabaoth.combat.roar_sweep");
 
@@ -39,6 +42,16 @@ public final class YaldabaothEntity extends AbstractYaldabaothEncounterEntity {
     @Override
     protected RawAnimation idleAnimation() {
         return IDLE;
+    }
+
+    @Override
+    protected RawAnimation movementAnimation() {
+        return MOVEMENT;
+    }
+
+    @Override
+    protected int baseAnimationTransitionTicks() {
+        return BASE_ANIMATION_TRANSITION_TICKS;
     }
 
     @Override

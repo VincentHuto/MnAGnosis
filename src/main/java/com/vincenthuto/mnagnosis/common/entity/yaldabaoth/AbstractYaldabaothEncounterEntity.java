@@ -124,10 +124,14 @@ public abstract class AbstractYaldabaothEncounterEntity
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(
                 this,
-                "idle_controller",
-                2,
+                "base_controller",
+                this.baseAnimationTransitionTicks(),
                 state -> {
-                    state.setAnimation(this.idleAnimation());
+                    state.setAnimation(YaldabaothBaseAnimationSelector.select(
+                            state.isMoving(),
+                            this.idleAnimation(),
+                            this.movementAnimation()
+                    ));
                     return PlayState.CONTINUE;
                 }
         ));
@@ -147,6 +151,14 @@ public abstract class AbstractYaldabaothEncounterEntity
     protected abstract int combatAnimationDuration();
 
     protected abstract RawAnimation idleAnimation();
+
+    protected RawAnimation movementAnimation() {
+        return this.idleAnimation();
+    }
+
+    protected int baseAnimationTransitionTicks() {
+        return 2;
+    }
 
     protected abstract RawAnimation combatAnimation();
 }
