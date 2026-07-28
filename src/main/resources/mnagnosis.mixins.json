@@ -11,6 +11,7 @@
     "core.FeyLightMixin",
     "core.ProgressionEventHandlerMixin",
     "core.PlayerProgressionMixin",
+    "core.SpellCasterMixin",
     "core.SummonCommandMixin",
     "core.ShapeRaytraceLivingLandMixin"
   ],
