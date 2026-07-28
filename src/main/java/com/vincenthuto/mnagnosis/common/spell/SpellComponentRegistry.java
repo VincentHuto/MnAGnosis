@@ -21,6 +21,12 @@ public final class SpellComponentRegistry {
             new ComponentGravityConvergence(
                     MnAGnosis.rloc("textures/spell/component/gravity_convergence.png")
             );
+    public static final ResourceLocation GRAVITY_SHIFT_ID =
+            MnAGnosis.rloc("components/gravity_shift");
+    public static final ComponentGravityShift GRAVITY_SHIFT =
+            new ComponentGravityShift(
+                    MnAGnosis.rloc("textures/spell/component/gravity_shift.png")
+            );
     public static final ResourceLocation LIVING_LAND_ID =
             MnAGnosis.rloc("components/living_land");
     public static final ComponentLivingLand LIVING_LAND = new ComponentLivingLand(
@@ -45,6 +51,7 @@ public final class SpellComponentRegistry {
                 helper -> {
                     helper.register(TRUE_DAMAGE_ID, TRUE_DAMAGE);
                     helper.register(GRAVITY_CONVERGENCE_ID, GRAVITY_CONVERGENCE);
+                    helper.register(GRAVITY_SHIFT_ID, GRAVITY_SHIFT);
                     helper.register(LIVING_LAND_ID, LIVING_LAND);
                 }
         );

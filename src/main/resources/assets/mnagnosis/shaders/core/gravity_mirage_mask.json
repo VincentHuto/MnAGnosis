@@ -1,0 +1,15 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "mnagnosis:gravity_mirage_mask",
+  "fragment": "mnagnosis:gravity_mirage_mask",
+  "attributes": [
+    "Position",
+    "Color"
+  ],
+  "samplers": [],
+  "uniforms": []
+}

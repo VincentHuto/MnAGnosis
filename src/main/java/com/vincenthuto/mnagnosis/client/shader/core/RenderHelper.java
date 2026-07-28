@@ -17,21 +17,19 @@ public final class RenderHelper extends RenderType {
         throw new UnsupportedOperationException("Should not be instantiated");
     }
 
-    private static final Function<ResourceLocation, RenderType> DOPPLEGANGER = Util.memoize(texture -> {
-        // [VanillaCopy] entity_translucent, with own shader
-        CompositeState glState = RenderType.CompositeState.builder()
-                .setShaderState(new ShaderStateShard(CoreShaders::doppleganger))
-                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-                .setCullState(NO_CULL)
-                .setLightmapState(LIGHTMAP)
-                .setOverlayState(OVERLAY)
-                .createCompositeState(true);
-        return makeLayer("mnagnosis:doppleganger", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, glState);
-    });
+    private static final RenderType DOPPLEGANGER = makeLayer("mnagnosis:doppleganger", DefaultVertexFormat.NEW_ENTITY,
+            VertexFormat.Mode.QUADS, 256, true, true,
+            RenderType.CompositeState.builder()
+                    .setShaderState(new ShaderStateShard(CoreShaders::doppleganger))
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .createCompositeState(true));
 
+    /* The shader generates the armor surface itself. It intentionally has no
+     * texture state, so a mask image cannot affect coverage or color. */
     private static final Function<ResourceLocation, RenderType> NOISE = Util.memoize(texture -> {
-        // [VanillaCopy] entity_translucent, with own shader
         CompositeState glState = RenderType.CompositeState.builder()
                 .setShaderState(new ShaderStateShard(CoreShaders::noise))
                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
@@ -55,8 +53,8 @@ public final class RenderHelper extends RenderType {
         return makeLayer("mnagnosis:truth_glitch", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, glState);
     });
 
-    public static RenderType getDopplegangerLayer(ResourceLocation texture) {
-        return DOPPLEGANGER.apply(texture);
+    public static RenderType getDopplegangerLayer() {
+        return DOPPLEGANGER;
     }
 
     public static RenderType getNoiseLayer(ResourceLocation texture) {

@@ -63,3 +63,11 @@ with credit to it's authors.
 Forge Mod Loader downloads components from the Minecraft Coder Pack
 (http://mcp.ocean-labs.de/index.php/Main_Page) with kind permission from the MCP team.
 
+=========================================================================
+
+The Ineffable armor circle-grid shader is adapted from Nicole Vella's 2021
+Shadertoy work:
+https://www.shadertoy.com/view/Wl3BD8
+
+Licensed under Creative Commons Attribution 4.0 International:
+https://creativecommons.org/licenses/by/4.0/

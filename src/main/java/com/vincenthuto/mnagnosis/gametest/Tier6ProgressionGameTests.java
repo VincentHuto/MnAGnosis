@@ -36,6 +36,7 @@ import com.google.gson.JsonParser;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.client.authorship.CounterlawHudRenderer;
 import com.vincenthuto.mnagnosis.client.authorship.IneffableHudRenderer;
+import com.vincenthuto.mnagnosis.client.render.armor.IneffableRobesCurioLookup;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityFieldEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityRuptureEntity;
@@ -53,6 +54,7 @@ import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ParticleRegistry;
 import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
+import com.vincenthuto.mnagnosis.common.item.IneffableRobesItem;
 import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
 import com.vincenthuto.mnagnosis.common.spell.ComponentTrueDamage;
 import com.vincenthuto.mnagnosis.common.spell.ComponentGravityConvergence;
@@ -88,7 +90,6 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -106,6 +107,8 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.registries.ForgeRegistries;
+import top.theillusivec4.curios.api.CuriosApi;
+import top.theillusivec4.curios.api.SlotContext;
 import software.bernie.geckolib.animatable.GeoEntity;
 
 import java.util.List;
@@ -570,33 +573,55 @@ public final class Tier6ProgressionGameTests {
     }
 
     @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
-    public static void ineffableArmorRegistersWithTierSixStats(GameTestHelper helper) {
-        int[] defenses = {4, 10, 7, 4};
-        ArmorItem.Type[] types = {
-                ArmorItem.Type.HELMET,
-                ArmorItem.Type.CHESTPLATE,
-                ArmorItem.Type.LEGGINGS,
-                ArmorItem.Type.BOOTS
-        };
-        String[] ids = {
-                "ineffable_hood",
-                "ineffable_robes",
-                "ineffable_leggings",
-                "ineffable_boots"
-        };
+    public static void ineffableRobesRegistersAsAnEffectFreeCurio(GameTestHelper helper) {
+        Item item = ForgeRegistries.ITEMS.getValue(MnAGnosis.rloc("ineffable_robes"));
+        helper.assertTrue(item instanceof IneffableRobesItem,
+                "ineffable_robes was not registered as the Curio item");
+        helper.assertTrue(item.getMaxStackSize() == 1,
+                "ineffable_robes is not limited to one item per stack");
+        helper.assertTrue(!item.getDefaultInstance().isDamageableItem(),
+                "ineffable_robes still has armor durability");
+        helper.assertTrue(item.getDefaultInstance()
+                        .getAttributeModifiers(EquipmentSlot.CHEST)
+                        .isEmpty(),
+                "ineffable_robes still grants armor attributes");
+        helper.assertTrue(item.getRarity(item.getDefaultInstance()) == Rarity.EPIC,
+                "ineffable_robes is not Epic");
+        helper.assertTrue(CuriosApi.getCurio(item.getDefaultInstance()).isPresent(),
+                "ineffable_robes did not register its Curio capability");
+        helper.assertTrue(CuriosApi.getItemStackSlots(item.getDefaultInstance())
+                        .containsKey("body"),
+                "ineffable_robes is not valid for the Curios body slot");
+        IneffableRobesItem robes = (IneffableRobesItem) item;
+        helper.assertTrue(robes.canEquip(
+                        new SlotContext("body", null, 0, false, true),
+                        item.getDefaultInstance()
+                ) && !robes.canEquip(
+                        new SlotContext("back", null, 0, false, true),
+                        item.getDefaultInstance()
+                ),
+                "ineffable_robes does not enforce the Curios body slot");
+        helper.assertTrue(robes.canEquipFromUse(
+                        new SlotContext("body", null, 0, false, true),
+                        item.getDefaultInstance()
+                ),
+                "ineffable_robes cannot be equipped by right-clicking it");
 
-        for (int index = 0; index < ids.length; index++) {
-            Item item = ForgeRegistries.ITEMS.getValue(MnAGnosis.rloc(ids[index]));
-            helper.assertTrue(item instanceof ArmorItem, ids[index] + " was not registered as armor");
-            ArmorItem armor = (ArmorItem) item;
-            helper.assertTrue(armor.getType() == types[index], ids[index] + " uses the wrong slot");
-            helper.assertTrue(armor.getDefense() == defenses[index], ids[index] + " uses the wrong defense");
-            helper.assertTrue(armor.getToughness() == 4.0F, ids[index] + " uses the wrong toughness");
-            helper.assertTrue(armor.getMaterial().getKnockbackResistance() == 0.15F,
-                    ids[index] + " uses the wrong knockback resistance");
-            helper.assertTrue(armor.getRarity(item.getDefaultInstance()) == Rarity.EPIC,
-                    ids[index] + " is not Epic");
-        }
+        Player player = helper.makeMockPlayer();
+        var curios = CuriosApi.getCuriosInventory(player).orElseThrow(
+                () -> new IllegalStateException("Mock player has no Curios inventory")
+        );
+        curios.setEquippedCurio("body", 0, item.getDefaultInstance());
+        helper.assertTrue(IneffableRobesCurioLookup.isEquipped(player, item),
+                "Body-slot lookup did not find an equipped robe");
+        curios.setEquippedCurio("body", 0, ItemStack.EMPTY);
+        helper.assertTrue(!IneffableRobesCurioLookup.isEquipped(player, item),
+                "Body-slot lookup still found a removed robe");
+
+        helper.assertTrue(!ForgeRegistries.ITEMS.containsKey(MnAGnosis.rloc("ineffable_hood"))
+                        && !ForgeRegistries.ITEMS.containsKey(MnAGnosis.rloc("ineffable_leggings"))
+                        && !ForgeRegistries.ITEMS.containsKey(MnAGnosis.rloc("ineffable_boots")),
+                "Obsolete Ineffable armor pieces are still registered");
         helper.succeed();
     }
 

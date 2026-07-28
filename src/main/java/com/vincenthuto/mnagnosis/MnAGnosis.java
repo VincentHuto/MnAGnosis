@@ -2,7 +2,8 @@ package com.vincenthuto.mnagnosis;
 
 import com.mojang.logging.LogUtils;
 import com.vincenthuto.mnagnosis.client.render.block.TesseractBlockEntityRenderer;
-import com.vincenthuto.mnagnosis.client.authorship.ClientAuthorshipConfig;
+import com.vincenthuto.mnagnosis.client.ClientConfig;
+import com.vincenthuto.mnagnosis.common.item.IneffableRobesItem;
 import com.vincenthuto.mnagnosis.common.registry.BlockEntityRegistry;
 import com.vincenthuto.mnagnosis.common.registry.BlockRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
@@ -29,6 +30,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 import software.bernie.geckolib.GeckoLib;
+import top.theillusivec4.curios.api.CuriosApi;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(MnAGnosis.MODID)
@@ -63,7 +65,7 @@ public class MnAGnosis {
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         context.registerConfig(
                 ModConfig.Type.CLIENT,
-                ClientAuthorshipConfig.SPEC,
+                ClientConfig.SPEC,
                 "mnagnosis-client.toml"
         );
     }
@@ -73,7 +75,13 @@ public class MnAGnosis {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(NetworkHandler::register);
+        event.enqueueWork(() -> {
+            NetworkHandler.register();
+            CuriosApi.registerCurio(
+                    ItemRegistry.INEFFABLE_ROBES.get(),
+                    (IneffableRobesItem) ItemRegistry.INEFFABLE_ROBES.get()
+            );
+        });
     }
     public  void clientSetup(FMLClientSetupEvent event) {
         BlockEntityRenderers.register(BlockEntityRegistry.TESSERACT_BE.get(),

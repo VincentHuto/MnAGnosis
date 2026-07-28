@@ -1,10 +1,9 @@
 package com.vincenthuto.mnagnosis.common.registry;
 
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.common.item.IneffableRobesItem;
 import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
-import com.vincenthuto.mnagnosis.common.item.armor.IneffableArmorItem;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.DeferredRegister;
@@ -24,14 +23,8 @@ public class ItemRegistry {
     public static final RegistryObject<Item> primal_mote = BASEITEMS.register("primal_mote",
             () -> new PrimalMoteItem(new Item.Properties()));
 
-        public static final RegistryObject<Item> INEFFABLE_HOOD = BASEITEMS.register("ineffable_hood",
-                () -> new IneffableArmorItem(ArmorItem.Type.HELMET));
         public static final RegistryObject<Item> INEFFABLE_ROBES = BASEITEMS.register("ineffable_robes",
-                () -> new IneffableArmorItem(ArmorItem.Type.CHESTPLATE));
-        public static final RegistryObject<Item> INEFFABLE_LEGGINGS = BASEITEMS.register("ineffable_leggings",
-                () -> new IneffableArmorItem(ArmorItem.Type.LEGGINGS));
-        public static final RegistryObject<Item> INEFFABLE_BOOTS = BASEITEMS.register("ineffable_boots",
-                () -> new IneffableArmorItem(ArmorItem.Type.BOOTS));
+                IneffableRobesItem::new);
 
         public static final RegistryObject<Item> tesseract = BASEITEMS.register("tesseract",
                 () -> new TesseractItem(new Item.Properties()

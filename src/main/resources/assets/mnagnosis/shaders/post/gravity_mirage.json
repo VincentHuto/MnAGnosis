@@ -1,0 +1,24 @@
+{
+  "targets": [
+    "gravity_mask",
+    "gravity_mirage_swap"
+  ],
+  "passes": [
+    {
+      "name": "mnagnosis:gravity_mirage",
+      "intarget": "minecraft:main",
+      "outtarget": "gravity_mirage_swap",
+      "auxtargets": [
+        {
+          "name": "MaskSampler",
+          "id": "gravity_mask"
+        }
+      ]
+    },
+    {
+      "name": "blit",
+      "intarget": "gravity_mirage_swap",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}

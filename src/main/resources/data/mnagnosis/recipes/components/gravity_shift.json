@@ -1,0 +1,19 @@
+{
+  "type": "mna:component",
+  "tier": 6,
+  "output": "mnagnosis:components/gravity_shift",
+  "items": [
+    "mnagnosis:primal_mote",
+    "mnagnosis:tesseract",
+    "mna:greater_mote_earth",
+    "mna:greater_mote_ender",
+    "minecraft:feather",
+    "minecraft:black_concrete",
+    "minecraft:white_concrete"
+  ],
+  "patterns": [
+    "mna:manaweave_patterns/square",
+    "mna:manaweave_patterns/circle",
+    "mna:manaweave_patterns/inverted_triangle"
+  ]
+}

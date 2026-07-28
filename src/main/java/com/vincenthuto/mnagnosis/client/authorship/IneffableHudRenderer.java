@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.client.authorship;
 
 import com.mna.api.capabilities.IPlayerMagic;
+import com.vincenthuto.mnagnosis.client.ClientConfig;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -324,7 +325,7 @@ public final class IneffableHudRenderer {
             return;
         }
         int phase = 0;
-        if (ClientAuthorshipConfig.ANIMATE_COUNTERLAW_HUD.get()
+        if (ClientConfig.ANIMATE_COUNTERLAW_HUD.get()
                 && Minecraft.getInstance().level != null) {
             phase = (int) (Minecraft.getInstance().level.getGameTime() / 8L & 1L);
         }

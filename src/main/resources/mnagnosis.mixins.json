@@ -13,11 +13,18 @@
     "core.PlayerProgressionMixin",
     "core.SpellCasterMixin",
     "core.SummonCommandMixin",
+    "core.EntityGravityShiftMixin",
+    "core.LivingEntityGravityShiftMixin",
     "core.ShapeRaytraceLivingLandMixin"
   ],
   "client": [
     "client.GuiOcculusMixin",
     "client.HandParticleLayerMixin",
+    "client.LocalPlayerGravityShiftMixin",
+    "client.CameraGravityShiftMixin",
+    "client.GameRendererGravityShiftMixin",
+    "client.ScreenEffectRendererGravityShiftMixin",
+    "client.LivingEntityRendererGravityShiftMixin",
     "client.MixinHUDOverlayRenderer",
     "client.WorldRenderUtilsMixin",
     "core.RenderTypeAccessor"

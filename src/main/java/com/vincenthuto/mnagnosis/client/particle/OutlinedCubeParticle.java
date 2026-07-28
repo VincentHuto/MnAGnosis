@@ -43,13 +43,13 @@ public final class OutlinedCubeParticle extends TextureSheetParticle {
         super(level, x, y, z, velocityX, velocityY, velocityZ);
         this.sprites = sprites;
         this.spinOffset = random.nextFloat() * ((float) Math.PI * 2.0F);
-        this.spinRate = 0.10F + random.nextFloat() * 0.14F;
+        this.spinRate = 0.05F + random.nextFloat() * 0.04F;
         this.lifetime = 18 + random.nextInt(11);
         this.quadSize = IneffableParticleScale.baseHalfSize(
                 random.nextFloat(), scale
         );
-        this.friction = 0.92F;
-        this.gravity = 0.0F;
+        this.friction = 0.12F;
+        this.gravity =0F;
         this.hasPhysics = false;
         this.setSpriteFromAge(sprites);
     }

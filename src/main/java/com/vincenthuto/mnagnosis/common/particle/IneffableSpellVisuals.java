@@ -12,6 +12,7 @@ public final class IneffableSpellVisuals {
     private static final Set<ResourceLocation> COMPONENT_IDS = Set.of(
             SpellComponentRegistry.TRUE_DAMAGE_ID,
             SpellComponentRegistry.GRAVITY_CONVERGENCE_ID,
+            SpellComponentRegistry.GRAVITY_SHIFT_ID,
             SpellComponentRegistry.LIVING_LAND_ID,
             AuthorshipRegistry.BANISH_ID
     );

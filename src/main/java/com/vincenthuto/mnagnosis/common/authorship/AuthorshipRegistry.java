@@ -34,6 +34,7 @@ public final class AuthorshipRegistry {
             MnAGnosis.rloc("textures/spell/component/true_damage.png")
     );
     public static final InversionLawHandler INVERSION = new InversionLawHandler();
+
     public static final LawInscriptionModifier LAW_EXCHANGE = new LawInscriptionModifier(
             MnAGnosis.rloc("textures/spell/component/true_damage.png")
     );

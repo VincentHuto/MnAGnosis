@@ -6,9 +6,11 @@ import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmorModel;
 import com.vincenthuto.mnagnosis.client.render.entity.TruthRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.GravityFieldRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.GravityRuptureRenderer;
+import com.vincenthuto.mnagnosis.client.render.entity.GravityShiftSurfaceRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.LivingLandControllerRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.LivingLandStrikeRenderer;
 import com.vincenthuto.mnagnosis.client.render.gravity.GravityLensController;
+import com.vincenthuto.mnagnosis.client.render.gravity.GravityMirageController;
 import com.vincenthuto.mnagnosis.client.particle.OutlinedCubeParticle;
 import com.vincenthuto.mnagnosis.client.truth.TruthSceneController;
 import com.vincenthuto.mnagnosis.client.render.item.*;
@@ -24,7 +26,6 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
@@ -47,6 +48,18 @@ public class ClientEvents {
 	public static void onClientTick(ClientTickEvent event) {
 		if (event.phase == net.minecraftforge.event.TickEvent.Phase.END) {
 			TruthSceneController.tick(Minecraft.getInstance());
+			Minecraft minecraft = Minecraft.getInstance();
+			if (minecraft.level != null) {
+				for (net.minecraft.world.entity.Entity entity
+						: minecraft.level.entitiesForRendering()) {
+					if (entity instanceof LivingEntity living) {
+						living.getCapability(
+								com.vincenthuto.mnagnosis.common.spell.gravity.shift
+										.GravityShiftStateProvider.CAPABILITY
+						).ifPresent(state -> state.tickClient());
+					}
+				}
+			}
 		}
 	}
 
@@ -54,6 +67,7 @@ public class ClientEvents {
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
 		TruthSceneController.reset(Minecraft.getInstance());
 		GravityLensController.reset();
+		GravityMirageController.reset();
 	}
 
 	public static boolean isKeyDown(KeyMapping keybind) {
@@ -74,6 +88,7 @@ public class ClientEvents {
 	@SubscribeEvent
 	public static void renderLevelLastEvent(RenderLevelStageEvent event) {
 		GravityLensController.render(event);
+		GravityMirageController.render(event);
 	}
 
 
@@ -82,16 +97,7 @@ public class ClientEvents {
 
 		@SubscribeEvent
 		public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
-			event.registerLayerDefinition(EmptyModel.LAYER_LOCATION,
-					() -> EmptyModel.createHeadLayer(EquipmentSlot.HEAD));
-
-			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_HOOD_LAYER,
-					IneffableArmorModel::createBodyLayer);
 			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_ROBES_LAYER,
-					IneffableArmorModel::createBodyLayer);
-			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_LEGGINGS_LAYER,
-					IneffableArmorModel::createBodyLayer);
-			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_BOOTS_LAYER,
 					IneffableArmorModel::createBodyLayer);
 		}
 
@@ -148,6 +154,10 @@ public class ClientEvents {
 					EntityRegistry.GRAVITY_RUPTURE.get(), GravityRuptureRenderer::new
 			);
 			event.registerEntityRenderer(
+					EntityRegistry.GRAVITY_SHIFT_SURFACE.get(),
+					GravityShiftSurfaceRenderer::new
+			);
+			event.registerEntityRenderer(
 					EntityRegistry.LIVING_LAND_CONTROLLER.get(),
 					LivingLandControllerRenderer::new
 			);
@@ -192,6 +202,10 @@ public class ClientEvents {
 			event.registerReloadListener(
 					(ResourceManagerReloadListener) resourceManager ->
 							GravityLensController.reset()
+			);
+			event.registerReloadListener(
+					(ResourceManagerReloadListener) resourceManager ->
+							GravityMirageController.reset()
 			);
 		}
 

@@ -45,6 +45,13 @@ description='''${mod_description}'''
     side="BOTH"
 
 [[dependencies.${mod_id}]]
+    modId="curios"
+    mandatory=true
+    versionRange="[5.6.1,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
     modId="magichem"
     mandatory=true
     versionRange="[0.5.1,)"

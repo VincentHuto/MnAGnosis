@@ -21,6 +21,7 @@ public class CoreShaders {
     private static ShaderInstance doppleganger;
     private static ShaderInstance noise;
     private static ShaderInstance truthGlitch;
+    private static ShaderInstance gravityMirageMask;
 
     public static void init(TriConsumer<ResourceLocation, VertexFormat, Consumer<ShaderInstance>> registrations) {
         registrations.accept(
@@ -38,6 +39,11 @@ public class CoreShaders {
                 DefaultVertexFormat.NEW_ENTITY,
                 inst -> truthGlitch = inst
         );
+        registrations.accept(
+                MnAGnosis.rloc("gravity_mirage_mask"),
+                DefaultVertexFormat.POSITION_COLOR,
+                inst -> gravityMirageMask = inst
+        );
 
     }
 
@@ -54,5 +60,8 @@ public class CoreShaders {
         return truthGlitch;
     }
 
+    public static ShaderInstance gravityMirageMask() {
+        return gravityMirageMask;
+    }
 
 }

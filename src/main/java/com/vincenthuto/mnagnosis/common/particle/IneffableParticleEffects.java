@@ -88,7 +88,7 @@ public final class IneffableParticleEffects {
             Vec3 forward,
             long phase
     ) {
-        handParticle(level, origin, forward, phase, 1.0F);
+        handParticle(level, origin, forward, phase,1);
     }
 
     public static void handParticle(
@@ -105,11 +105,12 @@ public final class IneffableParticleEffects {
                 Math.sin(angle * 1.7D) * 0.07D,
                 Math.sin(angle) * 0.09D
         );
+
         Vec3 velocity = forward.scale(0.018D).add(
                 (random.nextDouble() - 0.5D) * 0.008D,
                 0.008D + random.nextDouble() * 0.008D,
                 (random.nextDouble() - 0.5D) * 0.008D
         );
-        add(level, (int) phase, origin.add(orbit), velocity, scale);
+        add(level, (int) phase, origin.add(orbit), velocity.multiply(0.1,0.1,0.1), scale*0.5f);
     }
 }

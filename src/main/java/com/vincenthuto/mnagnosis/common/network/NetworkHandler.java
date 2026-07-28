@@ -8,6 +8,7 @@ import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStatePr
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -19,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class NetworkHandler {
 
-    private static final String PROTOCOL = "1";
+    private static final String PROTOCOL = "4";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             MnAGnosis.rloc("main"),
             () -> PROTOCOL,
@@ -61,6 +62,13 @@ public final class NetworkHandler {
                 DeclareClosurePacket::decode,
                 DeclareClosurePacket::handle
         );
+        CHANNEL.registerMessage(
+                4,
+                GravityShiftStatePacket.class,
+                GravityShiftStatePacket::encode,
+                GravityShiftStatePacket::decode,
+                GravityShiftStatePacket::handle
+        );
     }
 
     public static void setTruthScene(ServerPlayer player, boolean active) {
@@ -73,6 +81,31 @@ public final class NetworkHandler {
 
     public static void declareClosure(java.util.UUID debtId) {
         CHANNEL.sendToServer(new DeclareClosurePacket(debtId));
+    }
+
+    public static void syncGravityShift(LivingEntity entity) {
+        entity.getCapability(
+                com.vincenthuto.mnagnosis.common.spell.gravity.shift
+                        .GravityShiftStateProvider.CAPABILITY
+        ).ifPresent(state -> CHANNEL.send(
+                PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
+                new GravityShiftStatePacket(
+                        entity.getId(),
+                        state.mode(),
+                        state.previousDirection(),
+                        state.direction(),
+                        state.transitionTicks(),
+                        state.releaseGraceTicks(),
+                        state.revision(),
+                        state.mobileTicks(),
+                        entity.getX(),
+                        entity.getY(),
+                        entity.getZ(),
+                        entity.getDeltaMovement().x,
+                        entity.getDeltaMovement().y,
+                        entity.getDeltaMovement().z
+                )
+        ));
     }
 
     public static void syncAuthorship(ServerPlayer player) {
