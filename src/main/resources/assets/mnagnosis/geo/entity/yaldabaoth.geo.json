@@ -7,8 +7,8 @@
         "texture_width": 128,
         "texture_height": 128,
         "visible_bounds_width": 22.0,
-        "visible_bounds_height": 9.0,
-        "visible_bounds_offset": [0, 3.5, 7.0]
+        "visible_bounds_height": 18.0,
+        "visible_bounds_offset": [0, 8.0, 4.0]
       },
       "bones": [
         {

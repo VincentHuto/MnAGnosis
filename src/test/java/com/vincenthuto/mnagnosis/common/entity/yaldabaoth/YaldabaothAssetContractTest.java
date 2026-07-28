@@ -15,6 +15,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class YaldabaothAssetContractTest {
@@ -51,6 +52,7 @@ class YaldabaothAssetContractTest {
                 "yaldabaoth",
                 Set.of(
                         "animation.yaldabaoth.idle",
+                        "animation.yaldabaoth.move",
                         "animation.yaldabaoth.combat.roar_sweep"
                 )
         );
@@ -160,6 +162,71 @@ class YaldabaothAssetContractTest {
         }
     }
 
+    @Test
+    void yaldabaothIdleIsTallAndCompactWhileMovementIsLowAndExtended()
+            throws IOException {
+        JsonObject root = json("animations/entity/yaldabaoth.animation.json");
+        JsonObject animations = root.getAsJsonObject("animations");
+        assertTrue(animations.has("animation.yaldabaoth.move"));
+
+        JsonObject idle = animations.getAsJsonObject("animation.yaldabaoth.idle");
+        JsonObject move = animations.getAsJsonObject("animation.yaldabaoth.move");
+
+        assertTrue(
+                component(idle, "neck", "position", "0.0", 1) >= 24.0D,
+                "Idle neck must rear above the coil"
+        );
+        assertTrue(
+                component(idle, "terminal_sweep", "position", "0.0", 2)
+                        <= -180.0D,
+                "Idle tail must return beneath the body to form a compact coil"
+        );
+        assertTrue(
+                Math.abs(component(move, "neck", "position", "0.0", 1))
+                        <= 2.0D,
+                "Moving neck must return to the low stance"
+        );
+        assertTrue(
+                Math.abs(component(
+                        move,
+                        "terminal_sweep",
+                        "position",
+                        "0.0",
+                        2
+                )) <= 2.0D,
+                "Moving tail must extend behind the body"
+        );
+
+        double earlyWave =
+                component(move, "segment_02", "rotation", "0.0", 1);
+        double lateWave =
+                component(move, "segment_07", "rotation", "0.0", 1);
+        assertTrue(
+                earlyWave * lateWave < 0.0D,
+                "Movement loop must phase-shift its lateral wave down the body"
+        );
+        assertNotEquals(
+                earlyWave,
+                component(move, "segment_02", "rotation", "0.6", 1),
+                0.0001D,
+                "Movement loop must animate rather than hold a flat pose"
+        );
+    }
+
+    @Test
+    void yaldabaothVisibleBoundsContainRaisedIdlePose() throws IOException {
+        JsonObject description = json("geo/entity/yaldabaoth.geo.json")
+                .getAsJsonArray("minecraft:geometry")
+                .get(0).getAsJsonObject()
+                .getAsJsonObject("description");
+
+        assertTrue(description.get("visible_bounds_height").getAsDouble() >= 16.0D);
+        assertTrue(
+                description.getAsJsonArray("visible_bounds_offset")
+                        .get(1).getAsDouble() >= 7.0D
+        );
+    }
+
     private static void assertGeometry(
             String assetName,
             String expectedIdentifier,
@@ -227,6 +294,22 @@ class YaldabaothAssetContractTest {
                         .getResourceAsStream(path);
         assertNotNull(stream, "Missing resource " + path);
         return stream;
+    }
+
+    private static double component(
+            JsonObject animation,
+            String bone,
+            String transform,
+            String time,
+            int component
+    ) {
+        return animation.getAsJsonObject("bones")
+                .getAsJsonObject(bone)
+                .getAsJsonObject(transform)
+                .getAsJsonObject(time)
+                .getAsJsonArray("vector")
+                .get(component)
+                .getAsDouble();
     }
 
     private static boolean containsNear(
