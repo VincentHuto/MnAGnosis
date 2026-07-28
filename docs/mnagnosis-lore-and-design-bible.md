@@ -10,7 +10,7 @@
 | Platform | Minecraft Forge 1.20.1 |
 | Purpose | Late-game addon to Mana and Artifice |
 | Document role | Living lore bible and technical future-state reference |
-| Snapshot | 2026-07-25 |
+| Snapshot | 2026-07-28 |
 
 This is the central creative and production reference for MnAGnosis. It records what the
 mod means, what already exists, what direction has been chosen, and what remains open
@@ -64,6 +64,7 @@ in the [Decision Log](#decision-log) and [Revision History](#revision-history).
   - [The Player's Ascent](#the-players-ascent)
   - [Cosmology](#cosmology)
   - [Truth](#truth)
+  - [Yaldabaoth](#yaldabaoth)
   - [The Tesseract](#the-tesseract)
   - [The Pentad of Authorities](#the-pentad-of-authorities)
   - [The Broker](#the-broker)
@@ -294,6 +295,49 @@ role is coherent.
 - Truth should appear more stable when ignored and less stable when closely observed.
 - Truth's transformations should make the renderer feel inadequate, not make Truth
   feel wounded.
+
+## Yaldabaoth
+
+**Canon — Designed**
+
+Yaldabaoth is the Blind First Author and the post-mastery final adversary of
+MnAGnosis. He genuinely authored much of the Low Order by reproducing a higher pattern
+he could perceive only incompletely. The world is not false because its author was
+limited. Stone remains stone, history remains meaningful, and every consequence still
+has weight.
+
+Yaldabaoth's error is to mistake one stable arrangement for the only possible reality.
+He calls authorship sovereignty. An ascendant capable of Relation, Definition, and
+Continuance disproves that claim merely by existing.
+
+### The final confrontation
+
+The player reaches Yaldabaoth only after achieving Authorship in all three Manuscripts.
+Three mastery proofs become the Writ of No Authority, which opens the First Firmament.
+There the player confronts a lion-faced, segmented serpent accompanied by a white Sun
+outlined in black and a black crescent Moon outlined in white.
+
+The celestials express a counterfeit binary: Yaldabaoth's insistence that every state
+must resolve into one of two answers he controls. The player defeats, redefines, and
+turns them into Witnesses before revoking their maker's final claim.
+
+Victory does not destroy creation and does not grant Tier 7. It ends Yaldabaoth's
+authority over the player and unlocks the substrate for a first personalized Original
+Work.
+
+### After the original
+
+The first victory is ontological. The original Yaldabaoth no longer exists as an
+authority the player can fight again. Repeat encounters are practice emanations
+authored by the victorious player through **Reconstruct the First Error**.
+
+These projections are black-and-white static reconstructions with missing frames,
+inverted surfaces, and visible projection seams. Their altered appearance states the
+new relationship clearly: the player is no longer challenging a creator but
+reconstructing a surpassed proposition to hone their own authorship.
+
+The complete encounter and staged production design is recorded in
+[Yaldabaoth Capstone Design](superpowers/specs/2026-07-28-yaldabaoth-capstone-design.md).
 
 ## The Tesseract
 
@@ -1076,6 +1120,8 @@ than making its factions, spells, rituals, or artifacts irrelevant.
 | 2026-07-25 | Require a meaningful Broker exchange | The threshold needs a proof of equivalence and understanding that combat cannot provide |
 | 2026-07-25 | Keep black and white as the dominant visual language | Severe contrast supports Truth, abstraction, static, and representational failure |
 | 2026-07-25 | Maintain the bible as Markdown | The document should live beside the code and remain easy to revise and diff |
+| 2026-07-28 | Establish Yaldabaoth as the Blind First Author and post-mastery capstone | The Ineffable journey needs a faction-leader culmination that tests authorship without making the Low Order false |
+| 2026-07-28 | Treat rematches as player-authored projections | Repeatable combat must not reverse the original's ontological defeat |
 
 ## Open Questions
 
@@ -1181,3 +1227,4 @@ These are intentional design questions, not missing text.
 | Date | Revision |
 |---|---|
 | 2026-07-25 | Created the two-book living bible from the approved lore and technical design |
+| 2026-07-28 | Added the canonical Yaldabaoth capstone, First Firmament, and projection-rematch premise |
