@@ -1,0 +1,103 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "mnagnosis:apollonian_trap",
+  "fragment": "mnagnosis:apollonian_trap",
+  "attributes": ["Position", "Color"],
+  "samplers": [],
+  "uniforms": [
+    {
+      "name": "ModelViewMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ProjMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ColorModulator",
+      "type": "float",
+      "count": 4,
+      "values": [1.0,1.0,1.0,1.0]
+    },
+    {
+      "name": "InversePose",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ModelPoseMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "CameraOrigin",
+      "type": "float",
+      "count": 3,
+      "values": [0.0,0.0,3.0]
+    },
+    {
+      "name": "RayDirection",
+      "type": "float",
+      "count": 3,
+      "values": [0.0,0.0,-1.0]
+    },
+    {
+      "name": "Perspective",
+      "type": "int",
+      "count": 1,
+      "values": [0]
+    },
+    {
+      "name": "ApollonianTime",
+      "type": "float",
+      "count": 1,
+      "values": [0.0]
+    },
+    {
+      "name": "PaletteOrbitCyan",
+      "type": "float",
+      "count": 3,
+      "values": [0.0,1.0,1.0]
+    },
+    {
+      "name": "PaletteSurfaceWhite",
+      "type": "float",
+      "count": 3,
+      "values": [1.0,1.0,1.0]
+    },
+    {
+      "name": "PaletteTrapRed",
+      "type": "float",
+      "count": 3,
+      "values": [0.4,0.0,0.0]
+    },
+    {
+      "name": "PaletteKeyLight",
+      "type": "float",
+      "count": 3,
+      "values": [1.0,1.0,0.6]
+    },
+    {
+      "name": "PaletteBackLight",
+      "type": "float",
+      "count": 3,
+      "values": [1.0,0.8,0.3]
+    },
+    {
+      "name": "PaletteSpecular",
+      "type": "float",
+      "count": 3,
+      "values": [1.0,1.0,1.0]
+    }
+  ]
+}

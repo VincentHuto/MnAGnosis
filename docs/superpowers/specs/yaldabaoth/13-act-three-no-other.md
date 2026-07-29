@@ -1,3 +1,5 @@
+![Stage 13 concept preview](../../../concept-art/yaldabaoth-stages/13-act-three-no-other.png)
+
 # Stage 13 — Act III: No Other
 
 ## Purpose

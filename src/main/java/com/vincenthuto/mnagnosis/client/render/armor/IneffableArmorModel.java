@@ -205,32 +205,32 @@ public final class IneffableArmorModel<T extends LivingEntity> extends HumanoidM
                 PartPose.offset(3.8F, 12.25F, 0.0F));
         PartDefinition sideclothR1 = sideclothL.addOrReplaceChild("SideclothR1",
                 CubeListBuilder.create().texOffs(57, 57)
-                        .addBox(0.0417F, 0.0691F, -2.5F, 1.0F, 5.0F, 5.0F, CubeDeformation.NONE),
+                        .addBox(-0.008F, 0.063F, -2.5F, 1.0F, 5.0F, 5.0F, CubeDeformation.NONE),
                 PartPose.offsetAndRotation(-0.5F, 0.0F, 0.0F, 0.0F, 0.0F, -0.1222F));
         PartDefinition sideclothR2 = sideclothR1.addOrReplaceChild("SideclothR2",
                 CubeListBuilder.create().texOffs(63, 24)
-                        .addBox(-0.709F, -0.6426F, -2.51F, 1.0F, 3.0F, 5.0F, CubeDeformation.NONE),
+                        .addBox(-0.7547F, -0.663F, -2.51F, 1.0F, 3.0F, 5.0F, CubeDeformation.NONE),
                 PartPose.offsetAndRotation(0.9076F, 5.4763F, 0.0F, 0.0F, 0.0F, -0.2967F));
         sideclothR2.addOrReplaceChild("SideclothR3",
                 CubeListBuilder.create().texOffs(63, 33)
-                        .addBox(-0.134F, -0.134F, -2.5F, 1.0F, 3.0F, 5.0F, CubeDeformation.NONE),
+                        .addBox(-0.1634F, -0.1744F, -2.5F, 1.0F, 3.0F, 5.0F, CubeDeformation.NONE),
                 PartPose.offsetAndRotation(-0.526F, 2.4064F, 0.0F, 0.0F, 0.0F, -0.5236F));
 
         PartDefinition sideclothR = body.addOrReplaceChild("SideclothR", CubeListBuilder.create(),
                 PartPose.offset(-3.8F, 12.25F, 0.0F));
         PartDefinition sideclothR4 = sideclothR.addOrReplaceChild("SideclothR4",
                 CubeListBuilder.create().texOffs(57, 57).mirror()
-                        .addBox(-1.0416F, 0.0691F, -2.5F, 1.0F, 5.0F, 5.0F, CubeDeformation.NONE)
+                        .addBox(-0.992F, 0.063F, -2.5F, 1.0F, 5.0F, 5.0F, CubeDeformation.NONE)
                         .mirror(false),
                 PartPose.offsetAndRotation(0.5F, 0.0F, 0.0F, 0.0F, 0.0F, 0.1222F));
         PartDefinition sideclothR5 = sideclothR4.addOrReplaceChild("SideclothR5",
                 CubeListBuilder.create().texOffs(63, 24).mirror()
-                        .addBox(-0.291F, -0.6426F, -2.51F, 1.0F, 3.0F, 5.0F, CubeDeformation.NONE)
+                        .addBox(-0.2453F, -0.663F, -2.51F, 1.0F, 3.0F, 5.0F, CubeDeformation.NONE)
                         .mirror(false),
                 PartPose.offsetAndRotation(-0.9076F, 5.4763F, 0.0F, 0.0F, 0.0F, 0.2967F));
         sideclothR5.addOrReplaceChild("SideclothR6",
                 CubeListBuilder.create().texOffs(63, 33).mirror()
-                        .addBox(-0.866F, -0.134F, -2.5F, 1.0F, 3.0F, 5.0F, CubeDeformation.NONE)
+                        .addBox(-0.8366F, -0.1744F, -2.5F, 1.0F, 3.0F, 5.0F, CubeDeformation.NONE)
                         .mirror(false),
                 PartPose.offsetAndRotation(0.526F, 2.4064F, 0.0F, 0.0F, 0.0F, 0.5236F));
     }
@@ -252,64 +252,70 @@ public final class IneffableArmorModel<T extends LivingEntity> extends HumanoidM
                 PartPose.offsetAndRotation(0.0F, -1.0F, 0.0F, 0.1396F, 0.0F, 0.0F));
         PartDefinition cloak2 = cloak1.addOrReplaceChild("Cloak2",
                 CubeListBuilder.create().texOffs(104, 83)
-                        .addBox(-4.5F, -0.1501F, -0.3628F, 9.0F, 4.0F, 1.0F, new CubeDeformation(0.1F)),
+                        .addBox(-4.5F, 0.015F, -0.3884F, 9.0F, 4.0F, 1.0F, new CubeDeformation(0.1F)),
                 PartPose.offsetAndRotation(0.0F, 14.0335F, 1.3912F, 0.3069F, 0.0F, 0.0F));
         cloak2.addOrReplaceChild("Cloak3",
                 CubeListBuilder.create().texOffs(103, 98)
-                        .addBox(-4.5F, -0.4485F, -0.1911F, 9.0F, 4.0F, 1.0F, new CubeDeformation(0.1F)),
-                PartPose.offsetAndRotation(0.0F, 4.1718F, 0.0032F, 0.4466F, 0.0F, 0.0F));
+                        .addBox(-4.5F, -0.0868F, -0.3582F, 9.0F, 4.0F, 1.0F, new CubeDeformation(0.1F)),
+                PartPose.offsetAndRotation(0.0F, 4.1718F, 0.0032F, 0.272F, 0.0F, 0.0F));
     }
 
     private static void addArms(PartDefinition root) {
         PartDefinition leftArm = root.addOrReplaceChild("left_arm",
                 CubeListBuilder.create()
-                        .texOffs(38, 0).addBox(-1.0F, 1.0F, -2.5F, 4.0F, 7.0F, 5.0F,
-                                new CubeDeformation(0.3F))
-                        .texOffs(49, 24).addBox(-1.0F, 5.0F, 3.1F, 4.0F, 3.0F, 1.0F,
-                                new CubeDeformation(0.3F))
-                        .texOffs(58, 9).addBox(-0.3F, 3.0F, 2.5F, 3.0F, 2.0F, 1.0F,
-                                new CubeDeformation(0.3F))
-                        .texOffs(102, 36).addBox(-0.7341F, 0.8521F, -2.6125F, 5.0F, 4.0F, 5.0F,
-                                new CubeDeformation(0.27F)),
+                        .texOffs(42, 32).mirror()
+                        .addBox(-1.0F, 1.0F, -2.6F, 4.0F, 7.0F, 5.0F,
+                                new CubeDeformation(0.25F)).mirror(false)
+                        .texOffs(68, 9).mirror()
+                        .addBox(0.5F, 3.0F, 2.4F, 2.0F, 2.0F, 1.0F,
+                                new CubeDeformation(0.25F)).mirror(false)
+                        .texOffs(2, 65).mirror()
+                        .addBox(0.0F, 5.0F, 2.9F, 3.0F, 3.0F, 1.0F,
+                                new CubeDeformation(0.25F)).mirror(false)
+                        .texOffs(79, 27)
+                        .addBox(-0.7628F, 1.0122F, -2.66F, 5.0F, 4.0F, 5.0F,
+                                new CubeDeformation(0.25F)),
                 PartPose.offset(5.0F, 2.0F, 0.0F));
         leftArm.addOrReplaceChild("ShoulderL1",
-                CubeListBuilder.create().texOffs(78, 35)
-                        .addBox(-2.4063F, -2.0774F, -2.2F, 5.0F, 3.0F, 6.0F,
-                                new CubeDeformation(0.27F)),
-                PartPose.offsetAndRotation(0.7F, -0.25F, -0.5F, 0.0F, 0.0F, -1.1345F));
+                CubeListBuilder.create().texOffs(100, 20)
+                        .addBox(-1.5F, -2.5F, -2.3375F, 4.0F, 3.0F, 5.0F,
+                                new CubeDeformation(0.25F)),
+                PartPose.offsetAndRotation(1.6779F, 1.2446F, -0.3225F,
+                        0.0F, 0.0F, -0.4363F));
         leftArm.addOrReplaceChild("ShoulderL2",
-                CubeListBuilder.create().texOffs(99, 27)
-                        .addBox(-1.9226F, -1.5937F, -2.5375F, 4.0F, 3.0F, 6.0F,
-                                new CubeDeformation(0.26F)),
-                PartPose.offsetAndRotation(1.6646F, 0.2398F, -0.1125F, 0.0F, 0.0F, -0.4363F));
-        leftArm.addOrReplaceChild(
-                "body2",
-                CubeListBuilder.create(),
-                PartPose.offset(-5.0F, -2.0F, 1.0F)
-        );
+                CubeListBuilder.create().texOffs(79, 19)
+                        .addBox(-1.5F, -2.5F, -2.2F, 5.0F, 3.0F, 5.0F,
+                                new CubeDeformation(0.25F)),
+                PartPose.offsetAndRotation(0.7302F, 0.6669F, -0.45F,
+                        0.0F, 0.0F, -1.1345F));
 
         PartDefinition rightArm = root.addOrReplaceChild("right_arm",
                 CubeListBuilder.create()
-                        .texOffs(42, 32).addBox(-3.0F, 1.0F, -2.5F, 4.0F, 7.0F, 5.0F,
-                                new CubeDeformation(0.3F))
-                        .texOffs(0, 65).addBox(-3.0F, 5.0F, 3.1F, 4.0F, 3.0F, 1.0F,
-                                new CubeDeformation(0.3F))
-                        .texOffs(67, 9).addBox(-2.5F, 3.0F, 2.5F, 3.0F, 2.0F, 1.0F,
-                                new CubeDeformation(0.3F))
+                        .texOffs(42, 32)
+                        .addBox(-3.0F, 1.0F, -2.6F, 4.0F, 7.0F, 5.0F,
+                                new CubeDeformation(0.25F))
+                        .texOffs(1, 65)
+                        .addBox(-3.0F, 5.0F, 2.9F, 3.0F, 3.0F, 1.0F,
+                                new CubeDeformation(0.25F))
+                        .texOffs(67, 9)
+                        .addBox(-2.5F, 3.0F, 2.4F, 2.0F, 2.0F, 1.0F,
+                                new CubeDeformation(0.25F))
                         .texOffs(79, 27).mirror()
-                        .addBox(-4.2659F, 0.8521F, -2.6125F, 5.0F, 4.0F, 5.0F,
+                        .addBox(-4.2372F, 1.0122F, -2.66F, 5.0F, 4.0F, 5.0F,
                                 new CubeDeformation(0.25F)).mirror(false),
                 PartPose.offset(-5.0F, 2.0F, 0.0F));
         rightArm.addOrReplaceChild("ShoulderR1",
-                CubeListBuilder.create().texOffs(99, 19).mirror()
-                        .addBox(-2.5F, -2.5F, -2.3375F, 4.0F, 3.0F, 6.0F,
-                                new CubeDeformation(0.26F)).mirror(false),
-                PartPose.offsetAndRotation(-1.6646F, 1.2398F, -0.3125F, 0.0F, 0.0F, 0.4363F));
+                CubeListBuilder.create().texOffs(100, 20).mirror()
+                        .addBox(-2.5F, -2.5F, -2.3375F, 4.0F, 3.0F, 5.0F,
+                                new CubeDeformation(0.25F)).mirror(false),
+                PartPose.offsetAndRotation(-1.6779F, 1.2446F, -0.3225F,
+                        0.0F, 0.0F, 0.4363F));
         rightArm.addOrReplaceChild("ShoulderR2",
-                CubeListBuilder.create().texOffs(78, 18).mirror()
-                        .addBox(-3.5F, -2.5F, -2.2F, 5.0F, 3.0F, 6.0F,
-                                new CubeDeformation(0.27F)).mirror(false),
-                PartPose.offsetAndRotation(-0.7F, 0.75F, -0.5F, 0.0F, 0.0F, 1.1345F));
+                CubeListBuilder.create().texOffs(79, 19).mirror()
+                        .addBox(-3.5F, -2.5F, -2.2F, 5.0F, 3.0F, 5.0F,
+                                new CubeDeformation(0.25F)).mirror(false),
+                PartPose.offsetAndRotation(-0.7302F, 0.6669F, -0.45F,
+                        0.0F, 0.0F, 1.1345F));
     }
 
     private static void addLegs(PartDefinition root) {
@@ -345,7 +351,7 @@ public final class IneffableArmorModel<T extends LivingEntity> extends HumanoidM
         this.cloak.xRot = -0.0436F + idle * 0.025F + Math.abs(walk) * 0.05F;
         this.cloak1.xRot = 0.1396F + Mth.sin(ageInTicks * 0.067F + 0.5F) * 0.035F;
         this.cloak2.xRot = 0.3069F + Mth.sin(ageInTicks * 0.067F + 1.0F) * 0.04F + walk * 0.04F;
-        this.cloak3.xRot = 0.4466F + Mth.sin(ageInTicks * 0.067F + 1.5F) * 0.035F + walk * 0.05F;
+        this.cloak3.xRot = 0.272F + Mth.sin(ageInTicks * 0.067F + 1.5F) * 0.035F + walk * 0.05F;
 
         this.clothBackR1.xRot = 0.1047F + idle * 0.03F + walk * 0.07F;
         this.clothBackL1.xRot = 0.1047F + idle * 0.03F - walk * 0.07F;
@@ -362,61 +368,6 @@ public final class IneffableArmorModel<T extends LivingEntity> extends HumanoidM
         this.sideclothR6.zRot = 0.5236F + Mth.sin(ageInTicks * 0.067F + 1.2F) * 0.03F + walk * 0.07F;
     }
 
-    public void applyClearance(IneffableArmorClearance clearance) {
-        float helmetOffset = clearance.helmetOffset();
-        this.hoodLeft.x = -helmetOffset;
-        this.hoodRight.x = helmetOffset;
-        this.hoodTop.y = -helmetOffset;
-        this.hoodBack.z = helmetOffset * REAR_OFFSET_MULTIPLIER;
-
-        float chestOffset = clearance.chestOffset();
-        this.bodyPositiveX.x = chestOffset;
-        this.bodyNegativeX.x = -chestOffset;
-        this.bodyFront.z = -chestOffset;
-        this.bodyBack.z = chestOffset * REAR_OFFSET_MULTIPLIER;
-        this.leftArm.x += chestOffset;
-        this.rightArm.x -= chestOffset;
-
-        float lowerOffset = clearance.lowerBodyOffset();
-        this.clothBack.z = 4.4F + lowerOffset * REAR_OFFSET_MULTIPLIER;
-        this.sideclothL.x = 3.8F + lowerOffset;
-        this.sideclothR.x = -3.8F - lowerOffset;
-        this.cloak.z = 1.2F
-                + Math.max(chestOffset, lowerOffset) * REAR_OFFSET_MULTIPLIER;
-
-        resetScale(
-                this.head,
-                this.hoodLeft,
-                this.hoodRight,
-                this.hoodTop,
-                this.hoodBack,
-                this.bodyShell,
-                this.bodyPositiveX,
-                this.bodyNegativeX,
-                this.bodyFront,
-                this.bodyBack,
-                this.leftArm,
-                this.rightArm,
-                this.cloak,
-                this.clothBack,
-                this.sideclothL,
-                this.sideclothR,
-                this.clothBackR3,
-                this.clothBackL3,
-                this.sideclothR3,
-                this.sideclothR6,
-                this.cloak3
-        );
-    }
-
-    private static void resetScale(ModelPart... parts) {
-        for (ModelPart part : parts) {
-            part.xScale = 1.0F;
-            part.yScale = 1.0F;
-            part.zScale = 1.0F;
-        }
-    }
-
     @Override
     public void renderToBuffer(
             PoseStack poseStack,
@@ -428,7 +379,51 @@ public final class IneffableArmorModel<T extends LivingEntity> extends HumanoidM
             float blue,
             float alpha
     ) {
+        renderHoodToBuffer(
+                poseStack,
+                buffer,
+                packedLight,
+                packedOverlay,
+                red,
+                green,
+                blue,
+                alpha
+        );
+        renderBodyToBuffer(
+                poseStack,
+                buffer,
+                packedLight,
+                packedOverlay,
+                red,
+                green,
+                blue,
+                alpha
+        );
+    }
+
+    public void renderHoodToBuffer(
+            PoseStack poseStack,
+            VertexConsumer buffer,
+            int packedLight,
+            int packedOverlay,
+            float red,
+            float green,
+            float blue,
+            float alpha
+    ) {
         this.head.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+    }
+
+    public void renderBodyToBuffer(
+            PoseStack poseStack,
+            VertexConsumer buffer,
+            int packedLight,
+            int packedOverlay,
+            float red,
+            float green,
+            float blue,
+            float alpha
+    ) {
         this.body.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
         this.rightArm.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
         this.leftArm.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);

@@ -7,6 +7,7 @@ import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityFrame;
 import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityMoveResult;
 import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityPhysics;
 import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityShiftApi;
+import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityTransitionFrame;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -204,7 +205,9 @@ public abstract class EntityGravityShiftMixin implements GravityCollisionAccess 
     ) {
         Entity self = (Entity) (Object) this;
         GravityDirection gravity = GravityShiftApi.direction(self);
-        if (gravity == GravityDirection.DOWN) {
+        var state = GravityShiftApi.state(self);
+        boolean transitioning = state != null && state.transitionTicks() > 0;
+        if (gravity == GravityDirection.DOWN && !transitioning) {
             return;
         }
         double lengthSquared = relative.lengthSqr();
@@ -221,7 +224,20 @@ public abstract class EntityGravityShiftMixin implements GravityCollisionAccess 
                 normalized.y,
                 normalized.z * cosine + normalized.x * sine
         );
-        setDeltaMovement(getDeltaMovement().add(gravity.toWorld(vanillaFrame)));
+        Vec3 worldFrame = transitioning
+                ? GravityTransitionFrame.control(
+                        vanillaFrame,
+                        GravityTransitionFrame.rotation(
+                                state.transitionOriginRotation(),
+                                state.direction(),
+                                state.transitionTicks(),
+                                0.0F
+                        ),
+                        gravity,
+                        true
+                )
+                : gravity.toWorld(vanillaFrame);
+        setDeltaMovement(getDeltaMovement().add(worldFrame));
         callback.cancel();
     }
 

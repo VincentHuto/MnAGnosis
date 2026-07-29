@@ -16,6 +16,8 @@ uniform sampler2D Sampler2;
 
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
+uniform mat4 FractalInversePose;
+uniform mat4 FractalInverseHeadPose;
 uniform mat3 IViewRotMat;
 uniform int FogShape;
 
@@ -28,6 +30,8 @@ out vec4 lightMapColor;
 out vec4 overlayColor;
 out vec2 texCoord0;
 out vec4 normal;
+out vec3 robeModelPosition;
+out vec3 robeModelNormal;
 
 uniform float GameTime;
 uniform float BotaniaDisfiguration;
@@ -53,4 +57,19 @@ void main() {
     overlayColor = texelFetch(Sampler1, UV1, 0);
     texCoord0 = UV0;
     normal = ProjMat * ModelViewMat * vec4(Normal, 0.0);
+    robeModelPosition = (
+        FractalInversePose * vec4(Position, 1.0)
+    ).xyz;
+    robeModelNormal = normalize(
+        mat3(FractalInversePose) * Normal
+    );
+    if (robeModelPosition.y < -0.001) {
+        robeModelPosition = (
+            FractalInverseHeadPose
+                * vec4(robeModelPosition, 1.0)
+        ).xyz;
+        robeModelNormal = normalize(
+            mat3(FractalInverseHeadPose) * robeModelNormal
+        );
+    }
 }

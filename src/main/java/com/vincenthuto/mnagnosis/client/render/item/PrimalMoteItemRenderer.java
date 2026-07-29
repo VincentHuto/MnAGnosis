@@ -1,27 +1,51 @@
 package com.vincenthuto.mnagnosis.client.render.item;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.vincenthuto.mnagnosis.client.shader.core.CoreShaders;
+import com.vincenthuto.mnagnosis.client.shader.core.RenderHelper;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
-import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 
 public final class PrimalMoteItemRenderer extends BlockEntityWithoutLevelRenderer {
 
-    private static final TesseractRenderCore.LineColor BLACK =
-            new TesseractRenderCore.LineColor(0.015F, 0.015F, 0.015F, 1.0F);
-    private static final TesseractRenderCore.LineColor WHITE =
-            new TesseractRenderCore.LineColor(1.0F, 1.0F, 1.0F, 1.0F);
-    private static final TesseractRenderCore.LineColor PALE =
-            new TesseractRenderCore.LineColor(0.72F, 0.72F, 0.72F, 0.9F);
-    private static final int[] FACE_ANCHORS = {10, 12, 15};
-    private static final long FACE_PERIOD_MILLIS = 5_400L;
+    private static final float PROXY_BOUND = 1.24F;
+    private static final float[][][] PROXY_FACES = {
+            {
+                    {-1, -1, 1}, {1, -1, 1},
+                    {1, 1, 1}, {-1, 1, 1}
+            },
+            {
+                    {-1, -1, -1}, {-1, 1, -1},
+                    {1, 1, -1}, {1, -1, -1}
+            },
+            {
+                    {-1, -1, -1}, {-1, -1, 1},
+                    {-1, 1, 1}, {-1, 1, -1}
+            },
+            {
+                    {1, -1, -1}, {1, 1, -1},
+                    {1, 1, 1}, {1, -1, 1}
+            },
+            {
+                    {-1, 1, -1}, {-1, 1, 1},
+                    {1, 1, 1}, {1, 1, -1}
+            },
+            {
+                    {-1, -1, -1}, {1, -1, -1},
+                    {1, -1, 1}, {-1, -1, 1}
+            }
+    };
+    private static final int[] TRIANGLE_ORDER = {0, 1, 2, 0, 2, 3};
 
     public PrimalMoteItemRenderer(
             BlockEntityRenderDispatcher dispatcher,
@@ -42,142 +66,118 @@ public final class PrimalMoteItemRenderer extends BlockEntityWithoutLevelRendere
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.5D, 0.5D);
         float scale = switch (displayContext) {
-            case GUI -> 0.225F;
-            case GROUND -> 0.18F;
-            case FIXED -> 0.21F;
-            default -> 0.20F;
+            case GUI -> 0.31F;
+            case GROUND -> 0.26F;
+            case FIXED -> 0.29F;
+            default -> 0.27F;
         };
         poseStack.scale(scale, scale, scale);
 
-        long time = System.currentTimeMillis();
-        float angleXw = cycle(time, 15_000L);
-        float angleYz = cycle(time, 11_000L);
-        float[][] projected = TesseractRenderCore.project(angleXw, angleYz);
-        TesseractRenderCore.renderEdges(
-                poseStack, buffer, projected, BLACK, WHITE
+        configureShader(poseStack);
+        RenderType layer = RenderHelper.getMandelbulbLayer();
+        renderProxyCube(
+                buffer.getBuffer(layer),
+                poseStack.last().pose()
         );
-        renderFaces(poseStack, buffer, projected, time);
+        if (buffer instanceof MultiBufferSource.BufferSource bufferSource) {
+            bufferSource.endBatch(layer);
+        }
         poseStack.popPose();
     }
 
-    private static void renderFaces(
-            PoseStack poseStack,
-            MultiBufferSource buffer,
-            float[][] projected,
-            long time
-    ) {
-        VertexConsumer consumer = buffer.getBuffer(RenderType.lines());
-        Matrix4f matrix = poseStack.last().pose();
-        for (int face = 0; face < FACE_ANCHORS.length; face++) {
-            float phase = ((time + face * FACE_PERIOD_MILLIS / 3L)
-                    % FACE_PERIOD_MILLIS) / (float) FACE_PERIOD_MILLIS;
-            if (phase >= 0.76F) {
-                continue;
-            }
-            float life = Mth.sin(phase / 0.76F * Mth.PI);
-            float emergence = life * life;
-            float[] anchor = projected[FACE_ANCHORS[face]];
-            float length = Mth.sqrt(
-                    anchor[0] * anchor[0]
-                            + anchor[1] * anchor[1]
-                            + anchor[2] * anchor[2]
-            );
-            float inverseLength = length < 0.001F ? 0.0F : 1.0F / length;
-            float outward = 0.18F + emergence * 0.72F;
-            float[] center = {
-                    anchor[0] + anchor[0] * inverseLength * outward,
-                    anchor[1] + anchor[1] * inverseLength * outward,
-                    anchor[2] + anchor[2] * inverseLength * outward
-            };
-            float width = 0.10F + emergence * 0.24F;
-            float height = 0.12F + emergence * 0.34F;
-            float scream = 0.08F + emergence * 0.22F;
+    private static void configureShader(PoseStack poseStack) {
+        ShaderInstance shader = CoreShaders.mandelbulb();
+        if (shader == null) {
+            return;
+        }
+        Matrix4f pose = new Matrix4f(poseStack.last().pose());
+        Matrix4f inversePose = new Matrix4f(pose).invert();
+        Matrix4f inverseModelViewPose =
+                new Matrix4f(RenderSystem.getModelViewMatrix())
+                        .mul(pose)
+                        .invert();
+        Vector4f cameraOrigin = inverseModelViewPose.transform(
+                new Vector4f(0.0F, 0.0F, 0.0F, 1.0F)
+        );
+        if (Math.abs(cameraOrigin.w()) > 0.00001F) {
+            cameraOrigin.div(cameraOrigin.w());
+        }
+        Vector4f rayDirection = inverseModelViewPose.transform(
+                new Vector4f(0.0F, 0.0F, -1.0F, 0.0F)
+        );
+        float directionLength = (float) Math.sqrt(
+                rayDirection.x() * rayDirection.x()
+                        + rayDirection.y() * rayDirection.y()
+                        + rayDirection.z() * rayDirection.z()
+        );
+        if (directionLength > 0.00001F) {
+            rayDirection.div(directionLength);
+        }
+        int perspective =
+                Math.abs(RenderSystem.getProjectionMatrix().m33()) < 0.5F
+                        ? 1
+                        : 0;
 
-            diamond(
-                    consumer, matrix, center,
-                    width * 0.92F, height * 0.92F, WHITE
-            );
-            diamond(
-                    consumer, matrix,
-                    point(center, -width * 0.45F, height * 0.30F),
-                    width * 0.17F, height * 0.12F, BLACK
-            );
-            diamond(
-                    consumer, matrix,
-                    point(center, width * 0.45F, height * 0.30F),
-                    width * 0.17F, height * 0.12F, BLACK
-            );
-            diamond(
-                    consumer, matrix,
-                    point(center, 0.0F, -height * 0.24F),
-                    width * 0.22F, scream, BLACK
-            );
-            TesseractRenderCore.line(
-                    consumer,
-                    matrix,
-                    point(center, -width * 0.72F, height * 0.58F),
-                    point(center, width * 0.72F, height * 0.58F),
-                    WHITE,
-                    WHITE
-            );
-            if (phase > 0.57F) {
-                renderFragments(
-                        consumer, matrix, center, width, height,
-                        (phase - 0.57F) / 0.19F
-                );
+        shader.safeGetUniform("InversePose").set(inversePose);
+        shader.safeGetUniform("ModelPoseMat").set(pose);
+        shader.safeGetUniform("CameraOrigin").set(
+                cameraOrigin.x(), cameraOrigin.y(), cameraOrigin.z()
+        );
+        shader.safeGetUniform("RayDirection").set(
+                rayDirection.x(), rayDirection.y(), rayDirection.z()
+        );
+        shader.safeGetUniform("Perspective").set(perspective);
+        shader.safeGetUniform("MandelbulbTime").set(
+                (System.currentTimeMillis() % 120_000L) / 1_000.0F
+        );
+        shader.safeGetUniform("MorphAmount").set(2.8F);
+        setPaletteColor(shader, "PaletteBlush", MandelbulbPalette.Slot.BLUSH);
+        setPaletteColor(shader, "PalettePeach", MandelbulbPalette.Slot.PEACH);
+        setPaletteColor(shader, "PaletteButter", MandelbulbPalette.Slot.BUTTER);
+        setPaletteColor(shader, "PaletteMint", MandelbulbPalette.Slot.MINT);
+        setPaletteColor(shader, "PaletteSky", MandelbulbPalette.Slot.SKY);
+        setPaletteColor(
+                shader,
+                "PaletteLavender",
+                MandelbulbPalette.Slot.LAVENDER
+        );
+        MandelbulbPalette.Stops stops = MandelbulbPalette.stops();
+        shader.safeGetUniform("PaletteStopPeach").set(stops.peach());
+        shader.safeGetUniform("PaletteStopButter").set(stops.butter());
+        shader.safeGetUniform("PaletteStopMint").set(stops.mint());
+        shader.safeGetUniform("PaletteStopSky").set(stops.sky());
+        shader.safeGetUniform("PaletteStopLavender").set(stops.lavender());
+    }
+
+    private static void setPaletteColor(
+            ShaderInstance shader,
+            String uniform,
+            MandelbulbPalette.Slot slot
+    ) {
+        MandelbulbPalette.Color color = MandelbulbPalette.color(slot);
+        shader.safeGetUniform(uniform).set(
+                color.red(),
+                color.green(),
+                color.blue()
+        );
+    }
+
+    private static void renderProxyCube(
+            VertexConsumer consumer,
+            Matrix4f matrix
+    ) {
+        for (float[][] face : PROXY_FACES) {
+            for (int index : TRIANGLE_ORDER) {
+                float[] point = face[index];
+                consumer.vertex(
+                                matrix,
+                                point[0] * PROXY_BOUND,
+                                point[1] * PROXY_BOUND,
+                                point[2] * PROXY_BOUND
+                        )
+                .color(1.0F, 1.0F, 1.0F, 1.0F)
+                .endVertex();
             }
         }
-    }
-
-    private static void diamond(
-            VertexConsumer consumer,
-            Matrix4f matrix,
-            float[] center,
-            float halfWidth,
-            float halfHeight,
-            TesseractRenderCore.LineColor color
-    ) {
-        float[] top = point(center, 0.0F, halfHeight);
-        float[] right = point(center, halfWidth, 0.0F);
-        float[] bottom = point(center, 0.0F, -halfHeight);
-        float[] left = point(center, -halfWidth, 0.0F);
-        TesseractRenderCore.line(consumer, matrix, top, right, color, color);
-        TesseractRenderCore.line(consumer, matrix, right, bottom, color, color);
-        TesseractRenderCore.line(consumer, matrix, bottom, left, color, color);
-        TesseractRenderCore.line(consumer, matrix, left, top, color, color);
-    }
-
-    private static void renderFragments(
-            VertexConsumer consumer,
-            Matrix4f matrix,
-            float[] center,
-            float width,
-            float height,
-            float collapse
-    ) {
-        for (int fragment = 0; fragment < 5; fragment++) {
-            float angle = fragment * Mth.TWO_PI / 5.0F + collapse;
-            float radius = (1.0F - collapse)
-                    * width * (1.1F + fragment * 0.12F);
-            float x = Mth.cos(angle) * radius;
-            float y = Mth.sin(angle) * radius + height * 0.05F;
-            float size = 0.025F * (1.0F - collapse);
-            TesseractRenderCore.line(
-                    consumer,
-                    matrix,
-                    point(center, x - size, y - size),
-                    point(center, x + size, y + size),
-                    PALE,
-                    WHITE
-            );
-        }
-    }
-
-    private static float[] point(float[] center, float x, float y) {
-        return new float[]{center[0] + x, center[1] + y, center[2]};
-    }
-
-    private static float cycle(long time, long period) {
-        return (time % period) / (float) period * Mth.TWO_PI;
     }
 }

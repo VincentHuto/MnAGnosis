@@ -1,3 +1,5 @@
+![Stage 09 concept preview](../../../concept-art/yaldabaoth-stages/09-claim-no-outside.png)
+
 # Stage 09 — Claim: There Is No Outside
 
 ## Purpose

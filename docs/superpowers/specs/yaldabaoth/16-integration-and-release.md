@@ -1,3 +1,5 @@
+![Stage 16 concept preview](../../../concept-art/yaldabaoth-stages/16-integration-and-release.png)
+
 # Stage 16 — Integration and Release
 
 ## Purpose

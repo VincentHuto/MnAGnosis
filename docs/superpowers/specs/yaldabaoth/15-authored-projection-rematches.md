@@ -1,3 +1,5 @@
+![Stage 15 concept preview](../../../concept-art/yaldabaoth-stages/15-authored-projection-rematches.png)
+
 # Stage 15 — Authored Projection Rematches
 
 ## Purpose

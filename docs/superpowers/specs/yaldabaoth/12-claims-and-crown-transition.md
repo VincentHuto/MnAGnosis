@@ -1,3 +1,5 @@
+![Stage 12 concept preview](../../../concept-art/yaldabaoth-stages/12-claims-and-crown-transition.png)
+
 # Stage 12 — Claims and Crown Transition
 
 ## Purpose

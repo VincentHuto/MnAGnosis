@@ -1,10 +1,12 @@
 package com.vincenthuto.mnagnosis.common.spell.gravity.shift;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 public final class GravityShiftState implements IGravityShiftState {
 
-    private static final int ENGINE_VERSION = 2;
+    private static final int ENGINE_VERSION = 3;
     public static final int TRANSITION_TICKS = 6;
     public static final int RELEASE_GRACE_TICKS = 10;
 
@@ -15,6 +17,8 @@ public final class GravityShiftState implements IGravityShiftState {
     private int transitionTicks;
     private int releaseGraceTicks;
     private int unsupportedTicks;
+    private Vec3 transitionOriginAnchor = Vec3.ZERO;
+    private Quaternionf transitionOriginRotation = new Quaternionf();
     private long revision;
 
     public void applyMobile(int durationTicks) {
@@ -90,6 +94,8 @@ public final class GravityShiftState implements IGravityShiftState {
         transitionTicks = 0;
         releaseGraceTicks = RELEASE_GRACE_TICKS;
         unsupportedTicks = 0;
+        transitionOriginAnchor = Vec3.ZERO;
+        transitionOriginRotation = GravityDirection.DOWN.rotation();
         revision++;
     }
 
@@ -106,7 +112,9 @@ public final class GravityShiftState implements IGravityShiftState {
             int transitionTicks,
             int releaseGraceTicks,
             long revision,
-            int mobileTicks
+            int mobileTicks,
+            Vec3 transitionOriginAnchor,
+            Quaternionf transitionOriginRotation
     ) {
         if (revision < this.revision) {
             return;
@@ -119,6 +127,10 @@ public final class GravityShiftState implements IGravityShiftState {
         this.releaseGraceTicks = bounded(releaseGraceTicks, RELEASE_GRACE_TICKS);
         this.revision = Math.max(0L, revision);
         this.mobileTicks = Math.max(0, mobileTicks);
+        setTransitionOrigin(
+                transitionOriginAnchor,
+                transitionOriginRotation
+        );
     }
 
     public CompoundTag serializeNBT() {
@@ -131,12 +143,20 @@ public final class GravityShiftState implements IGravityShiftState {
         tag.putInt("TransitionTicks", transitionTicks);
         tag.putInt("ReleaseGraceTicks", releaseGraceTicks);
         tag.putInt("UnsupportedTicks", unsupportedTicks);
+        tag.putDouble("TransitionOriginX", transitionOriginAnchor.x);
+        tag.putDouble("TransitionOriginY", transitionOriginAnchor.y);
+        tag.putDouble("TransitionOriginZ", transitionOriginAnchor.z);
+        tag.putFloat("TransitionOriginQX", transitionOriginRotation.x);
+        tag.putFloat("TransitionOriginQY", transitionOriginRotation.y);
+        tag.putFloat("TransitionOriginQZ", transitionOriginRotation.z);
+        tag.putFloat("TransitionOriginQW", transitionOriginRotation.w);
         tag.putLong("Revision", revision);
         return tag;
     }
 
     public void deserializeNBT(CompoundTag tag) {
-        if (tag.getInt("EngineVersion") < ENGINE_VERSION) {
+        int engineVersion = tag.getInt("EngineVersion");
+        if (engineVersion < 2) {
             resetOrientation();
             return;
         }
@@ -152,6 +172,25 @@ public final class GravityShiftState implements IGravityShiftState {
                 RELEASE_GRACE_TICKS);
         unsupportedTicks = Math.max(0, tag.getInt("UnsupportedTicks"));
         revision = Math.max(0L, tag.getLong("Revision"));
+        if (engineVersion >= ENGINE_VERSION) {
+            setTransitionOrigin(
+                    new Vec3(
+                            tag.getDouble("TransitionOriginX"),
+                            tag.getDouble("TransitionOriginY"),
+                            tag.getDouble("TransitionOriginZ")
+                    ),
+                    new Quaternionf(
+                            tag.getFloat("TransitionOriginQX"),
+                            tag.getFloat("TransitionOriginQY"),
+                            tag.getFloat("TransitionOriginQZ"),
+                            tag.getFloat("TransitionOriginQW")
+                    )
+            );
+        } else {
+            transitionTicks = 0;
+            transitionOriginAnchor = Vec3.ZERO;
+            transitionOriginRotation = direction.rotation();
+        }
         if (mobileTicks == 0 && mode == GravitySourceMode.MOBILE) {
             mode = GravitySourceMode.NONE;
             direction = GravityDirection.DOWN;
@@ -203,11 +242,39 @@ public final class GravityShiftState implements IGravityShiftState {
         return unsupportedTicks;
     }
 
+    @Override
+    public Vec3 transitionOriginAnchor() {
+        return transitionOriginAnchor;
+    }
+
+    @Override
+    public Quaternionf transitionOriginRotation() {
+        return new Quaternionf(transitionOriginRotation);
+    }
+
+    @Override
+    public void setTransitionOrigin(Vec3 anchor, Quaternionf rotation) {
+        transitionOriginAnchor = finite(anchor) ? anchor : Vec3.ZERO;
+        transitionOriginRotation = GravityTransitionFrame.rotation(
+                rotation,
+                direction,
+                TRANSITION_TICKS,
+                0.0F
+        );
+    }
+
     public long revision() {
         return revision;
     }
 
     public boolean hasMobileAdhesion() {
         return mobileTicks > 0;
+    }
+
+    private static boolean finite(Vec3 value) {
+        return value != null
+                && Double.isFinite(value.x)
+                && Double.isFinite(value.y)
+                && Double.isFinite(value.z);
     }
 }

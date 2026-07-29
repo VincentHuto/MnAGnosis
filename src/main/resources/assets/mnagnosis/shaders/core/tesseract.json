@@ -1,0 +1,139 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "mnagnosis:tesseract",
+  "fragment": "mnagnosis:tesseract",
+  "attributes": ["Position", "Color"],
+  "samplers": [],
+  "uniforms": [
+    {
+      "name": "ModelViewMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ProjMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ColorModulator",
+      "type": "float",
+      "count": 4,
+      "values": [1.0,1.0,1.0,1.0]
+    },
+    {
+      "name": "InversePose",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ModelPoseMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "CameraOrigin",
+      "type": "float",
+      "count": 3,
+      "values": [0.0,0.0,3.0]
+    },
+    {
+      "name": "RayDirection",
+      "type": "float",
+      "count": 3,
+      "values": [0.0,0.0,-1.0]
+    },
+    {
+      "name": "Perspective",
+      "type": "int",
+      "count": 1,
+      "values": [0]
+    },
+    {
+      "name": "TesseractTime",
+      "type": "float",
+      "count": 1,
+      "values": [0.0]
+    },
+    {
+      "name": "TesseractAngleXw",
+      "type": "float",
+      "count": 1,
+      "values": [0.0]
+    },
+    {
+      "name": "TesseractAngleYz",
+      "type": "float",
+      "count": 1,
+      "values": [0.0]
+    },
+    {
+      "name": "TesseractPulse",
+      "type": "float",
+      "count": 1,
+      "values": [0.5]
+    },
+    {
+      "name": "PaletteVoid",
+      "type": "float",
+      "count": 3,
+      "values": [0.025,0.015,0.080]
+    },
+    {
+      "name": "PaletteCyan",
+      "type": "float",
+      "count": 3,
+      "values": [0.12,0.92,1.00]
+    },
+    {
+      "name": "PaletteAzure",
+      "type": "float",
+      "count": 3,
+      "values": [0.16,0.44,1.00]
+    },
+    {
+      "name": "PaletteViolet",
+      "type": "float",
+      "count": 3,
+      "values": [0.58,0.22,1.00]
+    },
+    {
+      "name": "PalettePearl",
+      "type": "float",
+      "count": 3,
+      "values": [0.88,0.96,1.00]
+    },
+    {
+      "name": "PaletteGold",
+      "type": "float",
+      "count": 3,
+      "values": [1.00,0.68,0.18]
+    },
+    {
+      "name": "PaletteBrightness",
+      "type": "float",
+      "count": 1,
+      "values": [1.0]
+    },
+    {
+      "name": "PaletteGlowStrength",
+      "type": "float",
+      "count": 1,
+      "values": [0.72]
+    },
+    {
+      "name": "TesseractTubeRadius",
+      "type": "float",
+      "count": 1,
+      "values": [0.045]
+    }
+  ]
+}

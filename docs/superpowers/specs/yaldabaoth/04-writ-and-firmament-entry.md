@@ -1,3 +1,5 @@
+![Stage 04 concept preview](../../../concept-art/yaldabaoth-stages/04-writ-and-firmament-entry.png)
+
 # Stage 04 — Writ and Firmament Entry
 
 ## Purpose

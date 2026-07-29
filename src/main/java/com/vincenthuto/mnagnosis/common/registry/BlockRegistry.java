@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.common.registry;
 
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.common.block.MengerianTopologyBlock;
 import com.vincenthuto.mnagnosis.common.block.TesseractBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -19,4 +20,16 @@ public class BlockRegistry {
                     .sound(SoundType.GLASS)
                     .lightLevel(state -> 10) // Emits light
                     .noOcclusion()));
+
+    public static final RegistryObject<Block> MENGERIAN_TOPOLOGY =
+            BASEBLOCKS.register(
+                    "mengerian_topology",
+                    () -> new MengerianTopologyBlock(
+                            BlockBehaviour.Properties.of()
+                                    .strength(4.0F, 8.0F)
+                                    .sound(SoundType.AMETHYST)
+                                    .lightLevel(state -> 8)
+                                    .noOcclusion()
+                    )
+            );
 }

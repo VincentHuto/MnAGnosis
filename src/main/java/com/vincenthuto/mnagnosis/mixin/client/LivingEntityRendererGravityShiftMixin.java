@@ -7,6 +7,7 @@ import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityShiftApi;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,6 +29,10 @@ public abstract class LivingEntityRendererGravityShiftMixin {
         poseStack.pushPose();
         if (GravityShiftApi.direction(entity) != GravityDirection.DOWN
                 || GravityShiftApi.state(entity) != null) {
+            Vec3 offset = GravityVisuals.anchor(
+                    entity, partialTick
+            ).subtract(entity.getPosition(partialTick));
+            poseStack.translate(offset.x, offset.y, offset.z);
             poseStack.mulPose(GravityVisuals.rotation(entity, partialTick));
         }
     }

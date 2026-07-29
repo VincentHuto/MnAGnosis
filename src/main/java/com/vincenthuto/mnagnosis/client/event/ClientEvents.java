@@ -2,11 +2,13 @@ package com.vincenthuto.mnagnosis.client.event;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmoredModel;
 import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmorModel;
 import com.vincenthuto.mnagnosis.client.render.entity.TruthRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.GravityFieldRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.GravityRuptureRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.GravityShiftSurfaceRenderer;
+import com.vincenthuto.mnagnosis.client.render.entity.FractalItemEntityRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.LivingLandControllerRenderer;
 import com.vincenthuto.mnagnosis.client.render.entity.LivingLandStrikeRenderer;
 import com.vincenthuto.mnagnosis.client.render.gravity.GravityLensController;
@@ -99,6 +101,10 @@ public class ClientEvents {
 		public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
 			event.registerLayerDefinition(IneffableArmorModel.INEFFABLE_ROBES_LAYER,
 					IneffableArmorModel::createBodyLayer);
+			event.registerLayerDefinition(
+					IneffableArmoredModel.INEFFABLE_ARMORED_ROBES_LAYER,
+					IneffableArmoredModel::createBodyLayer
+			);
 		}
 
 
@@ -146,6 +152,10 @@ public class ClientEvents {
 
 		@SubscribeEvent
 		public static void renderEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+			event.registerEntityRenderer(
+					EntityRegistry.FRACTAL_ITEM.get(),
+					FractalItemEntityRenderer::new
+			);
 			event.registerEntityRenderer(EntityRegistry.TRUTH.get(), TruthRenderer::new);
 			event.registerEntityRenderer(
 					EntityRegistry.GRAVITY_FIELD.get(), GravityFieldRenderer::new

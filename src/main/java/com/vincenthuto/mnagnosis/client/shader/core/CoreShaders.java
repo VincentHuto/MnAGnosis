@@ -22,6 +22,11 @@ public class CoreShaders {
     private static ShaderInstance noise;
     private static ShaderInstance truthGlitch;
     private static ShaderInstance gravityMirageMask;
+    private static ShaderInstance mandelbulb;
+    private static ShaderInstance apollonianTrap;
+    private static ShaderInstance kochianStar;
+    private static ShaderInstance mengerianTopology;
+    private static ShaderInstance tesseract;
 
     public static void init(TriConsumer<ResourceLocation, VertexFormat, Consumer<ShaderInstance>> registrations) {
         registrations.accept(
@@ -44,6 +49,31 @@ public class CoreShaders {
                 DefaultVertexFormat.POSITION_COLOR,
                 inst -> gravityMirageMask = inst
         );
+        registrations.accept(
+                MnAGnosis.rloc("mandelbulb"),
+                DefaultVertexFormat.POSITION_COLOR,
+                inst -> mandelbulb = inst
+        );
+        registrations.accept(
+                MnAGnosis.rloc("apollonian_trap"),
+                DefaultVertexFormat.POSITION_COLOR,
+                inst -> apollonianTrap = inst
+        );
+        registrations.accept(
+                MnAGnosis.rloc("kochian_star"),
+                DefaultVertexFormat.POSITION_COLOR,
+                inst -> kochianStar = inst
+        );
+        registrations.accept(
+                MnAGnosis.rloc("mengerian_topology"),
+                DefaultVertexFormat.POSITION_COLOR,
+                inst -> mengerianTopology = inst
+        );
+        registrations.accept(
+                MnAGnosis.rloc("tesseract"),
+                DefaultVertexFormat.POSITION_COLOR,
+                inst -> tesseract = inst
+        );
 
     }
 
@@ -62,6 +92,26 @@ public class CoreShaders {
 
     public static ShaderInstance gravityMirageMask() {
         return gravityMirageMask;
+    }
+
+    public static ShaderInstance mandelbulb() {
+        return mandelbulb;
+    }
+
+    public static ShaderInstance apollonianTrap() {
+        return apollonianTrap;
+    }
+
+    public static ShaderInstance kochianStar() {
+        return kochianStar;
+    }
+
+    public static ShaderInstance mengerianTopology() {
+        return mengerianTopology;
+    }
+
+    public static ShaderInstance tesseract() {
+        return tesseract;
     }
 
 }

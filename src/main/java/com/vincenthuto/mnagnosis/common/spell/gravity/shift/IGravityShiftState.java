@@ -1,6 +1,8 @@
 package com.vincenthuto.mnagnosis.common.spell.gravity.shift;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 public interface IGravityShiftState {
 
@@ -25,7 +27,9 @@ public interface IGravityShiftState {
             int transitionTicks,
             int releaseGraceTicks,
             long revision,
-            int mobileTicks
+            int mobileTicks,
+            Vec3 transitionOriginAnchor,
+            Quaternionf transitionOriginRotation
     );
 
     CompoundTag serializeNBT();
@@ -45,6 +49,12 @@ public interface IGravityShiftState {
     int releaseGraceTicks();
 
     int unsupportedTicks();
+
+    Vec3 transitionOriginAnchor();
+
+    Quaternionf transitionOriginRotation();
+
+    void setTransitionOrigin(Vec3 anchor, Quaternionf rotation);
 
     long revision();
 

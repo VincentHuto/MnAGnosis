@@ -53,6 +53,91 @@ public final class RenderHelper extends RenderType {
         return makeLayer("mnagnosis:truth_glitch", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, glState);
     });
 
+    private static final RenderType MANDELBULB = makeLayer(
+            "mnagnosis:mandelbulb",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.TRIANGLES,
+            1_024,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(new ShaderStateShard(CoreShaders::mandelbulb))
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType APOLLONIAN_TRAP = makeLayer(
+            "mnagnosis:apollonian_trap",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.TRIANGLES,
+            1_024,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(
+                            new ShaderStateShard(CoreShaders::apollonianTrap)
+                    )
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType KOCHIAN_STAR = makeLayer(
+            "mnagnosis:kochian_star",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.TRIANGLES,
+            1_048_576,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(
+                            new ShaderStateShard(CoreShaders::kochianStar)
+                    )
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType MENGERIAN_TOPOLOGY = makeLayer(
+            "mnagnosis:mengerian_topology",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.TRIANGLES,
+            1_024,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(
+                            new ShaderStateShard(
+                                    CoreShaders::mengerianTopology
+                            )
+                    )
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType TESSERACT = makeLayer(
+            "mnagnosis:tesseract",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.TRIANGLES,
+            1_024,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(
+                            new ShaderStateShard(CoreShaders::tesseract)
+                    )
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .createCompositeState(false)
+    );
+
     public static RenderType getDopplegangerLayer() {
         return DOPPLEGANGER;
     }
@@ -65,6 +150,27 @@ public final class RenderHelper extends RenderType {
     public static RenderType getTruthGlitchLayer(ResourceLocation texture) {
         return TRUTH_GLITCH.apply(texture);
     }
+
+    public static RenderType getMandelbulbLayer() {
+        return MANDELBULB;
+    }
+
+    public static RenderType getApollonianTrapLayer() {
+        return APOLLONIAN_TRAP;
+    }
+
+    public static RenderType getKochianStarLayer() {
+        return KOCHIAN_STAR;
+    }
+
+    public static RenderType getMengerianTopologyLayer() {
+        return MENGERIAN_TOPOLOGY;
+    }
+
+    public static RenderType getTesseractLayer() {
+        return TESSERACT;
+    }
+
     private static RenderType makeLayer(String name, VertexFormat format, VertexFormat.Mode mode,
                                         int bufSize, boolean hasCrumbling, boolean sortOnUpload, CompositeState glState) {
         return RenderTypeAccessor.create(name, format, mode, bufSize, hasCrumbling, sortOnUpload, glState);

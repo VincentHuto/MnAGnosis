@@ -1,3 +1,5 @@
+![Stage 10 concept preview](../../../concept-art/yaldabaoth-stages/10-claim-name-what-lives.png)
+
 # Stage 10 — Claim: I Name What Lives
 
 ## Purpose

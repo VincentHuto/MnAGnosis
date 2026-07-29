@@ -1,3 +1,5 @@
+![Stage 05 concept preview](../../../concept-art/yaldabaoth-stages/05-first-firmament-runtime.png)
+
 # Stage 05 — First Firmament Runtime
 
 ## Purpose

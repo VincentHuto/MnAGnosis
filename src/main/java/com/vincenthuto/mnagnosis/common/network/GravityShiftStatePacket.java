@@ -19,6 +19,13 @@ public record GravityShiftStatePacket(
         int releaseGraceTicks,
         long revision,
         int mobileTicks,
+        double transitionOriginX,
+        double transitionOriginY,
+        double transitionOriginZ,
+        float transitionOriginQX,
+        float transitionOriginQY,
+        float transitionOriginQZ,
+        float transitionOriginQW,
         double anchorX,
         double anchorY,
         double anchorZ,
@@ -36,6 +43,13 @@ public record GravityShiftStatePacket(
         buffer.writeVarInt(packet.releaseGraceTicks);
         buffer.writeVarLong(packet.revision);
         buffer.writeVarInt(packet.mobileTicks);
+        buffer.writeDouble(packet.transitionOriginX);
+        buffer.writeDouble(packet.transitionOriginY);
+        buffer.writeDouble(packet.transitionOriginZ);
+        buffer.writeFloat(packet.transitionOriginQX);
+        buffer.writeFloat(packet.transitionOriginQY);
+        buffer.writeFloat(packet.transitionOriginQZ);
+        buffer.writeFloat(packet.transitionOriginQW);
         buffer.writeDouble(packet.anchorX);
         buffer.writeDouble(packet.anchorY);
         buffer.writeDouble(packet.anchorZ);
@@ -54,6 +68,13 @@ public record GravityShiftStatePacket(
                 buffer.readVarInt(),
                 buffer.readVarLong(),
                 buffer.readVarInt(),
+                buffer.readDouble(),
+                buffer.readDouble(),
+                buffer.readDouble(),
+                buffer.readFloat(),
+                buffer.readFloat(),
+                buffer.readFloat(),
+                buffer.readFloat(),
                 buffer.readDouble(),
                 buffer.readDouble(),
                 buffer.readDouble(),

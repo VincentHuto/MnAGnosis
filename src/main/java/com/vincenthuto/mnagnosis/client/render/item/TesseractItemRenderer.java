@@ -10,11 +10,6 @@ import net.minecraft.world.item.ItemStack;
 
 public class TesseractItemRenderer extends BlockEntityWithoutLevelRenderer {
 
-    private static final TesseractRenderCore.LineColor INNER =
-            new TesseractRenderCore.LineColor(0.1F, 0.5F, 1.0F, 1.0F);
-    private static final TesseractRenderCore.LineColor OUTER =
-            new TesseractRenderCore.LineColor(0.5F, 0.9F, 1.0F, 1.0F);
-
     public TesseractItemRenderer(
             BlockEntityRenderDispatcher dispatcher,
             EntityModelSet models
@@ -33,19 +28,31 @@ public class TesseractItemRenderer extends BlockEntityWithoutLevelRenderer {
     ) {
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.5D, 0.5D);
-        poseStack.scale(0.25F, 0.25F, 0.25F);
+        float scale = switch (displayContext) {
+            case GUI -> 0.82F;
+            case GROUND -> 0.66F;
+            case FIXED -> 0.78F;
+            default -> 0.72F;
+        };
+        poseStack.scale(scale, scale, scale);
 
         long time = System.currentTimeMillis();
+        float elapsedSeconds = (time % 240_000L) / 1_000.0F;
         float angleXw = (time % 10_000L) / 10_000.0F
                 * (float) Math.PI * 2.0F;
         float angleYz = (time % 7_000L) / 7_000.0F
                 * (float) Math.PI * 2.0F;
-        TesseractRenderCore.renderEdges(
+        float pulse = (float) (
+                Math.sin(elapsedSeconds * 2.4F) * 0.5F + 0.5F
+        );
+        TesseractRenderCore.renderShader(
                 poseStack,
                 buffer,
-                TesseractRenderCore.project(angleXw, angleYz),
-                INNER,
-                OUTER
+                elapsedSeconds,
+                angleXw,
+                angleYz,
+                pulse,
+                1.0F
         );
         poseStack.popPose();
     }

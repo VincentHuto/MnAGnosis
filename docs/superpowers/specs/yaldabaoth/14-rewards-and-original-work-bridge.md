@@ -1,3 +1,5 @@
+![Stage 14 concept preview](../../../concept-art/yaldabaoth-stages/14-rewards-and-original-work-bridge.png)
+
 # Stage 14 — Rewards and Original Work Bridge
 
 ## Purpose

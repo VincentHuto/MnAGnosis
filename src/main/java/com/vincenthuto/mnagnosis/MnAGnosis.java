@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis;
 
 import com.mojang.logging.LogUtils;
+import com.vincenthuto.mnagnosis.client.render.block.MengerianTopologyBlockEntityRenderer;
 import com.vincenthuto.mnagnosis.client.render.block.TesseractBlockEntityRenderer;
 import com.vincenthuto.mnagnosis.client.ClientConfig;
 import com.vincenthuto.mnagnosis.common.item.IneffableRobesItem;
@@ -86,6 +87,10 @@ public class MnAGnosis {
     public  void clientSetup(FMLClientSetupEvent event) {
         BlockEntityRenderers.register(BlockEntityRegistry.TESSERACT_BE.get(),
                 TesseractBlockEntityRenderer::new);
+        BlockEntityRenderers.register(
+                BlockEntityRegistry.MENGERIAN_TOPOLOGY_BE.get(),
+                MengerianTopologyBlockEntityRenderer::new
+        );
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {

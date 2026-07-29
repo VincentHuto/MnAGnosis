@@ -5,6 +5,7 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 public final class GravityShiftApi {
 
@@ -69,7 +70,14 @@ public final class GravityShiftApi {
         )) {
             return false;
         }
+        TransitionOrigin transitionOrigin = currentVisualPose(
+                entity, state
+        );
         state.resolve(mode, direction);
+        state.setTransitionOrigin(
+                transitionOrigin.anchor(),
+                transitionOrigin.rotation()
+        );
         entity.setPos(anchor);
         entity.setDeltaMovement(GravityPhysics.transitionVelocity(
                 entity.getDeltaMovement(),
@@ -94,11 +102,18 @@ public final class GravityShiftApi {
     ) {
         GravityDirection previous = state.direction();
         AABB previousBounds = entity.getBoundingBox();
+        TransitionOrigin transitionOrigin = currentVisualPose(
+                entity, state
+        );
         change.run();
         GravityDirection current = state.direction();
         if (current == previous) {
             return;
         }
+        state.setTransitionOrigin(
+                transitionOrigin.anchor(),
+                transitionOrigin.rotation()
+        );
         entity.setPos(GravityFrame.anchor(previousBounds, current));
         entity.setDeltaMovement(GravityPhysics.transitionVelocity(
                 entity.getDeltaMovement(),
@@ -106,5 +121,31 @@ public final class GravityShiftApi {
                 current,
                 state.mode() == GravitySourceMode.SURFACE
         ));
+    }
+
+    private static TransitionOrigin currentVisualPose(
+            LivingEntity entity,
+            IGravityShiftState state
+    ) {
+        return new TransitionOrigin(
+                GravityTransitionFrame.anchor(
+                        state.transitionOriginAnchor(),
+                        entity.position(),
+                        state.transitionTicks(),
+                        0.0F
+                ),
+                GravityTransitionFrame.rotation(
+                        state.transitionOriginRotation(),
+                        state.direction(),
+                        state.transitionTicks(),
+                        0.0F
+                )
+        );
+    }
+
+    private record TransitionOrigin(
+            Vec3 anchor,
+            Quaternionf rotation
+    ) {
     }
 }

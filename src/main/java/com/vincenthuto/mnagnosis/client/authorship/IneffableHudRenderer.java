@@ -3,6 +3,7 @@ package com.vincenthuto.mnagnosis.client.authorship;
 import com.mna.api.capabilities.IPlayerMagic;
 import com.vincenthuto.mnagnosis.client.ClientConfig;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
+import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
@@ -142,7 +143,12 @@ public final class IneffableHudRenderer {
                 BADGE_X + BADGE_SIZE, FRAME_Y - 1 + BADGE_SIZE, BLACK);
         graphics.fill(BADGE_X + 1, FRAME_Y,
                 BADGE_X + BADGE_SIZE - 1,
-                FRAME_Y - 2 + BADGE_SIZE, WHITE);
+                FRAME_Y - 2 + BADGE_SIZE, GRAY);
+        graphics.renderItem(
+                ItemRegistry.INEFFABLE_HUD_BADGE.get().getDefaultInstance(),
+                BADGE_X + 1,
+                FRAME_Y
+        );
 
         String levelText = Integer.toString(level);
         int textWidth = Minecraft.getInstance().font.width(levelText);

@@ -26,6 +26,7 @@ import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityShiftStatePro
 import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravitySourceMode;
 import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravitySupportResolver;
 import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravitySurfaceMath;
+import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityTransitionFrame;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -35,6 +36,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Zombie;
@@ -47,6 +49,7 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.common.ForgeMod;
 import io.netty.buffer.Unpooled;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.Set;
@@ -122,6 +125,163 @@ public final class GravityShiftGameTests {
                         && entity.getPosition(1.0F).distanceToSqr(wallAnchor)
                         < 1.0E-12D,
                 "A direction-changing snapshot interpolated through the old gravity frame"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void interruptedGravityTurnStartsFromCurrentVisualPose(
+            GameTestHelper helper
+    ) {
+        Zombie entity = helper.spawnWithNoFreeWill(
+                EntityType.ZOMBIE, 2, 2, 2
+        );
+        var state = entity.getCapability(
+                GravityShiftStateProvider.CAPABILITY
+        ).resolve().orElseThrow();
+        state.applyMobile(100);
+        GravityShiftApi.resolveAnchored(
+                entity,
+                state,
+                GravitySourceMode.MOBILE,
+                GravityDirection.EAST
+        );
+        GravityShiftApi.tickAnchored(entity, state);
+        GravityShiftApi.tickAnchored(entity, state);
+
+        Vec3 expectedOriginAnchor = GravityTransitionFrame.anchor(
+                state.transitionOriginAnchor(),
+                entity.position(),
+                state.transitionTicks(),
+                0.0F
+        );
+        Quaternionf expectedOriginRotation =
+                GravityTransitionFrame.rotation(
+                        state.transitionOriginRotation(),
+                        state.direction(),
+                        state.transitionTicks(),
+                        0.0F
+                );
+        Vector3f expectedUp = new Vector3f(
+                0.0F, 1.0F, 0.0F
+        ).rotate(expectedOriginRotation);
+
+        GravityShiftApi.resolveAnchored(
+                entity,
+                state,
+                GravitySourceMode.MOBILE,
+                GravityDirection.UP
+        );
+
+        Vector3f actualUp = new Vector3f(
+                0.0F, 1.0F, 0.0F
+        ).rotate(state.transitionOriginRotation());
+        AABB physicalBox = entity.getBoundingBox();
+        helper.assertTrue(
+                state.transitionOriginAnchor().distanceToSqr(
+                        expectedOriginAnchor
+                ) < 1.0E-12D
+                        && expectedUp.distance(actualUp) < 1.0E-5F
+                        && close(physicalBox.maxY, entity.getY())
+                        && helper.getLevel().noCollision(
+                        entity, physicalBox.deflate(1.0E-7D)
+                ),
+                "Interrupted gravity turn restarted from a discrete pose"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void blockedGravityTurnPreservesEntireTransition(
+            GameTestHelper helper
+    ) {
+        Zombie entity = helper.spawnWithNoFreeWill(
+                EntityType.ZOMBIE, 2, 2, 2
+        );
+        var state = entity.getCapability(
+                GravityShiftStateProvider.CAPABILITY
+        ).resolve().orElseThrow();
+        state.applyMobile(100);
+        state.setTransitionOrigin(
+                new Vec3(1.25D, 2.5D, -3.75D),
+                GravityDirection.DOWN.rotation()
+        );
+        AABB current = entity.getBoundingBox();
+        Vec3 targetAnchor = GravityFrame.anchor(
+                current, GravityDirection.EAST
+        );
+        EntityDimensions dimensions = entity.getDimensions(
+                entity.getPose()
+        );
+        AABB target = GravityFrame.anchoredBox(
+                targetAnchor,
+                dimensions.width,
+                dimensions.height,
+                GravityDirection.EAST
+        );
+        helper.getLevel().setBlockAndUpdate(
+                BlockPos.containing(target.getCenter()),
+                Blocks.STONE.defaultBlockState()
+        );
+
+        Vec3 positionBefore = entity.position();
+        Vec3 velocityBefore = new Vec3(0.1D, -0.2D, 0.3D);
+        entity.setDeltaMovement(velocityBefore);
+        Vec3 originBefore = state.transitionOriginAnchor();
+        Quaternionf rotationBefore = state.transitionOriginRotation();
+
+        boolean changed = GravityShiftApi.tryResolveAnchored(
+                entity,
+                state,
+                GravitySourceMode.MOBILE,
+                GravityDirection.EAST
+        );
+
+        helper.assertTrue(
+                !changed
+                        && state.direction() == GravityDirection.DOWN
+                        && entity.position().distanceToSqr(positionBefore)
+                        < 1.0E-12D
+                        && entity.getDeltaMovement().distanceToSqr(
+                        velocityBefore
+                ) < 1.0E-12D
+                        && state.transitionOriginAnchor().distanceToSqr(
+                        originBefore
+                ) < 1.0E-12D
+                        && sameRotation(
+                        state.transitionOriginRotation(),
+                        rotationBefore
+                ),
+                "Blocked gravity turn partially mutated transition state"
+        );
+        helper.succeed();
+    }
+
+    @GameTest(templateNamespace = MnAGnosis.MODID, template = "empty")
+    public static void transitionControlsBeginInVisibleFrame(
+            GameTestHelper helper
+    ) {
+        Zombie entity = helper.spawnWithNoFreeWill(
+                EntityType.ZOMBIE, 2, 2, 2
+        );
+        var state = entity.getCapability(
+                GravityShiftStateProvider.CAPABILITY
+        ).resolve().orElseThrow();
+        state.applyMobile(100);
+        entity.setYRot(0.0F);
+        GravityShiftApi.resolveAnchored(
+                entity,
+                state,
+                GravitySourceMode.MOBILE,
+                GravityDirection.EAST
+        );
+        entity.setDeltaMovement(Vec3.ZERO);
+
+        entity.moveRelative(1.0F, new Vec3(1.0D, 0.0D, 0.0D));
+
+        helper.assertTrue(
+                entity.getDeltaMovement().lengthSqr() < 1.0E-12D,
+                "Controls snapped to the final wall frame before the camera"
         );
         helper.succeed();
     }
@@ -373,6 +533,12 @@ public final class GravityShiftGameTests {
         GravityShiftState state = new GravityShiftState();
         state.applyMobile(40);
         state.resolve(GravitySourceMode.MOBILE, GravityDirection.NORTH);
+        state.setTransitionOrigin(
+                new Vec3(1.25D, 2.5D, -3.75D),
+                new Quaternionf(
+                        0.0F, 0.0F, -0.38268343F, 0.9238795F
+                )
+        );
         helper.assertTrue(state.mobileTicks() == 40
                         && state.mode() == GravitySourceMode.MOBILE
                         && state.direction() == GravityDirection.NORTH
@@ -385,7 +551,18 @@ public final class GravityShiftGameTests {
         restored.deserializeNBT(saved);
         helper.assertTrue(restored.mobileTicks() == 40
                         && restored.direction() == GravityDirection.NORTH
-                        && restored.revision() == state.revision(),
+                        && restored.revision() == state.revision()
+                        && restored.transitionOriginAnchor().distanceToSqr(
+                        new Vec3(1.25D, 2.5D, -3.75D)
+                ) < 1.0E-12D
+                        && close(
+                        restored.transitionOriginRotation().z,
+                        -0.38268343F
+                )
+                        && close(
+                        restored.transitionOriginRotation().w,
+                        0.9238795F
+                ),
                 "Gravity Shift state did not survive NBT");
 
         for (int tick = 0; tick < 40; tick++) {
@@ -411,7 +588,9 @@ public final class GravityShiftGameTests {
                 4,
                 0,
                 12L,
-                2
+                2,
+                Vec3.ZERO,
+                GravityDirection.DOWN.rotation()
         );
         state.tickClient();
         state.tickClient();
@@ -427,7 +606,9 @@ public final class GravityShiftGameTests {
                 GravityShiftState.TRANSITION_TICKS,
                 GravityShiftState.RELEASE_GRACE_TICKS,
                 13L,
-                0
+                0,
+                Vec3.ZERO,
+                GravityDirection.NORTH.rotation()
         );
         helper.assertTrue(state.revision() == 13L
                         && state.direction() == GravityDirection.DOWN,
@@ -553,6 +734,13 @@ public final class GravityShiftGameTests {
                 0,
                 91L,
                 120,
+                1.25D,
+                2.5D,
+                -3.75D,
+                0.0F,
+                0.0F,
+                -0.38268343F,
+                0.9238795F,
                 10.25D,
                 64.0D,
                 -7.5D,
@@ -564,6 +752,11 @@ public final class GravityShiftGameTests {
         GravityShiftStatePacket.encode(packet, buffer);
         GravityShiftStatePacket decoded = GravityShiftStatePacket.decode(buffer);
         helper.assertTrue(packet.equals(decoded)
+                        && close(decoded.transitionOriginX(), 1.25D)
+                        && close(decoded.transitionOriginY(), 2.5D)
+                        && close(decoded.transitionOriginZ(), -3.75D)
+                        && close(decoded.transitionOriginQZ(), -0.38268343F)
+                        && close(decoded.transitionOriginQW(), 0.9238795F)
                         && close(decoded.anchorX(), 10.25D)
                         && close(decoded.anchorY(), 64.0D)
                         && close(decoded.anchorZ(), -7.5D)
@@ -703,6 +896,7 @@ public final class GravityShiftGameTests {
         entity.setSpeed(0.1F);
 
         for (int tick = 0; tick < 10; tick++) {
+            GravityShiftApi.tickAnchored(entity, state);
             entity.travel(Vec3.ZERO);
         }
         helper.assertTrue(entity.onGround(),
@@ -811,5 +1005,12 @@ public final class GravityShiftGameTests {
 
     private static boolean close(double first, double second) {
         return Math.abs(first - second) < 1.0E-6D;
+    }
+
+    private static boolean sameRotation(
+            Quaternionf first,
+            Quaternionf second
+    ) {
+        return Math.abs(first.dot(second)) > 1.0F - 1.0E-5F;
     }
 }

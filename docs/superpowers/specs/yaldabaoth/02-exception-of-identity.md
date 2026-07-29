@@ -1,3 +1,5 @@
+![Stage 02 concept preview](../../../concept-art/yaldabaoth-stages/02-exception-of-identity.png)
+
 # Stage 02 — Exception of Identity
 
 ## Purpose

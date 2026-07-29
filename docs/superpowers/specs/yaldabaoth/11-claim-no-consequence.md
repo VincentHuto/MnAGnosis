@@ -1,3 +1,5 @@
+![Stage 11 concept preview](../../../concept-art/yaldabaoth-stages/11-claim-no-consequence.png)
+
 # Stage 11 — Claim: No Consequence Precedes Me
 
 ## Purpose

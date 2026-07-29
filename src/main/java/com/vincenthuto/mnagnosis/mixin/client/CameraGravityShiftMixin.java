@@ -66,12 +66,7 @@ public abstract class CameraGravityShiftMixin {
             return;
         }
         Quaternionf gravityRotation = GravityVisuals.rotation(entity, partialTick);
-        Vec3 interpolatedFeet = entity.getPosition(partialTick);
-        Vec3 rotatedEye = interpolatedFeet.add(
-                GravityCameraFrame.spatialOffset(
-                new Vec3(0.0D, entity.getEyeHeight(), 0.0D),
-                gravity
-        ));
+        Vec3 rotatedEye = GravityVisuals.eye(entity, partialTick);
         rotation.set(GravityCameraFrame.cameraRotation(
                 gravityRotation, rotation
         ));

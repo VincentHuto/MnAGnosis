@@ -1,3 +1,5 @@
+![Stage 06 concept preview](../../../concept-art/yaldabaoth-stages/06-yaldabaoth-foundation.png)
+
 # Stage 06 — Yaldabaoth Foundation
 
 ## Purpose

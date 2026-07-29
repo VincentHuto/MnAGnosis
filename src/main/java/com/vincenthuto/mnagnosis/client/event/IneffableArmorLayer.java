@@ -3,10 +3,11 @@ package com.vincenthuto.mnagnosis.client.event;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.vincenthuto.mnagnosis.client.ClientConfig;
-import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmorClearance;
+import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmoredModel;
 import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmorModel;
-import com.vincenthuto.mnagnosis.client.render.armor.IneffableRobesCurioLookup;
 import com.vincenthuto.mnagnosis.client.render.armor.IneffableArmorShaderMode;
+import com.vincenthuto.mnagnosis.client.render.armor.IneffableRobePresentation;
+import com.vincenthuto.mnagnosis.client.render.armor.IneffableRobesCurioLookup;
 import com.vincenthuto.mnagnosis.client.shader.core.CoreShaders;
 import com.vincenthuto.mnagnosis.client.shader.core.RenderHelper;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
@@ -19,6 +20,7 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import org.joml.Matrix4f;
 
 public final class IneffableArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>>
         extends RenderLayer<T, M> {
@@ -51,39 +53,38 @@ public final class IneffableArmorLayer<T extends LivingEntity, M extends Humanoi
     private static final float FBM_OUTPUT_EXPONENT = 0.1F;
     private static final float FBM_OUTPUT_BIAS = 0.30F;
 
-    private static final float FRACTAL_PHASE = 200.0F;
-    private static final float FRACTAL_FLASH = 10.0F;
-    private static final int FRACTAL_ITERATIONS = 6;
-    private static final float FRACTAL_MODULUS = 2.1F;
-    private static final float FRACTAL_COLOR_SPEED = 12.0F;
-    private static final float FRACTAL_SCALE_BASE = 2F;
-    private static final float FRACTAL_SCALE_AMPLITUDE = 0.50F;
-    private static final float FRACTAL_SCALE_SPEED =10F;
-    private static final float FRACTAL_ROTATION_SPEED = 5.60F;
-    private static final float FRACTAL_ROTATION_OFFSET = 0.0F;
-    private static final float FRACTAL_ORBIT_X = 0.06545465634F;
-    private static final float FRACTAL_ORBIT_Y = -0.05346356485F;
-    private static final float FRACTAL_ORBIT_X_SPEED = 25.20F;
-    private static final float FRACTAL_ORBIT_Y_SPEED = 10.68F;
-    private static final float FRACTAL_DRIFT_SPEED = 1.20F;
-    private static final float FRACTAL_RADIUS_SMOOTH_MAX = 0.60F;
-    private static final float FRACTAL_LENGTH_OFFSET = 0.05F;
-    private static final float FRACTAL_EDGE_WIDTH = 0.02F;
-    private static final float FRACTAL_DENSITY_FADE = 0.20F;
-    private static final float FRACTAL_PIXEL_SIZE = 1F;
-    private static final int FRACTAL_BLUR_SAMPLES = 16;
-    private static final float FRACTAL_MOTION_BLUR_SCALE = 0.0F;
-    private static final float FRACTAL_AA_BLUR_SCALE = 4.0F;
-    private static final float FRACTAL_BRIGHTNESS = 10.0F;
+    private static final float FRACTAL_FIELD_SCALE = 5.5F;
+    private static final float FRACTAL_FLOW_X = 18.0F;
+    private static final float FRACTAL_FLOW_Y = 72.0F;
+    private static final float FRACTAL_PRIMARY_CELL_SIZE = 0.82F;
+    private static final float FRACTAL_SECONDARY_CELL_SIZE = 0.48F;
+    private static final int FRACTAL_ITERATIONS = 40;
+    private static final float FRACTAL_CONTOUR_WIDTH = 0.0022F;
+    private static final float FRACTAL_BRIGHTNESS = 1.78F;
+    private static final float FRACTAL_SECONDARY_BRIGHTNESS = 0.35F;
+    private static final float FRACTAL_GROWTH_MIN = .14F;
+    private static final float FRACTAL_GROWTH_MAX = 2.0F;
+    private static final float FRACTAL_LIFECYCLE_SPEED = 20.0F;
+    private static final float FRACTAL_ROTATION_RANGE = 6.2831855F;
 
 
     private static final float DISFIGURATION = 0F;
 
-    private final IneffableArmorModel<T> robes;
+    private final IneffableArmorModel<T> originalRobes;
+    private final IneffableArmoredModel<T> armoredRobes;
 
     public IneffableArmorLayer(LivingEntityRenderer<T, M> owner) {
         super(owner);
-        this.robes = bake(IneffableArmorModel.INEFFABLE_ROBES_LAYER);
+        this.originalRobes = new IneffableArmorModel<>(
+                Minecraft.getInstance().getEntityModels().bakeLayer(
+                        IneffableArmorModel.INEFFABLE_ROBES_LAYER
+                )
+        );
+        this.armoredRobes = new IneffableArmoredModel<>(
+                Minecraft.getInstance().getEntityModels().bakeLayer(
+                        IneffableArmoredModel.INEFFABLE_ARMORED_ROBES_LAYER
+                )
+        );
     }
 
     @Override
@@ -106,42 +107,76 @@ public final class IneffableArmorLayer<T extends LivingEntity, M extends Humanoi
             return;
         }
 
-        IneffableArmorClearance clearance = IneffableArmorClearance.from(
+        IneffableRobePresentation presentation = IneffableRobePresentation.from(
                 !entity.getItemBySlot(EquipmentSlot.HEAD).isEmpty(),
                 !entity.getItemBySlot(EquipmentSlot.CHEST).isEmpty(),
                 !entity.getItemBySlot(EquipmentSlot.LEGS).isEmpty(),
                 !entity.getItemBySlot(EquipmentSlot.FEET).isEmpty()
         );
-        this.getParentModel().copyPropertiesTo(this.robes);
-        this.robes.animateCloth(limbSwing, limbSwingAmount, ageInTicks);
-        this.robes.applyClearance(clearance);
-        configureShader();
+        this.getParentModel().copyPropertiesTo(this.originalRobes);
+        this.originalRobes.animateCloth(
+                limbSwing,
+                limbSwingAmount,
+                ageInTicks
+        );
+        this.armoredRobes.copyPoseFrom(this.getParentModel());
+        this.armoredRobes.animateCloth(
+                limbSwing,
+                limbSwingAmount,
+                ageInTicks
+        );
+        configureShader(poseStack);
         VertexConsumer shaderBuffer =
                 bufferSource.getBuffer(RenderHelper.getDopplegangerLayer());
-        this.robes.renderToBuffer(
-                poseStack,
-                shaderBuffer,
-                packedLight,
-                OverlayTexture.NO_OVERLAY,
-                1.0F,
-                1.0F,
-                1.0F,
-                1.0F
-        );
+        if (presentation.armoredBody()) {
+            this.armoredRobes.renderToBuffer(
+                    poseStack,
+                    shaderBuffer,
+                    packedLight,
+                    OverlayTexture.NO_OVERLAY,
+                    1.0F,
+                    1.0F,
+                    1.0F,
+                    1.0F
+            );
+        } else {
+            this.originalRobes.renderBodyToBuffer(
+                    poseStack,
+                    shaderBuffer,
+                    packedLight,
+                    OverlayTexture.NO_OVERLAY,
+                    1.0F,
+                    1.0F,
+                    1.0F,
+                    1.0F
+            );
+        }
+        if (presentation.hoodVisible()) {
+            this.originalRobes.renderHoodToBuffer(
+                    poseStack,
+                    shaderBuffer,
+                    packedLight,
+                    OverlayTexture.NO_OVERLAY,
+                    1.0F,
+                    1.0F,
+                    1.0F,
+                    1.0F
+            );
+        }
     }
 
-    @SuppressWarnings("unchecked")
-    private IneffableArmorModel<T> bake(
-            net.minecraft.client.model.geom.ModelLayerLocation layer
-    ) {
-        return new IneffableArmorModel<>(
-                Minecraft.getInstance().getEntityModels().bakeLayer(layer)
-        );
-    }
-
-    private static void configureShader() {
+    private void configureShader(PoseStack poseStack) {
         ShaderInstance shader = CoreShaders.doppleganger();
         if (shader != null) {
+            Matrix4f inversePose =
+                    new Matrix4f(poseStack.last().pose()).invert();
+            PoseStack headPose = new PoseStack();
+            this.originalRobes.head.translateAndRotate(headPose);
+            Matrix4f inverseHeadPose =
+                    new Matrix4f(headPose.last().pose()).invert();
+            shader.safeGetUniform("FractalInversePose").set(inversePose);
+            shader.safeGetUniform("FractalInverseHeadPose")
+                    .set(inverseHeadPose);
             int mode = IneffableArmorShaderMode.fromConfigValue(
                     ClientConfig.INEFFABLE_ARMOR_SHADER.get()
             ).uniformValue();
@@ -172,30 +207,30 @@ public final class IneffableArmorLayer<T extends LivingEntity, M extends Humanoi
             shader.safeGetUniform("FbmGradientDivisor").set(FBM_GRADIENT_DIVISOR);
             shader.safeGetUniform("FbmOutputExponent").set(FBM_OUTPUT_EXPONENT);
             shader.safeGetUniform("FbmOutputBias").set(FBM_OUTPUT_BIAS);
-            shader.safeGetUniform("FractalPhase").set(FRACTAL_PHASE);
-            shader.safeGetUniform("FractalFlash").set(FRACTAL_FLASH);
-            shader.safeGetUniform("FractalIterations").set(FRACTAL_ITERATIONS);
-            shader.safeGetUniform("FractalModulus").set(FRACTAL_MODULUS);
-            shader.safeGetUniform("FractalColorSpeed").set(FRACTAL_COLOR_SPEED);
-            shader.safeGetUniform("FractalScaleBase").set(FRACTAL_SCALE_BASE);
-            shader.safeGetUniform("FractalScaleAmplitude").set(FRACTAL_SCALE_AMPLITUDE);
-            shader.safeGetUniform("FractalScaleSpeed").set(FRACTAL_SCALE_SPEED);
-            shader.safeGetUniform("FractalRotationSpeed").set(FRACTAL_ROTATION_SPEED);
-            shader.safeGetUniform("FractalRotationOffset").set(FRACTAL_ROTATION_OFFSET);
-            shader.safeGetUniform("FractalOrbitX").set(FRACTAL_ORBIT_X);
-            shader.safeGetUniform("FractalOrbitY").set(FRACTAL_ORBIT_Y);
-            shader.safeGetUniform("FractalOrbitXSpeed").set(FRACTAL_ORBIT_X_SPEED);
-            shader.safeGetUniform("FractalOrbitYSpeed").set(FRACTAL_ORBIT_Y_SPEED);
-            shader.safeGetUniform("FractalDriftSpeed").set(FRACTAL_DRIFT_SPEED);
-            shader.safeGetUniform("FractalRadiusSmoothMax").set(FRACTAL_RADIUS_SMOOTH_MAX);
-            shader.safeGetUniform("FractalLengthOffset").set(FRACTAL_LENGTH_OFFSET);
-            shader.safeGetUniform("FractalEdgeWidth").set(FRACTAL_EDGE_WIDTH);
-            shader.safeGetUniform("FractalDensityFade").set(FRACTAL_DENSITY_FADE);
-            shader.safeGetUniform("FractalPixelSize").set(FRACTAL_PIXEL_SIZE);
-            shader.safeGetUniform("FractalBlurSamples").set(FRACTAL_BLUR_SAMPLES);
-            shader.safeGetUniform("FractalMotionBlurScale").set(FRACTAL_MOTION_BLUR_SCALE);
-            shader.safeGetUniform("FractalAaBlurScale").set(FRACTAL_AA_BLUR_SCALE);
-            shader.safeGetUniform("FractalBrightness").set(FRACTAL_BRIGHTNESS);
+            shader.safeGetUniform("FractalFieldScale")
+                    .set(FRACTAL_FIELD_SCALE);
+            shader.safeGetUniform("FractalFlowX").set(FRACTAL_FLOW_X);
+            shader.safeGetUniform("FractalFlowY").set(FRACTAL_FLOW_Y);
+            shader.safeGetUniform("FractalPrimaryCellSize")
+                    .set(FRACTAL_PRIMARY_CELL_SIZE);
+            shader.safeGetUniform("FractalSecondaryCellSize")
+                    .set(FRACTAL_SECONDARY_CELL_SIZE);
+            shader.safeGetUniform("FractalIterations")
+                    .set(FRACTAL_ITERATIONS);
+            shader.safeGetUniform("FractalContourWidth")
+                    .set(FRACTAL_CONTOUR_WIDTH);
+            shader.safeGetUniform("FractalBrightness")
+                    .set(FRACTAL_BRIGHTNESS);
+            shader.safeGetUniform("FractalSecondaryBrightness")
+                    .set(FRACTAL_SECONDARY_BRIGHTNESS);
+            shader.safeGetUniform("FractalGrowthMin")
+                    .set(FRACTAL_GROWTH_MIN);
+            shader.safeGetUniform("FractalGrowthMax")
+                    .set(FRACTAL_GROWTH_MAX);
+            shader.safeGetUniform("FractalLifecycleSpeed")
+                    .set(FRACTAL_LIFECYCLE_SPEED);
+            shader.safeGetUniform("FractalRotationRange")
+                    .set(FRACTAL_ROTATION_RANGE);
             shader.safeGetUniform("BotaniaDisfiguration").set(DISFIGURATION);
         }
     }

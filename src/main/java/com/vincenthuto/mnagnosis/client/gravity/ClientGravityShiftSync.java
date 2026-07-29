@@ -7,6 +7,7 @@ import com.vincenthuto.mnagnosis.common.spell.gravity.shift.GravityShiftStatePro
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 public final class ClientGravityShiftSync {
 
@@ -35,7 +36,18 @@ public final class ClientGravityShiftSync {
                             packet.transitionTicks(),
                             packet.releaseGraceTicks(),
                             packet.revision(),
-                            packet.mobileTicks()
+                            packet.mobileTicks(),
+                            new Vec3(
+                                    packet.transitionOriginX(),
+                                    packet.transitionOriginY(),
+                                    packet.transitionOriginZ()
+                            ),
+                            new Quaternionf(
+                                    packet.transitionOriginQX(),
+                                    packet.transitionOriginQY(),
+                                    packet.transitionOriginQZ(),
+                                    packet.transitionOriginQW()
+                            )
                     );
                     GravityAnchorSnapshot.apply(
                             entity,

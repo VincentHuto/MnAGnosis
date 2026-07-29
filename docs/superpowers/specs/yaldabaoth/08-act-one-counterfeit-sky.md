@@ -1,3 +1,5 @@
+![Stage 08 concept preview](../../../concept-art/yaldabaoth-stages/08-act-one-counterfeit-sky.png)
+
 # Stage 08 — Act I: The Counterfeit Sky
 
 ## Purpose

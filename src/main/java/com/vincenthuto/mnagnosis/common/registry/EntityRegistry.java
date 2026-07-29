@@ -5,6 +5,7 @@ import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityFieldEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityRuptureEntity;
 import com.vincenthuto.mnagnosis.common.entity.GravityShiftSurfaceEntity;
+import com.vincenthuto.mnagnosis.common.entity.item.FractalItemEntity;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandControllerEntity;
 import com.vincenthuto.mnagnosis.common.entity.LivingLandStrikeEntity;
 import com.vincenthuto.mnagnosis.common.entity.yaldabaoth.YaldabaothEntity;
@@ -20,6 +21,24 @@ public final class EntityRegistry {
 
     public static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MnAGnosis.MODID);
+
+    public static final RegistryObject<EntityType<FractalItemEntity>>
+            FRACTAL_ITEM = ENTITIES.register(
+                    "fractal_item",
+                    () -> EntityType.Builder
+                            .<FractalItemEntity>of(
+                                    FractalItemEntity::new,
+                                    MobCategory.MISC
+                            )
+                            .sized(0.25F, 0.25F)
+                            .clientTrackingRange(10)
+                            .updateInterval(20)
+                            .build(
+                                    MnAGnosis.rloc(
+                                            "fractal_item"
+                                    ).toString()
+                            )
+            );
 
     public static final RegistryObject<EntityType<TruthEntity>> TRUTH = ENTITIES.register(
             "truth",

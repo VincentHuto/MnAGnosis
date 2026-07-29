@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class NetworkHandler {
 
-    private static final String PROTOCOL = "4";
+    private static final String PROTOCOL = "5";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             MnAGnosis.rloc("main"),
             () -> PROTOCOL,
@@ -98,6 +98,13 @@ public final class NetworkHandler {
                         state.releaseGraceTicks(),
                         state.revision(),
                         state.mobileTicks(),
+                        state.transitionOriginAnchor().x,
+                        state.transitionOriginAnchor().y,
+                        state.transitionOriginAnchor().z,
+                        state.transitionOriginRotation().x,
+                        state.transitionOriginRotation().y,
+                        state.transitionOriginRotation().z,
+                        state.transitionOriginRotation().w,
                         entity.getX(),
                         entity.getY(),
                         entity.getZ(),

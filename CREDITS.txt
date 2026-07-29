@@ -71,3 +71,11 @@ https://www.shadertoy.com/view/Wl3BD8
 
 Licensed under Creative Commons Attribution 4.0 International:
 https://creativecommons.org/licenses/by/4.0/
+
+The Apollonian Trap shader is adapted from the Shadertoy work created by
+evilryu and modified by mla in 2018:
+https://www.shadertoy.com/view/MlSBzW
+
+Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 3.0
+Unported:
+https://creativecommons.org/licenses/by-nc-sa/3.0/

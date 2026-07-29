@@ -25,6 +25,8 @@ in vec4 lightMapColor;
 in vec4 overlayColor;
 in vec2 texCoord0;
 in vec4 normal;
+in vec3 robeModelPosition;
+in vec3 robeModelNormal;
 
 out vec4 fragColor;
 
@@ -56,30 +58,19 @@ uniform float FbmSampleOffset;
 uniform float FbmGradientDivisor;
 uniform float FbmOutputExponent;
 uniform float FbmOutputBias;
-uniform float FractalPhase;
-uniform float FractalFlash;
+uniform float FractalFieldScale;
+uniform float FractalFlowX;
+uniform float FractalFlowY;
+uniform float FractalPrimaryCellSize;
+uniform float FractalSecondaryCellSize;
 uniform int FractalIterations;
-uniform float FractalModulus;
-uniform float FractalColorSpeed;
-uniform float FractalScaleBase;
-uniform float FractalScaleAmplitude;
-uniform float FractalScaleSpeed;
-uniform float FractalRotationSpeed;
-uniform float FractalRotationOffset;
-uniform float FractalOrbitX;
-uniform float FractalOrbitY;
-uniform float FractalOrbitXSpeed;
-uniform float FractalOrbitYSpeed;
-uniform float FractalDriftSpeed;
-uniform float FractalRadiusSmoothMax;
-uniform float FractalLengthOffset;
-uniform float FractalEdgeWidth;
-uniform float FractalDensityFade;
-uniform float FractalPixelSize;
-uniform int FractalBlurSamples;
-uniform float FractalMotionBlurScale;
-uniform float FractalAaBlurScale;
+uniform float FractalContourWidth;
 uniform float FractalBrightness;
+uniform float FractalSecondaryBrightness;
+uniform float FractalGrowthMin;
+uniform float FractalGrowthMax;
+uniform float FractalLifecycleSpeed;
+uniform float FractalRotationRange;
 
 float trianglePattern(vec2 uv) {
     const float INV_SQRT_THREE = 0.57735026919;
@@ -262,13 +253,15 @@ float fbmPattern(vec2 uv) {
     return clamp(shaped - FbmOutputBias, 0.0, 1.0);
 }
 
-vec3 hsvColor(float hue, float saturation, float value) {
-    vec3 rgb = clamp(
-        abs(fract(hue + vec3(3.0, 2.0, 1.0) / 3.0) * 6.0 - 3.0) - 1.0,
-        0.0,
-        1.0
+float hashCell(vec2 cell) {
+    return fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+vec2 hashCell2(vec2 cell) {
+    return vec2(
+        hashCell(cell + vec2(19.19, 7.73)),
+        hashCell(cell + vec2(83.17, 41.53))
     );
-    return mix(vec3(1.0), rgb, saturation) * value;
 }
 
 mat2 rotation2d(float angle) {
@@ -277,122 +270,183 @@ mat2 rotation2d(float angle) {
     return mat2(cosine, -sine, sine, cosine);
 }
 
-float fractalFormula(vec2 position, vec2 constantValue) {
-    float modulusValue = max(FractalModulus, 0.0001);
-    float colorValue = length(position);
-    float visibility = 1.0;
-    float squaredLength = max(dot(position, position), 0.0001);
-    float pointLength = sqrt(squaredLength);
-    float radius = smoothstep(
-        0.0,
-        max(FractalRadiusSmoothMax, 0.0001),
-        pointLength
-    );
-
-    for (int iteration = 0; iteration < 16; iteration++) {
-        if (iteration >= FractalIterations) {
-            break;
-        }
-
-        position = abs(
-            mod(position / squaredLength + constantValue, modulusValue)
-            - modulusValue / 2.0
-        );
-
-        squaredLength = max(dot(position, position), 0.0001);
-        pointLength = sqrt(max(squaredLength - FractalLengthOffset, 0.0));
-
-        float edgeWidth = max(FractalEdgeWidth, 0.0001);
-        visibility *= smoothstep(
-            0.0,
-            edgeWidth,
-            abs(modulusValue / 2.0 - position.x) * pointLength
-        );
-        visibility *= smoothstep(
-            0.0,
-            edgeWidth,
-            abs(modulusValue / 2.0 - position.y) * pointLength
-        );
-        visibility *= smoothstep(
-            0.0,
-            edgeWidth,
-            abs(position.x) * 2.0
-        );
-        visibility *= smoothstep(
-            0.0,
-            edgeWidth,
-            abs(position.y) * 2.0
-        );
-
-        radius *= smoothstep(
-            0.0,
-            max(FractalDensityFade, 0.0001),
-            pointLength
-        );
-        colorValue += hsvColor(
-            1.0 - max(position.x, position.y)
-                + visibility * 2.0
-                + GameTime * FractalColorSpeed,
-            2.0 + FractalFlash - pointLength + visibility,
-            radius
-        ).z;
-    }
-
-    float bands = 1.0 - pow(
-        abs(cos(colorValue / 2.0 - FractalPhase)),
-        0.5
-    );
-    return clamp(
-        bands * visibility * FractalBrightness,
-        0.0,
-        1.0
+vec2 complexSquare(vec2 value) {
+    return vec2(
+        value.x * value.x - value.y * value.y,
+        2.0 * value.x * value.y
     );
 }
 
-float fractalFlashPattern(vec2 uv) {
-    vec2 position = -1.0 + 2.0 * uv;
-    position += 0.5;
-    position *= FractalScaleBase
-        + FractalScaleAmplitude * sin(GameTime * FractalScaleSpeed);
-    position = rotation2d(
-        GameTime * FractalRotationSpeed + FractalRotationOffset
-    ) * position;
-
-    vec2 orbit = vec2(
-        FractalOrbitX + sin(GameTime * FractalOrbitXSpeed),
-        FractalOrbitY + cos(GameTime * FractalOrbitYSpeed)
+vec2 complexMultiply(vec2 left, vec2 right) {
+    return vec2(
+        left.x * right.x - left.y * right.y,
+        left.x * right.y + left.y * right.x
     );
-    vec2 constantValue = GameTime * FractalDriftSpeed * orbit - orbit;
+}
 
-    int sampleCount = clamp(FractalBlurSamples, 1, 32);
-    float samplesPerSide = sqrt(float(sampleCount));
-    float orbitLength = max(length(orbit), 0.0001);
-    float motionBlurAmount = FractalPixelSize
-        / orbitLength
-        / float(sampleCount)
-        * FractalMotionBlurScale;
-    float aaBlurAmount = FractalPixelSize
-        / samplesPerSide
-        * FractalAaBlurScale;
+vec2 planarRobePosition(vec3 position, vec3 modelNormal) {
+    vec3 unitNormal = normalize(modelNormal);
+    vec3 referenceAxis = abs(unitNormal.y) < 0.9
+        ? vec3(0.0, 1.0, 0.0)
+        : vec3(0.0, 0.0, 1.0);
+    vec3 tangent = normalize(cross(referenceAxis, unitNormal));
+    vec3 bitangent = cross(unitNormal, tangent);
+    return vec2(
+        dot(position, tangent),
+        dot(position, bitangent)
+    );
+}
 
-    float colorValue = 0.0;
-    for (int sampleIndex = 0; sampleIndex < 32; sampleIndex++) {
-        if (sampleIndex >= sampleCount) {
+float mandelbrotDistance(
+    vec2 constantValue,
+    int iterationLimit,
+    out float escapeIteration
+) {
+    vec2 z = vec2(0.0);
+    vec2 derivative = vec2(0.0);
+    float escaped = 0.0;
+    float squaredRadius = 0.0;
+    escapeIteration = float(iterationLimit);
+
+    for (int iteration = 0; iteration < 48; iteration++) {
+        if (iteration >= iterationLimit) {
             break;
         }
-
-        float sampleValue = float(sampleIndex);
-        vec2 aaOffset = vec2(
-            mod(sampleValue, samplesPerSide) * aaBlurAmount,
-            sampleValue / samplesPerSide * aaBlurAmount
-        );
-        colorValue += fractalFormula(
-            position + aaOffset,
-            constantValue + orbit * motionBlurAmount * sampleValue
-        );
+        derivative = 2.0 * complexMultiply(z, derivative)
+            + vec2(1.0, 0.0);
+        z = complexSquare(z) + constantValue;
+        squaredRadius = dot(z, z);
+        if (squaredRadius > 256.0) {
+            escaped = 1.0;
+            escapeIteration = float(iteration + 1);
+            break;
+        }
     }
 
-    return clamp(colorValue / float(sampleCount), 0.0, 1.0);
+    if (escaped < 0.5) {
+        return -1.0;
+    }
+    float radius = sqrt(max(squaredRadius, 1.0001));
+    return 0.5 * log(max(squaredRadius, 1.0001)) * radius
+        / max(length(derivative), 0.0001);
+}
+
+float nurseryLayer(vec2 fieldPosition, float cellSize, float seedOffset) {
+    float safeCellSize = max(cellSize, 0.001);
+    vec2 gridPosition = fieldPosition / safeCellSize;
+    vec2 cell = floor(gridPosition);
+    vec2 local = fract(gridPosition) - 0.5;
+    float baseSeed = hashCell(cell + vec2(seedOffset));
+    float cycle = GameTime * max(FractalLifecycleSpeed, 0.001)
+        + baseSeed
+        + seedOffset * 0.137;
+    float generation = floor(cycle);
+    float lifecycle = fract(cycle);
+    vec2 generationKey = cell
+        + vec2(seedOffset)
+        + vec2(generation * 17.17, generation * 43.31);
+    float seed = hashCell(generationKey);
+    vec2 centerJitter = (
+        hashCell2(generationKey) - 0.5
+    ) * 0.64;
+    float birth = smoothstep(0.02, 0.20, lifecycle);
+    float death = 1.0 - smoothstep(0.70, 0.98, lifecycle);
+    float lifeOpacity = birth * death;
+    float growthPhase = smoothstep(0.03, 0.76, lifecycle);
+    float sizeVariation = mix(
+        0.68,
+        1.28,
+        hashCell(generationKey + vec2(29.73, 11.91))
+    );
+    float growth = mix(
+        max(FractalGrowthMin, 0.05),
+        max(FractalGrowthMax, FractalGrowthMin + 0.01),
+        growthPhase
+    ) * sizeVariation;
+    float angle = (seed - 0.5) * FractalRotationRange;
+    vec2 budPosition = rotation2d(angle)
+        * (local - centerJitter)
+        / growth;
+
+    float evolution = smoothstep(0.16, 0.82, lifecycle);
+    float boundaryAngle = 6.2831855 * hashCell(
+        generationKey + vec2(71.37, 53.19)
+    );
+    vec2 boundaryTarget = vec2(
+        0.5 * cos(boundaryAngle) - 0.25 * cos(2.0 * boundaryAngle),
+        0.5 * sin(boundaryAngle) - 0.25 * sin(2.0 * boundaryAngle)
+    );
+    vec2 viewCenter = mix(vec2(-0.5, 0.0), boundaryTarget, evolution);
+    float detailScale = mix(1.0, 0.20, evolution);
+    vec2 constantValue = viewCenter
+        + vec2(budPosition.x * 3.0, budPosition.y * 2.4)
+            * detailScale;
+    float activeIterations = mix(
+        14.0,
+        float(clamp(FractalIterations, 8, 48)),
+        evolution
+    );
+    int activeIterationLimit = int(floor(activeIterations));
+    float escapeIteration;
+    float distance = mandelbrotDistance(
+        constantValue,
+        activeIterationLimit,
+        escapeIteration
+    );
+    if (distance < 0.0) {
+        return 0.0;
+    }
+
+    float width = max(FractalContourWidth, 0.0001) / growth;
+    float antialias = max(
+        min(fwidth(distance), width * 0.75),
+        width * 0.15
+    );
+    float contour = 1.0 - smoothstep(
+        width,
+        width + antialias,
+        distance
+    );
+    float newestDetail = smoothstep(
+        max(activeIterations - 4.0, 1.0),
+        activeIterations,
+        escapeIteration
+    );
+    float cellEdge = max(abs(local.x), abs(local.y));
+    float cellFade = 1.0 - smoothstep(0.44, 0.50, cellEdge);
+    return contour
+        * lifeOpacity
+        * mix(0.62, 1.0, newestDetail)
+        * cellFade;
+}
+
+float fractalNurseryPattern(vec3 modelPosition, vec3 modelNormal) {
+    vec2 projected = planarRobePosition(modelPosition, modelNormal);
+    vec2 flow = vec2(FractalFlowX, FractalFlowY) * GameTime;
+    flow.x += sin(GameTime * 240.0) * 0.035;
+    vec2 organicWarp = vec2(
+        valueNoise(projected * 1.37 + vec2(13.71, 4.93)),
+        valueNoise(projected * 1.37 + vec2(-7.19, 21.37))
+    ) - 0.5;
+    vec2 field = projected * max(FractalFieldScale, 0.001)
+        + flow
+        + organicWarp * 0.30;
+
+    float primary = nurseryLayer(
+        field,
+        FractalPrimaryCellSize,
+        0.0
+    );
+    float secondary = nurseryLayer(
+        field + vec2(0.37, 0.61),
+        FractalSecondaryCellSize,
+        17.0
+    );
+    float filaments = max(
+        primary,
+        secondary * FractalSecondaryBrightness
+    );
+    return clamp(filaments * FractalBrightness, 0.0, 1.0);
 }
 
 void main() {
@@ -403,7 +457,10 @@ void main() {
 
     float pattern;
     if (ShaderMode == 3) {
-        pattern = fractalFlashPattern(texCoord0);
+        pattern = fractalNurseryPattern(
+            robeModelPosition,
+            robeModelNormal
+        );
     } else if (ShaderMode == 2) {
         pattern = fbmPattern(texCoord0);
     } else if (ShaderMode == 1) {
@@ -414,6 +471,9 @@ void main() {
 
     float litLuma = dot(litColor.rgb, vec3(0.2126, 0.7152, 0.0722));
     vec3 charcoal = litColor.rgb * 0.24 + vec3(litLuma * 0.035);
+    if (ShaderMode == 3) {
+        charcoal *= 0.38;
+    }
     float highlightLighting = mix(0.35, 1.0, clamp(litLuma, 0.0, 1.0));
     vec3 offWhite = vec3(0.92) * highlightLighting;
     vec3 patterned = mix(charcoal, offWhite, pattern);

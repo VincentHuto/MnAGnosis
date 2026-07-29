@@ -1,10 +1,15 @@
 package com.vincenthuto.mnagnosis.client.render.item;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.vincenthuto.mnagnosis.client.shader.core.CoreShaders;
+import com.vincenthuto.mnagnosis.client.shader.core.RenderHelper;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 
 public final class TesseractRenderCore {
 
@@ -31,8 +36,177 @@ public final class TesseractRenderCore {
     };
 
     private static final float PROJECTION_DISTANCE = 2.5F;
+    private static final float PROXY_BOUND = 0.78F;
+    private static final float[][][] PROXY_FACES = {
+            {
+                    {-1, -1, 1}, {1, -1, 1},
+                    {1, 1, 1}, {-1, 1, 1}
+            },
+            {
+                    {-1, -1, -1}, {-1, 1, -1},
+                    {1, 1, -1}, {1, -1, -1}
+            },
+            {
+                    {-1, -1, -1}, {-1, -1, 1},
+                    {-1, 1, 1}, {-1, 1, -1}
+            },
+            {
+                    {1, -1, -1}, {1, 1, -1},
+                    {1, 1, 1}, {1, -1, 1}
+            },
+            {
+                    {-1, 1, -1}, {-1, 1, 1},
+                    {1, 1, 1}, {1, 1, -1}
+            },
+            {
+                    {-1, -1, -1}, {1, -1, -1},
+                    {1, -1, 1}, {-1, -1, 1}
+            }
+    };
+    private static final int[] TRIANGLE_ORDER = {0, 1, 2, 0, 2, 3};
 
     private TesseractRenderCore() {
+    }
+
+    public static void renderShader(
+            PoseStack poseStack,
+            MultiBufferSource buffer,
+            float elapsedSeconds,
+            float angleXw,
+            float angleYz,
+            float pulse,
+            float alpha
+    ) {
+        ShaderInstance shader = CoreShaders.tesseract();
+        if (shader == null) {
+            return;
+        }
+
+        configureShader(
+                shader,
+                poseStack,
+                elapsedSeconds,
+                angleXw,
+                angleYz,
+                pulse
+        );
+        RenderType layer = RenderHelper.getTesseractLayer();
+        renderProxyCube(
+                buffer.getBuffer(layer),
+                poseStack.last().pose(),
+                alpha
+        );
+        if (buffer instanceof MultiBufferSource.BufferSource bufferSource) {
+            bufferSource.endBatch(layer);
+        }
+    }
+
+    private static void configureShader(
+            ShaderInstance shader,
+            PoseStack poseStack,
+            float elapsedSeconds,
+            float angleXw,
+            float angleYz,
+            float pulse
+    ) {
+        Matrix4f pose = new Matrix4f(poseStack.last().pose());
+        Matrix4f inversePose = new Matrix4f(pose).invert();
+        Matrix4f inverseModelViewPose =
+                new Matrix4f(RenderSystem.getModelViewMatrix())
+                        .mul(pose)
+                        .invert();
+        Vector4f cameraOrigin = inverseModelViewPose.transform(
+                new Vector4f(0.0F, 0.0F, 0.0F, 1.0F)
+        );
+        if (Math.abs(cameraOrigin.w()) > 0.000_01F) {
+            cameraOrigin.div(cameraOrigin.w());
+        }
+        Vector4f rayDirection = inverseModelViewPose.transform(
+                new Vector4f(0.0F, 0.0F, -1.0F, 0.0F)
+        );
+        float directionLength = (float) Math.sqrt(
+                rayDirection.x() * rayDirection.x()
+                        + rayDirection.y() * rayDirection.y()
+                        + rayDirection.z() * rayDirection.z()
+        );
+        if (directionLength > 0.000_01F) {
+            rayDirection.div(directionLength);
+        }
+        int perspective =
+                Math.abs(RenderSystem.getProjectionMatrix().m33()) < 0.5F
+                        ? 1
+                        : 0;
+
+        shader.safeGetUniform("InversePose").set(inversePose);
+        shader.safeGetUniform("ModelPoseMat").set(pose);
+        shader.safeGetUniform("CameraOrigin").set(
+                cameraOrigin.x(),
+                cameraOrigin.y(),
+                cameraOrigin.z()
+        );
+        shader.safeGetUniform("RayDirection").set(
+                rayDirection.x(),
+                rayDirection.y(),
+                rayDirection.z()
+        );
+        shader.safeGetUniform("Perspective").set(perspective);
+        shader.safeGetUniform("TesseractTime").set(elapsedSeconds);
+        shader.safeGetUniform("TesseractAngleXw").set(angleXw);
+        shader.safeGetUniform("TesseractAngleYz").set(angleYz);
+        shader.safeGetUniform("TesseractPulse").set(pulse);
+
+        setPaletteColor(shader, "PaletteVoid", TesseractPalette.Slot.VOID);
+        setPaletteColor(shader, "PaletteCyan", TesseractPalette.Slot.CYAN);
+        setPaletteColor(shader, "PaletteAzure", TesseractPalette.Slot.AZURE);
+        setPaletteColor(
+                shader,
+                "PaletteViolet",
+                TesseractPalette.Slot.VIOLET
+        );
+        setPaletteColor(shader, "PalettePearl", TesseractPalette.Slot.PEARL);
+        setPaletteColor(shader, "PaletteGold", TesseractPalette.Slot.GOLD);
+
+        TesseractPalette.Tuning tuning = TesseractPalette.tuning();
+        shader.safeGetUniform("PaletteBrightness").set(tuning.brightness());
+        shader.safeGetUniform("PaletteGlowStrength").set(
+                tuning.glowStrength()
+        );
+        shader.safeGetUniform("TesseractTubeRadius").set(
+                tuning.tubeRadius()
+        );
+    }
+
+    private static void setPaletteColor(
+            ShaderInstance shader,
+            String uniform,
+            TesseractPalette.Slot slot
+    ) {
+        TesseractPalette.Color color = TesseractPalette.color(slot);
+        shader.safeGetUniform(uniform).set(
+                color.red(),
+                color.green(),
+                color.blue()
+        );
+    }
+
+    private static void renderProxyCube(
+            VertexConsumer consumer,
+            Matrix4f matrix,
+            float alpha
+    ) {
+        for (float[][] face : PROXY_FACES) {
+            for (int index : TRIANGLE_ORDER) {
+                float[] point = face[index];
+                consumer.vertex(
+                                matrix,
+                                point[0] * PROXY_BOUND,
+                                point[1] * PROXY_BOUND,
+                                point[2] * PROXY_BOUND
+                        )
+                        .color(1.0F, 1.0F, 1.0F, alpha)
+                        .endVertex();
+            }
+        }
     }
 
     public static float[][] project(float angleXw, float angleYz) {

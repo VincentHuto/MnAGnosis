@@ -32,6 +32,15 @@ three answers to what it means to author reality. A player may pursue all three,
 each must retain a recognizable play style, visual language, risk, and philosophical
 temptation.
 
+Their short motto is:
+
+> What There Is, What May Be, What We Are.
+
+The three beats summarize the disciplines' domains: the material and established
+world, the possible states and paths that may unfold through time, and the identity
+or selfhood of people and beings. “What We Are” is intentionally general: it refers
+to selfhood as a category of existence, not to the author's personal ascent.
+
 ---
 
 # The Three Disciplines

@@ -1,3 +1,5 @@
+![Stage 01 concept preview](../../../concept-art/yaldabaoth-stages/01-exception-of-distance.png)
+
 # Stage 01 — Exception of Distance
 
 ## Purpose

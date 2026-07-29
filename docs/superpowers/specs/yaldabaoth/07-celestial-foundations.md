@@ -1,3 +1,5 @@
+![Stage 07 concept preview](../../../concept-art/yaldabaoth-stages/07-celestial-foundations.png)
+
 # Stage 07 — Celestial Foundations
 
 ## Purpose

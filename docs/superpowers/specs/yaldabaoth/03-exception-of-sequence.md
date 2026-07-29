@@ -1,3 +1,5 @@
+![Stage 03 concept preview](../../../concept-art/yaldabaoth-stages/03-exception-of-sequence.png)
+
 # Stage 03 — Exception of Sequence
 
 ## Purpose

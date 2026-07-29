@@ -7,7 +7,7 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.function.Consumer;
 
-public final class PrimalMoteItem extends Item {
+public final class PrimalMoteItem extends FractalItem {
 
     public PrimalMoteItem(Properties properties) {
         super(properties);

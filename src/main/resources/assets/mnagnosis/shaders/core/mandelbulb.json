@@ -1,0 +1,139 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "mnagnosis:mandelbulb",
+  "fragment": "mnagnosis:mandelbulb",
+  "attributes": ["Position", "Color"],
+  "samplers": [],
+  "uniforms": [
+    {
+      "name": "ModelViewMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ProjMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ColorModulator",
+      "type": "float",
+      "count": 4,
+      "values": [1.0,1.0,1.0,1.0]
+    },
+    {
+      "name": "InversePose",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "ModelPoseMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
+    },
+    {
+      "name": "CameraOrigin",
+      "type": "float",
+      "count": 3,
+      "values": [0.0,0.0,3.0]
+    },
+    {
+      "name": "RayDirection",
+      "type": "float",
+      "count": 3,
+      "values": [0.0,0.0,-1.0]
+    },
+    {
+      "name": "Perspective",
+      "type": "int",
+      "count": 1,
+      "values": [0]
+    },
+    {
+      "name": "MandelbulbTime",
+      "type": "float",
+      "count": 1,
+      "values": [0.0]
+    },
+    {
+      "name": "MorphAmount",
+      "type": "float",
+      "count": 1,
+      "values": [0.38]
+    },
+    {
+      "name": "PaletteBlush",
+      "type": "float",
+      "count": 3,
+      "values": [1.00,0.62,0.77]
+    },
+    {
+      "name": "PalettePeach",
+      "type": "float",
+      "count": 3,
+      "values": [1.00,0.74,0.61]
+    },
+    {
+      "name": "PaletteButter",
+      "type": "float",
+      "count": 3,
+      "values": [1.00,0.91,0.62]
+    },
+    {
+      "name": "PaletteMint",
+      "type": "float",
+      "count": 3,
+      "values": [0.62,0.94,0.77]
+    },
+    {
+      "name": "PaletteSky",
+      "type": "float",
+      "count": 3,
+      "values": [0.57,0.84,0.98]
+    },
+    {
+      "name": "PaletteLavender",
+      "type": "float",
+      "count": 3,
+      "values": [0.79,0.66,0.97]
+    },
+    {
+      "name": "PaletteStopPeach",
+      "type": "float",
+      "count": 1,
+      "values": [0.16]
+    },
+    {
+      "name": "PaletteStopButter",
+      "type": "float",
+      "count": 1,
+      "values": [0.34]
+    },
+    {
+      "name": "PaletteStopMint",
+      "type": "float",
+      "count": 1,
+      "values": [0.52]
+    },
+    {
+      "name": "PaletteStopSky",
+      "type": "float",
+      "count": 1,
+      "values": [0.70]
+    },
+    {
+      "name": "PaletteStopLavender",
+      "type": "float",
+      "count": 1,
+      "values": [0.86]
+    }
+  ]
+}
