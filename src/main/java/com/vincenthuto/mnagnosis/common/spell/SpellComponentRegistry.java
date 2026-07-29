@@ -2,6 +2,7 @@ package com.vincenthuto.mnagnosis.common.spell;
 
 import com.mna.Registries;
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.common.autogenic.harm.AxiomOfHarmModifier;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -40,6 +41,14 @@ public final class SpellComponentRegistry {
     public static final PrecisionModifier PRECISION = new PrecisionModifier(
             MnAGnosis.rloc("textures/spell/modifier/precision.png")
     );
+    public static final ResourceLocation AXIOM_OF_HARM_ID =
+            MnAGnosis.rloc("axiom_of_harm");
+    public static final AxiomOfHarmModifier AXIOM_OF_HARM =
+            new AxiomOfHarmModifier(
+                    MnAGnosis.rloc(
+                            "textures/spell/modifier/axiom_of_harm.png"
+                    )
+            );
 
     private SpellComponentRegistry() {
     }
@@ -60,6 +69,7 @@ public final class SpellComponentRegistry {
                 helper -> {
                     helper.register(POLARITY_ID, POLARITY);
                     helper.register(PRECISION_ID, PRECISION);
+                    helper.register(AXIOM_OF_HARM_ID, AXIOM_OF_HARM);
                 }
         );
     }

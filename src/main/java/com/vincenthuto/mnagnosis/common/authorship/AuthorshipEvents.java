@@ -4,6 +4,7 @@ import com.mna.api.events.CalculatingManaCostEvent;
 import com.mna.api.events.ComponentApplyingEvent;
 import com.mna.api.events.SpellCastEvent;
 import com.vincenthuto.mnagnosis.MnAGnosis;
+import com.vincenthuto.mnagnosis.common.autogenic.AutogenicCastRuntime;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -17,8 +18,13 @@ public final class AuthorshipEvents {
     @SubscribeEvent
     public static void calculateManaCost(CalculatingManaCostEvent event) {
         if (event.getCaster() instanceof ServerPlayer player) {
-            event.setManaCost(AuthorshipCastingService.prepareManaCost(
+            float authoredCost = AuthorshipCastingService.prepareManaCost(
                     player, event.getSpell(), event.getManaCost()
+            );
+            event.setManaCost(AutogenicCastRuntime.prepareManaCost(
+                    player,
+                    event.getSpell(),
+                    authoredCost
             ));
         }
     }
@@ -41,13 +47,17 @@ public final class AuthorshipEvents {
     @SubscribeEvent
     public static void finishCast(SpellCastEvent event) {
         if (event.getSource().getCaster() instanceof ServerPlayer player) {
-            AuthorshipCastingService.finalizeCast(
-                    player,
-                    event.getSpell(),
-                    event.getSource(),
-                    event.getContext(),
-                    event.getSpell().getManaCost()
-            );
+            try {
+                AuthorshipCastingService.finalizeCast(
+                        player,
+                        event.getSpell(),
+                        event.getSource(),
+                        event.getContext(),
+                        event.getSpell().getManaCost()
+                );
+            } finally {
+                AutogenicCastRuntime.finishCast(player);
+            }
         }
     }
 }

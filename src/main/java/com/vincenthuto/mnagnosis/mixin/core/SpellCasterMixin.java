@@ -5,6 +5,13 @@ import com.mna.api.capabilities.IPlayerMagic;
 import com.mna.api.capabilities.IPlayerProgression;
 import com.mna.spells.SpellCaster;
 import com.mna.spells.crafting.SpellRecipe;
+import com.mna.api.spells.ComponentApplicationResult;
+import com.mna.api.spells.base.IModifiedSpellPart;
+import com.mna.api.spells.parts.SpellEffect;
+import com.mna.api.spells.targeting.SpellContext;
+import com.mna.api.spells.targeting.SpellSource;
+import com.mna.api.spells.targeting.SpellTarget;
+import com.vincenthuto.mnagnosis.common.autogenic.AutogenicCastRuntime;
 import com.vincenthuto.mnagnosis.common.spell.IneffableAffinityErosion;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,6 +22,35 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = SpellCaster.class, remap = false, priority = 1000)
 public abstract class SpellCasterMixin {
+
+    @Redirect(
+            method = "lambda$ApplyComponents$13",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lcom/mna/api/spells/parts/SpellEffect;"
+                            + "ApplyEffect(Lcom/mna/api/spells/targeting/SpellSource;"
+                            + "Lcom/mna/api/spells/targeting/SpellTarget;"
+                            + "Lcom/mna/api/spells/base/IModifiedSpellPart;"
+                            + "Lcom/mna/api/spells/targeting/SpellContext;)"
+                            + "Lcom/mna/api/spells/ComponentApplicationResult;"
+            ),
+            require = 1
+    )
+    private static ComponentApplicationResult mnagnosis$applyAutogenicComponent(
+            SpellEffect effect,
+            SpellSource source,
+            SpellTarget target,
+            IModifiedSpellPart<SpellEffect> part,
+            SpellContext context
+    ) {
+        return AutogenicCastRuntime.applyComponent(
+                effect,
+                source,
+                target,
+                part,
+                context
+        );
+    }
 
     @Inject(
             method = "lambda$AddAffinityAndMagicXP$16",
