@@ -25,7 +25,8 @@ a successful native harm result.
 - Work directly on the current `master` branch, as explicitly requested.
 - Preserve all unrelated uncommitted work and stage only task-owned paths.
 - Keep `NetworkProtocol.CURRENT` at `"5"` and register no packet.
-- Use the real M&A registry IDs `mna:fire_damage` and `mna:poison`.
+- Use the real M&A registry IDs `mna:components/fire_damage` and
+  `mna:components/poison`.
 - Axiom ID is exactly `mnagnosis:axiom_of_harm`.
 - Definition proof ID is exactly
   `mnagnosis:definition/axiom_of_harm`.
@@ -165,10 +166,10 @@ Use exact built-in values:
 ```java
 FireDamageHarmAdapter.ID = MnAGnosis.rloc("mna_fire_damage");
 FireDamageHarmAdapter.COMPONENT_ID =
-        ResourceLocation.fromNamespaceAndPath("mna", "fire_damage");
+        ResourceLocation.fromNamespaceAndPath("mna", "components/fire_damage");
 PoisonHarmAdapter.ID = MnAGnosis.rloc("mna_poison");
 PoisonHarmAdapter.COMPONENT_ID =
-        ResourceLocation.fromNamespaceAndPath("mna", "poison");
+        ResourceLocation.fromNamespaceAndPath("mna", "components/poison");
 ```
 
 Scan an immutable copy of `spell.getComponents()` by integer index. A null

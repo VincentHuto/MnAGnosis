@@ -7,7 +7,10 @@ public final class PoisonHarmAdapter implements HarmAdapter<ComponentPoison> {
     public static final ResourceLocation ID =
             ResourceLocation.fromNamespaceAndPath("mnagnosis", "mna_poison");
     public static final ResourceLocation COMPONENT_ID =
-            ResourceLocation.fromNamespaceAndPath("mna", "poison");
+            ResourceLocation.fromNamespaceAndPath(
+                    "mna",
+                    "components/poison"
+            );
 
     @Override
     public ResourceLocation id() {

@@ -113,8 +113,8 @@ The initial frozen mapping is:
 
 | Native component | Gate crossed |
 |---|---|
-| `mna:fire_damage` | fire-type immunity |
-| `mna:poison` | undead poison immunity |
+| `mna:components/fire_damage` | fire-type immunity |
+| `mna:components/poison` | undead poison immunity |
 
 True Damage and all other harmful components are unsupported. Missing order
 data, null parts, missing IDs, ambiguous adapters, or an unfrozen registry

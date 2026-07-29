@@ -43,6 +43,8 @@
 	"mnagnosis:components/living_land.desc.delay": "A delay before the land is given intent.",
 	"mnagnosis:polarity": "Polarity",
 	"mnagnosis:precision": "Precision",
+	"modifier.mnagnosis.axiom_of_harm": "Axiom of Harm",
+	"modifier.mnagnosis.axiom_of_harm.description": "The first compatible harm denies one native immunity.",
 	"subtitles.mnagnosis.true_damage_static": "Reality breaks into static",
 	"death.attack.mnagnosis.true_damage": "%1$s was revised out of existence",
 	"death.attack.mnagnosis.true_damage.player": "%1$s was revised out of existence by %2$s",

@@ -11,7 +11,10 @@ public final class FireDamageHarmAdapter
                     "mna_fire_damage"
             );
     public static final ResourceLocation COMPONENT_ID =
-            ResourceLocation.fromNamespaceAndPath("mna", "fire_damage");
+            ResourceLocation.fromNamespaceAndPath(
+                    "mna",
+                    "components/fire_damage"
+            );
 
     @Override
     public ResourceLocation id() {

@@ -1,0 +1,17 @@
+{
+  "type": "mna:modifier",
+  "tier": 6,
+  "output": "mnagnosis:axiom_of_harm",
+  "items": [
+    "mnagnosis:tesseract",
+    "minecraft:flint_and_steel",
+    "minecraft:fermented_spider_eye",
+    "minecraft:nether_star",
+    "minecraft:black_concrete",
+    "minecraft:white_concrete"
+  ],
+  "patterns": [
+    "mna:manaweave_patterns/triangle",
+    "mna:manaweave_patterns/inverted_triangle"
+  ]
+}
