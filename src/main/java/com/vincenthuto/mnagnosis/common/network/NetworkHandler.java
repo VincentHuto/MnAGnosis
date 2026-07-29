@@ -6,6 +6,8 @@ import com.vincenthuto.mnagnosis.common.authorship.AuthorshipControlService;
 import com.vincenthuto.mnagnosis.common.authorship.law.SpellFingerprint;
 import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStateProvider;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
+import com.vincenthuto.mnagnosis.common.progression.manuscript.IManuscriptState;
+import com.vincenthuto.mnagnosis.common.progression.manuscript.ManuscriptSnapshotFactory;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,55 +22,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class NetworkHandler {
 
-    private static final String PROTOCOL = "5";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             MnAGnosis.rloc("main"),
-            () -> PROTOCOL,
-            PROTOCOL::equals,
-            PROTOCOL::equals
+            () -> NetworkProtocol.CURRENT,
+            NetworkProtocol.CURRENT::equals,
+            NetworkProtocol.CURRENT::equals
     );
     private static final Map<UUID, AuthorshipStatePacket> LAST_AUTHORSHIP =
             new ConcurrentHashMap<>();
+    private static final MnAGnosisPacketRegistrar PACKETS =
+            CorePacketRegistrar.create();
 
     private NetworkHandler() {
     }
 
     public static void register() {
-        CHANNEL.registerMessage(
-                0,
-                TruthScenePacket.class,
-                TruthScenePacket::encode,
-                TruthScenePacket::decode,
-                TruthScenePacket::handle
-        );
-        CHANNEL.registerMessage(
-                1,
-                AuthorshipStatePacket.class,
-                AuthorshipStatePacket::encode,
-                AuthorshipStatePacket::decode,
-                AuthorshipStatePacket::handle
-        );
-        CHANNEL.registerMessage(
-                2,
-                SelectInterpretationPacket.class,
-                SelectInterpretationPacket::encode,
-                SelectInterpretationPacket::decode,
-                SelectInterpretationPacket::handle
-        );
-        CHANNEL.registerMessage(
-                3,
-                DeclareClosurePacket.class,
-                DeclareClosurePacket::encode,
-                DeclareClosurePacket::decode,
-                DeclareClosurePacket::handle
-        );
-        CHANNEL.registerMessage(
-                4,
-                GravityShiftStatePacket.class,
-                GravityShiftStatePacket::encode,
-                GravityShiftStatePacket::decode,
-                GravityShiftStatePacket::handle
-        );
+        PACKETS.install(CHANNEL);
     }
 
     public static void setTruthScene(ServerPlayer player, boolean active) {
@@ -162,6 +131,12 @@ public final class NetworkHandler {
 
     public static void forgetAuthorship(ServerPlayer player) {
         LAST_AUTHORSHIP.remove(player.getUUID());
+    }
+
+    public static void openManuscript(ServerPlayer player, IManuscriptState state) {
+        CHANNEL.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                ManuscriptSnapshotFactory.create(state));
     }
 
     private static void sendAuthorship(ServerPlayer player, AuthorshipStatePacket packet) {

@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.common.entity.yaldabaoth;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
@@ -303,11 +304,13 @@ class YaldabaothAssetContractTest {
             String time,
             int component
     ) {
-        return animation.getAsJsonObject("bones")
+        JsonElement keyframe = animation.getAsJsonObject("bones")
                 .getAsJsonObject(bone)
                 .getAsJsonObject(transform)
-                .getAsJsonObject(time)
-                .getAsJsonArray("vector")
+                .get(time);
+        return (keyframe.isJsonArray()
+                ? keyframe.getAsJsonArray()
+                : keyframe.getAsJsonObject().getAsJsonArray("vector"))
                 .get(component)
                 .getAsDouble();
     }

@@ -11,6 +11,12 @@ Nothing in this vault is canon, scheduled, or approved for implementation merely
 because it appears here. Individual ideas should be promoted through a focused design
 and implementation cycle before entering the roadmap.
 
+The production foundation and implementation order promoted from this vault are
+defined by
+[`2026-07-29-three-discipline-foundation-contract.md`](2026-07-29-three-discipline-foundation-contract.md).
+That contract supersedes discipline-local packet, casting, Manuscript,
+Contradiction, instrument, and conservation foundations.
+
 The vault extends the established premise:
 
 > The world is not false. It is unfinished.

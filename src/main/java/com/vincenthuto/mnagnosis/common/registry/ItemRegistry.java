@@ -6,6 +6,7 @@ import com.vincenthuto.mnagnosis.common.item.IneffableRobesItem;
 import com.vincenthuto.mnagnosis.common.item.IneffableHudBadgeItem;
 import com.vincenthuto.mnagnosis.common.item.KochianStarItem;
 import com.vincenthuto.mnagnosis.common.item.MengerianTopologyItem;
+import com.vincenthuto.mnagnosis.common.item.LivingManuscriptItem;
 import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
 import com.vincenthuto.mnagnosis.common.item.TesseractBlockItem;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
@@ -26,6 +27,12 @@ public class ItemRegistry {
     // Base Items
     public static final RegistryObject<Item> primal_mote = BASEITEMS.register("primal_mote",
             () -> new PrimalMoteItem(new Item.Properties()));
+
+    public static final RegistryObject<Item> LIVING_MANUSCRIPT =
+            BASEITEMS.register(
+                    "living_manuscript",
+                    () -> new LivingManuscriptItem(new Item.Properties().stacksTo(1))
+            );
 
     public static final RegistryObject<Item> APOLLONIAN_TRAP =
             BASEITEMS.register(

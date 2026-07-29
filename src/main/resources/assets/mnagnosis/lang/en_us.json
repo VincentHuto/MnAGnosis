@@ -52,6 +52,21 @@
 	"key.categories.mnagnosis": "MnA: Gnosis",
 	"key.mnagnosis.authorship": "Authorship / Law Wheel",
 	"screen.mnagnosis.law_wheel": "Law Interpretation",
-	"screen.mnagnosis.law_wheel.release": "Release over a Law or Contradiction"
+	"screen.mnagnosis.law_wheel.release": "Release over a Law or Contradiction",
+	"item.mnagnosis.living_manuscript": "Living Manuscript",
+	"item.mnagnosis.living_manuscript.desc": "It records the hand that holds it.",
+	"message.mnagnosis.manuscript.ineligible": "The Manuscript remains illegible.",
+	"screen.mnagnosis.manuscript.title": "The Living Manuscript",
+	"screen.mnagnosis.manuscript.definition": "Autogenesis — Definition",
+	"screen.mnagnosis.manuscript.relation": "Architectonics — Relation",
+	"screen.mnagnosis.manuscript.continuance": "Worldliness — Continuance",
+	"screen.mnagnosis.manuscript.veiled": "Further proofs remain veiled.",
+	"screen.mnagnosis.manuscript.stage.perception": "Perception",
+	"screen.mnagnosis.manuscript.stage.intervention": "Intervention",
+	"screen.mnagnosis.manuscript.stage.authorship": "Authorship",
+	"screen.mnagnosis.manuscript.stage.original_work": "Original Work",
+	"proof.mnagnosis.revelation.definition": "Revelation of Definition",
+	"proof.mnagnosis.revelation.relation": "Revelation of Relation",
+	"proof.mnagnosis.revelation.continuance": "Revelation of Continuance"
 
 }

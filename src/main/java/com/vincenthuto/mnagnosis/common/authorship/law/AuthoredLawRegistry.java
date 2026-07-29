@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.common.authorship.law;
 
 import net.minecraft.resources.ResourceLocation;
+import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionHandlerRegistry;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -21,6 +22,7 @@ public final class AuthoredLawRegistry {
         if (existing != null && existing != handler) {
             throw new IllegalStateException("Duplicate authored law " + handler.lawId());
         }
+        ContradictionHandlerRegistry.GLOBAL.register(handler);
     }
 
     public static synchronized Optional<AuthoredLawHandler> get(ResourceLocation lawId) {

@@ -4,6 +4,7 @@ import com.mna.api.capabilities.IPlayerProgression;
 import com.mna.capabilities.playerdata.progression.PlayerProgressionProvider;
 import com.mna.items.ItemInit;
 import com.vincenthuto.mnagnosis.common.progression.Tier6Progression;
+import com.vincenthuto.mnagnosis.common.progression.manuscript.ManuscriptPlayerInitiation;
 import com.vincenthuto.mnagnosis.common.progression.TruthEncounterService;
 import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import net.minecraft.nbt.CompoundTag;
@@ -439,6 +440,7 @@ public class TruthEntity extends Entity implements GeoEntity {
         }
 
         progression.setTier(Tier6Progression.MAX_TIER, player);
+        ManuscriptPlayerInitiation.ensureInitiated(player, this.getUUID());
         player.sendSystemMessage(Component.literal(Tier6Progression.TIER_SIX_ADVANCEMENT_MESSAGE));
         this.beginFinale();
     }

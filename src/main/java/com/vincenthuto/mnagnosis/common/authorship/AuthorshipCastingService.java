@@ -16,7 +16,11 @@ import com.vincenthuto.mnagnosis.common.authorship.law.AuthoredLawHandler;
 import com.vincenthuto.mnagnosis.common.authorship.law.AuthoredLawRegistry;
 import com.vincenthuto.mnagnosis.common.authorship.law.LawApplication;
 import com.vincenthuto.mnagnosis.common.authorship.law.SpellFingerprint;
+import com.vincenthuto.mnagnosis.common.authorship.cast.AuthoredCastSessionStore;
+import com.vincenthuto.mnagnosis.common.authorship.cast.AuthorshipCastPermit;
+import com.vincenthuto.mnagnosis.common.authorship.instrument.AuthoredInstrumentRegistry;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
+import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionHandlerRegistry;
 import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionLedger;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
 import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStateProvider;
@@ -33,18 +37,19 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class AuthorshipCastingService {
 
     private static final String META_KEY = "mnagnosis";
     private static final String APPLIED_KEY = "authored_applied";
     private static final String PAYLOAD_KEY = "authored_payload";
-    private static final Map<UUID, PreparedCast> PREPARED = new ConcurrentHashMap<>();
+    private static final AuthoredCastSessionStore<PreparedCast> PREPARED =
+            new AuthoredCastSessionStore<>();
+    private static final AuthoredInstrumentRegistry INSTRUMENTS =
+            new AuthoredInstrumentRegistry();
 
     private AuthorshipCastingService() {
     }
@@ -134,11 +139,11 @@ public final class AuthorshipCastingService {
     ) {
         int inscriptions = countLawInscriptions(spell);
         if (inscriptions == 0) {
-            PREPARED.remove(player.getUUID());
+            PREPARED.forget(player.getUUID());
             return baseCost;
         }
         if (inscriptions != 1 || !isEligible(player)) {
-            PREPARED.remove(player.getUUID());
+            PREPARED.forget(player.getUUID());
             return Float.MAX_VALUE;
         }
 
@@ -150,7 +155,7 @@ public final class AuthorshipCastingService {
         AuthoredLawHandler handler = lawId == null
                 ? null : AuthoredLawRegistry.get(lawId).orElse(null);
         if (handler == null) {
-            PREPARED.remove(player.getUUID());
+            PREPARED.forget(player.getUUID());
             return Float.MAX_VALUE;
         }
 
@@ -180,9 +185,17 @@ public final class AuthorshipCastingService {
         float adjustedCost = handler.adjustedManaCost(
                 player, spell, interpretation, baseCost
         );
-        PREPARED.put(player.getUUID(), new PreparedCast(
-                handler, interpretation, baseCost, forced.map(Contradiction::id)
-        ));
+        PREPARED.prepare(
+                player.getUUID(),
+                fingerprint,
+                player.serverLevel().getGameTime(),
+                new PreparedCast(
+                        handler,
+                        interpretation,
+                        baseCost,
+                        forced.map(Contradiction::id)
+                )
+        );
         return adjustedCost + surcharge;
     }
 
@@ -194,7 +207,30 @@ public final class AuthorshipCastingService {
             SpellTarget target,
             SpellEffect component
     ) {
-        PreparedCast prepared = PREPARED.get(player.getUUID());
+        String fingerprint = SpellFingerprint.of(spell);
+        var session = PREPARED.current(
+                player.getUUID(),
+                fingerprint,
+                player.serverLevel().getGameTime()
+        ).orElse(null);
+        if (session != null && session.instrument().isEmpty()) {
+            UUID castId = session.castId();
+            INSTRUMENTS.resolve(player, source.getHand(), spell).ifPresent(snapshot ->
+                    PREPARED.bindInstrument(
+                            player.getUUID(),
+                            castId,
+                            fingerprint,
+                            player.serverLevel().getGameTime(),
+                            snapshot
+                    )
+            );
+            session = PREPARED.current(
+                    player.getUUID(),
+                    fingerprint,
+                    player.serverLevel().getGameTime()
+            ).orElse(session);
+        }
+        PreparedCast prepared = session == null ? null : session.prepared();
         if (prepared == null || !isEligible(player)) {
             return false;
         }
@@ -259,17 +295,21 @@ public final class AuthorshipCastingService {
             float baseCost
     ) {
         if (!isEligible(player)) {
-            PREPARED.remove(player.getUUID());
+            PREPARED.forget(player.getUUID());
             return;
         }
         IIneffableCastingState state = state(player).orElse(null);
         IneffableMana mana = mana(player).orElse(null);
         if (state == null || mana == null) {
-            PREPARED.remove(player.getUUID());
+            PREPARED.forget(player.getUUID());
             return;
         }
 
-        PreparedCast prepared = PREPARED.remove(player.getUUID());
+        PreparedCast prepared = PREPARED.take(
+                player.getUUID(),
+                SpellFingerprint.of(spell),
+                player.serverLevel().getGameTime()
+        ).map(session -> session.prepared()).orElse(null);
         Optional<LawApplication> application = Optional.empty();
         Set<UUID> closures = new HashSet<>();
         for (Contradiction debt : state.ledger().entries()) {
@@ -316,15 +356,15 @@ public final class AuthorshipCastingService {
                 state.ledger(), application, closures, mana.getMaxAmount()
         );
         resolution.closed().forEach(closed ->
-                AuthoredLawRegistry.get(closed.lawId())
+                ContradictionHandlerRegistry.GLOBAL.get(closed.lawId())
                         .ifPresent(handler -> handler.onClosed(player, closed))
         );
         resolution.created().ifPresent(created ->
-                AuthoredLawRegistry.get(created.lawId())
+                ContradictionHandlerRegistry.GLOBAL.get(created.lawId())
                         .ifPresent(handler -> handler.onDebtCreated(player, created))
         );
         for (Contradiction vented : resolution.vented()) {
-            AuthoredLawRegistry.get(vented.lawId())
+            ContradictionHandlerRegistry.GLOBAL.get(vented.lawId())
                     .ifPresent(handler -> handler.vent(player, vented));
         }
         if (state.declaredClosure()
@@ -342,6 +382,33 @@ public final class AuthorshipCastingService {
             boolean closesExistingDebt
     ) {
         return authoredEffectApplied && !closesExistingDebt;
+    }
+
+    public static AuthoredInstrumentRegistry instrumentRegistry() {
+        return INSTRUMENTS;
+    }
+
+    public static Optional<AuthorshipCastPermit> capturePersistentPermit(
+            ServerPlayer player,
+            ISpellDefinition spell,
+            CompoundTag persistentPayload
+    ) {
+        String fingerprint = SpellFingerprint.of(spell);
+        return PREPARED.current(
+                player.getUUID(),
+                fingerprint,
+                player.serverLevel().getGameTime()
+        ).map(session -> AuthorshipCastPermit.create(
+                session.castId(),
+                player.getUUID(),
+                fingerprint,
+                Optional.of(session.prepared().handler().lawId()),
+                Optional.of(session.prepared().interpretation()),
+                session.prepared().baseCost(),
+                player.serverLevel().getGameTime(),
+                persistentPayload,
+                session.instrument()
+        ));
     }
 
     private static boolean isEligible(ServerPlayer player) {

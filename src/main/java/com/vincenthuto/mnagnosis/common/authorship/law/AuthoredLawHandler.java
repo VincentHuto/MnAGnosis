@@ -6,14 +6,20 @@ import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.parts.SpellEffect;
 import com.mna.api.spells.targeting.SpellTarget;
 import com.vincenthuto.mnagnosis.common.authorship.state.Contradiction;
+import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
 
-public interface AuthoredLawHandler {
+public interface AuthoredLawHandler extends ContradictionHandler {
 
     ResourceLocation lawId();
+
+    @Override
+    default ResourceLocation handlerId() {
+        return lawId();
+    }
 
     List<ResourceLocation> interpretations(ISpellDefinition spell);
 

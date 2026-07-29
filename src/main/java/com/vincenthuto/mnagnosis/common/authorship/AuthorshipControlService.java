@@ -11,6 +11,7 @@ import com.vincenthuto.mnagnosis.common.authorship.law.AuthoredLawRegistry;
 import com.vincenthuto.mnagnosis.common.authorship.law.SpellFingerprint;
 import com.vincenthuto.mnagnosis.common.authorship.state.IIneffableCastingState;
 import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStateProvider;
+import com.vincenthuto.mnagnosis.common.authorship.state.ContradictionHandlerRegistry;
 import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
 import net.minecraft.resources.ResourceLocation;
@@ -59,7 +60,10 @@ public final class AuthorshipControlService {
         return player.getCapability(IneffableCastingStateProvider.CAPABILITY)
                 .map(state -> state.ledger().entries().stream()
                         .filter(debt -> debt.id().equals(debtId))
-                        .filter(debt -> AuthoredLawRegistry.get(debt.lawId()).isPresent())
+                        .filter(debt -> ContradictionHandlerRegistry.GLOBAL
+                                .get(debt.lawId())
+                                .filter(handler -> handler.canDeclareClosure(debt))
+                                .isPresent())
                         .findFirst()
                         .map(debt -> {
                             state.declareClosure(debtId);

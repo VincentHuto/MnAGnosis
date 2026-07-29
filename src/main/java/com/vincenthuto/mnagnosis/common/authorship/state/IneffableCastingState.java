@@ -85,8 +85,8 @@ public final class IneffableCastingState implements IIneffableCastingState {
 
         ledger = ContradictionLedger.load(root.getCompound(LEDGER_KEY));
         ledger.retain(debt -> AuthorshipRegistry.isKnownAuthorship(
-                debt.lawId(), debt.interpretationId()
-        ));
+                debt.lawId(), debt.interpretationId())
+                || ExternalContradictionType.isTypedExternal(debt));
 
         CompoundTag selections = root.getCompound(SELECTIONS_KEY);
         for (String fingerprint : selections.getAllKeys()) {

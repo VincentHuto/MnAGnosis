@@ -30,9 +30,33 @@ run/gameteststructures/*
 
 libs
 
+logs/
+
+/logs/
+
 # Files from Forge MDK
 forge*changelog.txt
 /.codebuddy/
-/docs/
-/docs/
+/docs/*
+!/docs/superpowers/
+/docs/superpowers/*
+!/docs/superpowers/specs/
+/docs/superpowers/specs/*
+!/docs/superpowers/specs/2026-07-29-three-discipline-foundation-contract.md
+!/docs/superpowers/specs/2026-07-29-living-manuscript-progression-shell-design.md
+!/docs/superpowers/plans/
+/docs/superpowers/plans/*
+!/docs/superpowers/plans/autogenesis-foundation-bridge.md
+!/docs/superpowers/plans/2026-07-29-living-manuscript-progression-shell.md
+!/docs/superpowers/plans/architectonics/
+/docs/superpowers/plans/architectonics/*
+!/docs/superpowers/plans/architectonics/README.md
+!/docs/superpowers/plans/architectonics/00-shared-architectonic-runtime.md
+!/docs/superpowers/plans/architectonics/14-integration-progression-and-release.md
+!/docs/superpowers/plans/worldlines/
+/docs/superpowers/plans/worldlines/*
+!/docs/superpowers/plans/worldlines/README.md
+!/docs/superpowers/plans/worldlines/00-worldline-runtime-foundation.md
+!/docs/superpowers/plans/worldlines/14-worldline-integration-and-release.md
 /.codex-remote-attachments/
+/logs/

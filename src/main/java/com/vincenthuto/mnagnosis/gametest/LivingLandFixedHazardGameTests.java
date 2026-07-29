@@ -340,6 +340,8 @@ public final class LivingLandFixedHazardGameTests {
                 helper.absolutePos(new BlockPos(6, 4, 2)),
                 helper.absolutePos(new BlockPos(5, 4, 2)),
                 helper.absolutePos(new BlockPos(4, 4, 2)));
+        finalSpans.forEach(pos -> helper.getLevel().setBlock(
+                pos, Blocks.AIR.defaultBlockState(), 3));
 
         helper.assertTrue(payload.settleAt(
                         helper.getLevel(), caster, finalSpans),
