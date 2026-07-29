@@ -4,6 +4,10 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "mnagnosis.refmap.json",
   "mixins": [
+    "autogenic.ComponentFireDamageHarmMixin",
+    "autogenic.EntityFireImmunityMixin",
+    "autogenic.LivingEntityPoisonImmunityMixin",
+    "autogenic.PotionEffectComponentHarmMixin",
     "core.AncientCouncilMixin",
     "core.CommandMnaMixin",
     "core.DemonStoneMixin",

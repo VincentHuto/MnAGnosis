@@ -2,6 +2,11 @@ package com.vincenthuto.mnagnosis.common.autogenic.harm;
 
 import com.vincenthuto.mnagnosis.common.authorship.cast.AuthorshipCastPermit;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -111,6 +116,70 @@ public final class HarmInvocationScope implements AutoCloseable {
         return true;
     }
 
+    public static boolean invokeDamage(
+            Entity target,
+            DamageSource source,
+            float amount
+    ) {
+        OwnerFrame owner = activeOwner(
+                target.getUUID(),
+                HarmGate.FIRE_TYPE_IMMUNITY
+        );
+        if (owner == null) {
+            return target.hurt(source, amount);
+        }
+        return invokeBound(
+                owner,
+                target.getUUID(),
+                HarmGate.FIRE_TYPE_IMMUNITY,
+                source,
+                () -> target.hurt(source, amount)
+        );
+    }
+
+    public static boolean invokeEffect(
+            LivingEntity target,
+            MobEffectInstance effect
+    ) {
+        OwnerFrame owner = activeOwner(
+                target.getUUID(),
+                HarmGate.UNDEAD_POISON_IMMUNITY
+        );
+        if (owner == null) {
+            return target.addEffect(effect);
+        }
+        return invokeBound(
+                owner,
+                target.getUUID(),
+                HarmGate.UNDEAD_POISON_IMMUNITY,
+                effect,
+                () -> target.addEffect(effect)
+        );
+    }
+
+    public static boolean permitsFireImmunity(
+            Entity target,
+            DamageSource source
+    ) {
+        return consume(
+                target.getUUID(),
+                HarmGate.FIRE_TYPE_IMMUNITY,
+                source
+        );
+    }
+
+    public static boolean permitsPoisonImmunity(
+            LivingEntity target,
+            MobEffectInstance effect
+    ) {
+        return effect.getEffect() == MobEffects.POISON
+                && consume(
+                target.getUUID(),
+                HarmGate.UNDEAD_POISON_IMMUNITY,
+                effect
+        );
+    }
+
     public Authorization authorization() {
         return owner.authorization;
     }
@@ -146,6 +215,48 @@ public final class HarmInvocationScope implements AutoCloseable {
     private void requireOpen() {
         if (closed) {
             throw new IllegalStateException("Harm scope is closed");
+        }
+    }
+
+    private static OwnerFrame activeOwner(UUID targetId, HarmGate gate) {
+        Frame frame = FRAMES.get().peek();
+        if (!(frame instanceof OwnerFrame owner)) {
+            return null;
+        }
+        Authorization authorization = owner.authorization;
+        return authorization.targetId().equals(targetId)
+                && authorization.gate() == gate
+                ? owner
+                : null;
+    }
+
+    private static boolean invokeBound(
+            OwnerFrame owner,
+            UUID targetId,
+            HarmGate gate,
+            Object nativeIdentity,
+            BooleanSupplier nativeCall
+    ) {
+        Deque<Frame> frames = FRAMES.get();
+        if (frames.peek() != owner) {
+            return nativeCall.getAsBoolean();
+        }
+        NativeFrame nativeFrame = new NativeFrame(
+                owner,
+                targetId,
+                gate,
+                nativeIdentity
+        );
+        frames.push(nativeFrame);
+        try {
+            boolean result = nativeCall.getAsBoolean();
+            owner.nativeSucceeded = result;
+            return result;
+        } finally {
+            if (frames.peek() != nativeFrame) {
+                throw new IllegalStateException("Unbalanced native harm frame");
+            }
+            frames.pop();
         }
     }
 
