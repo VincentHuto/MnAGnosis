@@ -27,6 +27,7 @@ public class CoreShaders {
     private static ShaderInstance kochianStar;
     private static ShaderInstance mengerianTopology;
     private static ShaderInstance tesseract;
+    private static ShaderInstance ineffableHudPortal;
 
     public static void init(TriConsumer<ResourceLocation, VertexFormat, Consumer<ShaderInstance>> registrations) {
         registrations.accept(
@@ -74,6 +75,11 @@ public class CoreShaders {
                 DefaultVertexFormat.POSITION_COLOR,
                 inst -> tesseract = inst
         );
+        registrations.accept(
+                MnAGnosis.rloc("ineffable_hud_portal"),
+                DefaultVertexFormat.POSITION_TEX,
+                inst -> ineffableHudPortal = inst
+        );
 
     }
 
@@ -112,6 +118,10 @@ public class CoreShaders {
 
     public static ShaderInstance tesseract() {
         return tesseract;
+    }
+
+    public static ShaderInstance ineffableHudPortal() {
+        return ineffableHudPortal;
     }
 
 }
