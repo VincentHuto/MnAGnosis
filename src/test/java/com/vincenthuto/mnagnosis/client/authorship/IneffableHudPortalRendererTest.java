@@ -12,10 +12,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class IneffableHudPortalRendererTest {
 
     @Test
-    void portalQuadMatchesTheCompleteManaChannel() {
+    void portalQuadLeavesTheTrimmedRightEndClear() {
         assertEquals(80, IneffableHudPortalRenderer.X);
         assertEquals(52, IneffableHudPortalRenderer.Y);
-        assertEquals(790, IneffableHudPortalRenderer.WIDTH);
+        assertEquals(760, IneffableHudPortalRenderer.WIDTH);
         assertEquals(54, IneffableHudPortalRenderer.HEIGHT);
     }
 
@@ -35,7 +35,7 @@ class IneffableHudPortalRendererTest {
                         + "IneffableHudRenderer.java"
         ));
         int base = renderer.indexOf(
-                "blitFull(graphics, IneffableHudConcept.baseTexture())"
+                "blitFull(graphics, IneffableHudConcept.backingTexture())"
         );
         int portal = renderer.indexOf("IneffableHudPortalRenderer.render");
         int disruption = renderer.indexOf(

@@ -15,7 +15,7 @@ public final class IneffableHudPortalRenderer {
 
     public static final int X = IneffableHudConcept.CHANNEL_X;
     public static final int Y = IneffableHudConcept.CHANNEL_Y;
-    public static final int WIDTH = IneffableHudConcept.CHANNEL_WIDTH;
+    public static final int WIDTH = IneffableHudConcept.CHANNEL_WIDTH-30;
     public static final int HEIGHT = IneffableHudConcept.CHANNEL_HEIGHT;
 
     private static final float OPACITY = 0.88F;
