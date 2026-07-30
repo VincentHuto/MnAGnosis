@@ -1,6 +1,7 @@
 package com.vincenthuto.mnagnosis.client.authorship;
 
 import java.util.List;
+import java.util.Optional;
 
 public final class IneffableHudAtlas {
 
@@ -46,6 +47,35 @@ public final class IneffableHudAtlas {
             return FrameState.LOCAL_INVERSION;
         }
         return FrameState.CONTRADICTION;
+    }
+
+    public static Optional<Sprite> disruption(FrameState state) {
+        return switch (state) {
+            case CONTAINED -> Optional.empty();
+            case LATTICE -> Optional.of(FRAME_LATTICE);
+            case LOCAL_INVERSION -> Optional.of(FRAME_LOCAL_INVERSION);
+            case CONTRADICTION -> Optional.of(FRAME_CONTRADICTION);
+        };
+    }
+
+    public static Sprite cropLeft(Sprite sprite, int width) {
+        int clampedWidth = Math.max(0, Math.min(sprite.width(), width));
+        return new Sprite(
+                sprite.u(),
+                sprite.v(),
+                clampedWidth,
+                sprite.height()
+        );
+    }
+
+    public static Sprite cropRight(Sprite sprite, int width) {
+        int clampedWidth = Math.max(0, Math.min(sprite.width(), width));
+        return new Sprite(
+                sprite.right() - clampedWidth,
+                sprite.v(),
+                clampedWidth,
+                sprite.height()
+        );
     }
 
     public record Sprite(int u, int v, int width, int height) {

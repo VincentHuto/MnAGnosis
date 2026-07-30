@@ -35,6 +35,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.vincenthuto.mnagnosis.MnAGnosis;
 import com.vincenthuto.mnagnosis.client.authorship.CounterlawHudRenderer;
+import com.vincenthuto.mnagnosis.client.authorship.IneffableHudAtlas;
 import com.vincenthuto.mnagnosis.client.authorship.IneffableHudRenderer;
 import com.vincenthuto.mnagnosis.client.render.armor.IneffableRobesCurioLookup;
 import com.vincenthuto.mnagnosis.common.entity.TruthEntity;
@@ -486,8 +487,8 @@ public final class Tier6ProgressionGameTests {
                     }
                 }
             }
-            helper.assertTrue(occupiedBottom == 15,
-                    "The Ineffable frame sprite was not the approved thin 16-pixel frame");
+            helper.assertTrue(occupiedBottom >= 76,
+                    "The Ineffable atlas did not include its layered HUD sprites");
         } catch (Exception exception) {
             helper.fail("Could not inspect the Ineffable HUD atlas: "
                     + exception.getMessage());
@@ -516,7 +517,7 @@ public final class Tier6ProgressionGameTests {
                         && IneffableHudRenderer.FRAME_X == 34,
                 "The custom Ineffable HUD ignored M&A's reserved left inset");
         helper.assertTrue(IneffableHudRenderer.FRAME_WIDTH == 153
-                        && IneffableHudRenderer.FRAME_HEIGHT == 14,
+                        && IneffableHudRenderer.FRAME_HEIGHT == 16,
                 "The custom Ineffable HUD no longer fits M&A's HUD allocation");
         helper.assertTrue(IneffableHudRenderer.CHANNEL_WIDTH == 121
                         && IneffableHudRenderer.CHANNEL_HEIGHT == 6
@@ -542,33 +543,15 @@ public final class Tier6ProgressionGameTests {
         helper.assertTrue(IneffableHudRenderer.overlapPixels(
                         1458.0F, 567.0F, 1620.0F) == 30,
                 "The Ineffable HUD did not calculate the contested channel region");
-        helper.assertTrue(IneffableHudRenderer.frameState(0.34F)
-                        == IneffableHudRenderer.FrameState.DESYNCHRONIZED,
-                "High Paradox no longer selects the approved desynchronized frame");
-        helper.assertTrue(IneffableHudRenderer.LATTICE_PITCH == 5
-                        && IneffableHudRenderer.LATTICE_CELL == 3
-                        && IneffableHudRenderer.RAIL_THICKNESS == 1
-                        && IneffableHudRenderer.CAP_STEM_HEIGHT == 2,
-                "Paradox no longer uses the approved balanced lattice density");
-
-        var stableDetails = IneffableHudRenderer.detailNodes(
-                IneffableHudRenderer.FrameState.STABLE
-        );
-        var shiftedDetails = IneffableHudRenderer.detailNodes(
-                IneffableHudRenderer.FrameState.DESYNCHRONIZED
-        );
-        helper.assertTrue(stableDetails.size() == 4,
-                "The stable frame lost its permanent circuit nodes");
-        helper.assertTrue(stableDetails.get(0).x()
-                        == IneffableHudRenderer.FRAME_X + 25
-                        && stableDetails.get(2).x()
-                        == IneffableHudRenderer.FRAME_X + 120
-                        && stableDetails.get(0).size() == 3
-                        && stableDetails.get(1).size() == 2,
-                "The stable circuit nodes drifted from the frame");
-        helper.assertTrue(shiftedDetails.get(0).x() == stableDetails.get(0).x() - 1
-                        && shiftedDetails.get(2).x() == stableDetails.get(2).x() + 1,
-                "Desynchronization did not make the circuit nodes disagree");
+        helper.assertTrue(IneffableHudRenderer.frameState(0.19F)
+                        == IneffableHudAtlas.FrameState.CONTAINED
+                        && IneffableHudRenderer.frameState(0.20F)
+                        == IneffableHudAtlas.FrameState.LATTICE
+                        && IneffableHudRenderer.frameState(0.45F)
+                        == IneffableHudAtlas.FrameState.LOCAL_INVERSION
+                        && IneffableHudRenderer.frameState(0.80F)
+                        == IneffableHudAtlas.FrameState.CONTRADICTION,
+                "Paradox no longer selects the progressive textured frame states");
         helper.succeed();
     }
 

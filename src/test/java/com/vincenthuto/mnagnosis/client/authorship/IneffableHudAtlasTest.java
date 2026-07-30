@@ -49,4 +49,50 @@ class IneffableHudAtlasTest {
         assertEquals(IneffableHudAtlas.FrameState.CONTRADICTION,
                 IneffableHudAtlas.frameState(0.80F));
     }
+
+    @Test
+    void frameStatesSelectOnlyTheirOwnDisruptionLayer() {
+        assertTrue(IneffableHudAtlas.disruption(
+                IneffableHudAtlas.FrameState.CONTAINED).isEmpty());
+        assertEquals(
+                IneffableHudAtlas.FRAME_LATTICE,
+                IneffableHudAtlas.disruption(
+                        IneffableHudAtlas.FrameState.LATTICE).orElseThrow()
+        );
+        assertEquals(
+                IneffableHudAtlas.FRAME_LOCAL_INVERSION,
+                IneffableHudAtlas.disruption(
+                        IneffableHudAtlas.FrameState.LOCAL_INVERSION)
+                        .orElseThrow()
+        );
+        assertEquals(
+                IneffableHudAtlas.FRAME_CONTRADICTION,
+                IneffableHudAtlas.disruption(
+                        IneffableHudAtlas.FrameState.CONTRADICTION)
+                        .orElseThrow()
+        );
+    }
+
+    @Test
+    void resourceSlicesCropFromTheirOpposedEdges() {
+        assertEquals(
+                new IneffableHudAtlas.Sprite(0, 64, 61, 6),
+                IneffableHudAtlas.cropLeft(
+                        IneffableHudAtlas.MANA_RAILS, 61)
+        );
+        assertEquals(
+                new IneffableHudAtlas.Sprite(91, 70, 30, 6),
+                IneffableHudAtlas.cropRight(
+                        IneffableHudAtlas.PARADOX_LATTICE, 30)
+        );
+        assertEquals(
+                new IneffableHudAtlas.Sprite(0, 76, 0, 1),
+                IneffableHudAtlas.cropLeft(IneffableHudAtlas.XP_STRIP, -4)
+        );
+        assertEquals(
+                IneffableHudAtlas.PARADOX_LATTICE,
+                IneffableHudAtlas.cropRight(
+                        IneffableHudAtlas.PARADOX_LATTICE, 999)
+        );
+    }
 }
