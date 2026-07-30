@@ -28,9 +28,9 @@ class IneffableHudPerspectiveTest {
         IneffableHudPerspective.Point right =
                 IneffableHudPerspective.project(187.0F, 18.0F, 0.0F);
 
-        assertEquals(180.73549F, right.x(), EPSILON);
-        assertEquals(9.26176F, right.y(), EPSILON);
-        assertEquals(-29.44031F, right.z(), EPSILON);
+        assertEquals(175.0211F, right.x(), EPSILON);
+        assertEquals(9.561239F, right.y(), EPSILON);
+        assertEquals(-52.39074F, right.z(), EPSILON);
     }
 
     @Test
@@ -71,8 +71,8 @@ class IneffableHudPerspectiveTest {
         Vector4f actual = new Vector4f(187.0F, 18.0F, 0.0F, 1.0F);
         pose.last().pose().transform(actual);
 
-        assertEquals(180.73549F, actual.x(), EPSILON);
-        assertEquals(9.26176F, actual.y(), EPSILON);
-        assertEquals(-29.44031F, actual.z(), EPSILON);
+        assertEquals(175.0211F, actual.x(), EPSILON);
+        assertEquals(9.561239F, actual.y(), EPSILON);
+        assertEquals(-52.39074F, actual.z(), EPSILON);
     }
 }

@@ -9,7 +9,7 @@ public final class IneffableHudPerspective {
     public static final float PIVOT_X = 14.0F;
     public static final float PIVOT_Y = 18.0F;
     public static final float ROTATION_Z_DEGREES = -3.0F;
-    public static final float ROTATION_Y_DEGREES = 10.0F;
+    public static final float ROTATION_Y_DEGREES = 18.0F;
     public static final float ROTATION_X_DEGREES = 6.0F;
     public static final float SCALE_X = 0.98F;
     public static final float SCALE_Y = 0.90F;
