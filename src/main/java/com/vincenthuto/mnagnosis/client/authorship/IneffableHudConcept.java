@@ -14,6 +14,7 @@ public final class IneffableHudConcept {
     public static final int CHANNEL_Y = 52;
     public static final int CHANNEL_WIDTH = 790;
     public static final int CHANNEL_HEIGHT = 54;
+    public static final int MANA_CAP_WIDTH = 5;
 
     public static final int BADGE_SOURCE_SIZE = 158;
     public static final int BADGE_DISPLAY_SIZE = 20;
@@ -31,6 +32,10 @@ public final class IneffableHudConcept {
 
     public static ResourceLocation manaTexture() {
         return texture("ineffable_hud_concept_mana.png");
+    }
+
+    public static ResourceLocation manaCapTexture() {
+        return texture("ineffable_hud_concept_mana_cap.png");
     }
 
     public static ResourceLocation paradoxTexture() {
@@ -56,6 +61,17 @@ public final class IneffableHudConcept {
             case CONTRADICTION ->
                     texture("ineffable_hud_concept_contradiction.png");
         };
+    }
+
+    public static int manaCapX(int manaWidth) {
+        if (manaWidth <= 0) {
+            return -1;
+        }
+        int clampedWidth = Math.min(CHANNEL_WIDTH, manaWidth);
+        return Math.max(
+                CHANNEL_X,
+                CHANNEL_X + clampedWidth - MANA_CAP_WIDTH
+        );
     }
 
     private static ResourceLocation texture(String name) {

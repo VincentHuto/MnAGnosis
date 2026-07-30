@@ -31,6 +31,7 @@ class IneffableHudConceptTest {
                 "ineffable_hud_concept_inversion.png",
                 "ineffable_hud_concept_contradiction.png",
                 "ineffable_hud_concept_mana.png",
+                "ineffable_hud_concept_mana_cap.png",
                 "ineffable_hud_concept_paradox.png",
                 "ineffable_hud_concept_xp.png"
         )) {
@@ -77,6 +78,14 @@ class IneffableHudConceptTest {
         assertEquals(34, IneffableHudRenderer.FRAME_X);
         assertEquals(395, IneffableHudRenderer.manaPixels(50.0F, 100.0F));
         assertEquals(198, IneffableHudRenderer.paradoxPixels(25.0F, 100.0F));
+    }
+
+    @Test
+    void manaCapTracksTheLiveRightEdge() {
+        assertEquals(-1, IneffableHudConcept.manaCapX(0));
+        assertEquals(470, IneffableHudConcept.manaCapX(395));
+        assertEquals(865, IneffableHudConcept.manaCapX(790));
+        assertEquals(865, IneffableHudConcept.manaCapX(999));
     }
 
     private static boolean hasVisiblePixels(BufferedImage image) {

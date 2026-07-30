@@ -166,6 +166,7 @@ public final class IneffableHudRenderer {
                 IneffableHudConcept.CHANNEL_Y,
                 IneffableHudConcept.CHANNEL_HEIGHT
         );
+        blitManaCap(graphics, manaWidth);
         blitRightResource(
                 graphics,
                 IneffableHudConcept.paradoxTexture(),
@@ -288,6 +289,27 @@ public final class IneffableHudRenderer {
                 y,
                 clampedWidth,
                 height,
+                IneffableHudConcept.SOURCE_WIDTH,
+                IneffableHudConcept.SOURCE_HEIGHT
+        );
+    }
+
+    private static void blitManaCap(
+            GuiGraphics graphics,
+            int manaWidth
+    ) {
+        int capX = IneffableHudConcept.manaCapX(manaWidth);
+        if (capX < 0) {
+            return;
+        }
+        graphics.blit(
+                IneffableHudConcept.manaCapTexture(),
+                capX,
+                IneffableHudConcept.CHANNEL_Y,
+                IneffableHudConcept.CHANNEL_X,
+                IneffableHudConcept.CHANNEL_Y,
+                IneffableHudConcept.MANA_CAP_WIDTH,
+                IneffableHudConcept.CHANNEL_HEIGHT,
                 IneffableHudConcept.SOURCE_WIDTH,
                 IneffableHudConcept.SOURCE_HEIGHT
         );
