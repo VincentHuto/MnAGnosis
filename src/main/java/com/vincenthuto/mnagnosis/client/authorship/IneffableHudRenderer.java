@@ -169,8 +169,9 @@ public final class IneffableHudRenderer {
         graphics.pose().translate(FRAME_X, FRAME_Y, 0.0F);
         graphics.pose().scale(FRAME_SCALE_X, FRAME_SCALE_Y, 1.0F);
 
-        blitFull(graphics, IneffableHudConcept.baseTexture());
+        blitFull(graphics, IneffableHudConcept.backingTexture());
         IneffableHudPortalRenderer.render(graphics, animationTicks);
+        blitFull(graphics, IneffableHudConcept.frameTexture());
         ResourceLocation disruption =
                 IneffableHudConcept.disruptionTexture(state);
         if (disruption != null) {
@@ -185,7 +186,7 @@ public final class IneffableHudRenderer {
                 IneffableHudConcept.CHANNEL_Y,
                 IneffableHudConcept.CHANNEL_HEIGHT
         );
-        blitManaCap(graphics, manaWidth);
+        blitManaCaps(graphics, manaWidth);
         blitRightResource(
                 graphics,
                 IneffableHudConcept.paradoxTexture(),
@@ -313,17 +314,29 @@ public final class IneffableHudRenderer {
         );
     }
 
-    private static void blitManaCap(
+    private static void blitManaCaps(
             GuiGraphics graphics,
             int manaWidth
     ) {
-        int capX = IneffableHudConcept.manaCapX(manaWidth);
-        if (capX < 0) {
+        int leftCapX = IneffableHudConcept.leftManaCapX(manaWidth);
+        if (leftCapX < 0) {
             return;
         }
         graphics.blit(
                 IneffableHudConcept.manaCapTexture(),
-                capX,
+                leftCapX,
+                IneffableHudConcept.CHANNEL_Y,
+                IneffableHudConcept.CHANNEL_X,
+                IneffableHudConcept.CHANNEL_Y,
+                IneffableHudConcept.MANA_CAP_WIDTH,
+                IneffableHudConcept.CHANNEL_HEIGHT,
+                IneffableHudConcept.SOURCE_WIDTH,
+                IneffableHudConcept.SOURCE_HEIGHT
+        );
+        int rightCapX = IneffableHudConcept.manaCapX(manaWidth);
+        graphics.blit(
+                IneffableHudConcept.manaCapTexture(),
+                rightCapX,
                 IneffableHudConcept.CHANNEL_Y,
                 IneffableHudConcept.CHANNEL_X,
                 IneffableHudConcept.CHANNEL_Y,

@@ -30,6 +30,14 @@ public final class IneffableHudConcept {
         return texture("ineffable_hud_concept_base.png");
     }
 
+    public static ResourceLocation backingTexture() {
+        return texture("ineffable_hud_concept_backing.png");
+    }
+
+    public static ResourceLocation frameTexture() {
+        return texture("ineffable_hud_concept_frame.png");
+    }
+
     public static ResourceLocation manaTexture() {
         return texture("ineffable_hud_concept_mana.png");
     }
@@ -72,6 +80,10 @@ public final class IneffableHudConcept {
                 CHANNEL_X,
                 CHANNEL_X + clampedWidth - MANA_CAP_WIDTH
         );
+    }
+
+    public static int leftManaCapX(int manaWidth) {
+        return manaWidth > 0 ? CHANNEL_X : -1;
     }
 
     private static ResourceLocation texture(String name) {

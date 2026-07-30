@@ -27,6 +27,8 @@ class IneffableHudConceptTest {
 
         for (String name : List.of(
                 "ineffable_hud_concept_base.png",
+                "ineffable_hud_concept_backing.png",
+                "ineffable_hud_concept_frame.png",
                 "ineffable_hud_concept_lattice.png",
                 "ineffable_hud_concept_inversion.png",
                 "ineffable_hud_concept_contradiction.png",
@@ -82,6 +84,9 @@ class IneffableHudConceptTest {
 
     @Test
     void manaCapTracksTheLiveRightEdge() {
+        assertEquals(-1, IneffableHudConcept.leftManaCapX(0));
+        assertEquals(80, IneffableHudConcept.leftManaCapX(1));
+        assertEquals(80, IneffableHudConcept.leftManaCapX(790));
         assertEquals(-1, IneffableHudConcept.manaCapX(0));
         assertEquals(470, IneffableHudConcept.manaCapX(395));
         assertEquals(865, IneffableHudConcept.manaCapX(790));
