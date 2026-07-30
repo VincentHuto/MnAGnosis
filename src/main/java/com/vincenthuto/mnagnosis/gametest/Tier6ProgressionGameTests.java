@@ -514,10 +514,10 @@ public final class Tier6ProgressionGameTests {
     ) {
         helper.assertTrue(IneffableHudRenderer.CONTENT_OFFSET_X == 14
                         && IneffableHudRenderer.BADGE_X == 14
-                        && IneffableHudRenderer.FRAME_X == 66,
+                        && IneffableHudRenderer.FRAME_X == 34,
                 "The custom Ineffable HUD ignored M&A's reserved left inset");
-        helper.assertTrue(IneffableHudRenderer.FRAME_WIDTH == 320
-                        && IneffableHudRenderer.FRAME_HEIGHT == 52,
+        helper.assertTrue(IneffableHudRenderer.FRAME_WIDTH == 153
+                        && IneffableHudRenderer.FRAME_HEIGHT == 25,
                 "The custom Ineffable HUD no longer uses the concept-art display size");
         helper.assertTrue(IneffableHudRenderer.CHANNEL_WIDTH == 790
                         && IneffableHudRenderer.CHANNEL_HEIGHT == 54

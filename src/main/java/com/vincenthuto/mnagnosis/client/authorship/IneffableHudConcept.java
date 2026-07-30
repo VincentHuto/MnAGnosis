@@ -7,8 +7,8 @@ public final class IneffableHudConcept {
 
     public static final int SOURCE_WIDTH = 976;
     public static final int SOURCE_HEIGHT = 158;
-    public static final int DISPLAY_WIDTH = 320;
-    public static final int DISPLAY_HEIGHT = 52;
+    public static final int DISPLAY_WIDTH = 153;
+    public static final int DISPLAY_HEIGHT = 25;
 
     public static final int CHANNEL_X = 80;
     public static final int CHANNEL_Y = 52;
@@ -16,7 +16,7 @@ public final class IneffableHudConcept {
     public static final int CHANNEL_HEIGHT = 54;
 
     public static final int BADGE_SOURCE_SIZE = 158;
-    public static final int BADGE_DISPLAY_SIZE = 52;
+    public static final int BADGE_DISPLAY_SIZE = 20;
 
     private IneffableHudConcept() {
     }

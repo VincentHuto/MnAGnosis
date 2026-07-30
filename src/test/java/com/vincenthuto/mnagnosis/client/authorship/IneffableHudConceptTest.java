@@ -21,8 +21,9 @@ class IneffableHudConceptTest {
     void conceptLayersKeepTheReferenceResolution() throws IOException {
         assertEquals(976, IneffableHudConcept.SOURCE_WIDTH);
         assertEquals(158, IneffableHudConcept.SOURCE_HEIGHT);
-        assertEquals(320, IneffableHudConcept.DISPLAY_WIDTH);
-        assertEquals(52, IneffableHudConcept.DISPLAY_HEIGHT);
+        assertEquals(153, IneffableHudConcept.DISPLAY_WIDTH);
+        assertEquals(25, IneffableHudConcept.DISPLAY_HEIGHT);
+        assertEquals(20, IneffableHudConcept.BADGE_DISPLAY_SIZE);
 
         for (String name : List.of(
                 "ineffable_hud_concept_base.png",
@@ -45,6 +46,14 @@ class IneffableHudConceptTest {
         assertEquals(158, badge.getWidth());
         assertEquals(158, badge.getHeight());
         assertTrue(hasVisiblePixels(badge));
+
+        BufferedImage base = ImageIO.read(
+                TEXTURES.resolve("ineffable_hud_concept_base.png").toFile()
+        );
+        assertEquals(0, base.getRGB(0, 0) >>> 24);
+        assertEquals(0, base.getRGB(975, 157) >>> 24);
+        assertEquals(0, badge.getRGB(0, 0) >>> 24);
+        assertEquals(0, badge.getRGB(157, 157) >>> 24);
     }
 
     @Test
@@ -62,10 +71,10 @@ class IneffableHudConceptTest {
 
     @Test
     void rendererUsesTheHighResolutionConceptGeometry() {
-        assertEquals(320, IneffableHudRenderer.FRAME_WIDTH);
-        assertEquals(52, IneffableHudRenderer.FRAME_HEIGHT);
+        assertEquals(153, IneffableHudRenderer.FRAME_WIDTH);
+        assertEquals(25, IneffableHudRenderer.FRAME_HEIGHT);
         assertEquals(790, IneffableHudRenderer.CHANNEL_WIDTH);
-        assertEquals(66, IneffableHudRenderer.FRAME_X);
+        assertEquals(34, IneffableHudRenderer.FRAME_X);
         assertEquals(395, IneffableHudRenderer.manaPixels(50.0F, 100.0F));
         assertEquals(198, IneffableHudRenderer.paradoxPixels(25.0F, 100.0F));
     }

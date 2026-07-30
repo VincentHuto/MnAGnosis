@@ -200,15 +200,11 @@ public final class IneffableHudRenderer {
         );
         graphics.pose().popPose();
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(BADGE_X + 10, FRAME_Y + 10, 0.0F);
-        graphics.pose().scale(2.0F, 2.0F, 1.0F);
         graphics.renderItem(
                 ItemRegistry.INEFFABLE_HUD_BADGE.get().getDefaultInstance(),
-                0,
-                0
+                BADGE_X + 2,
+                FRAME_Y + 2
         );
-        graphics.pose().popPose();
 
         String levelText = Integer.toString(level);
         int textWidth = Minecraft.getInstance().font.width(levelText);
