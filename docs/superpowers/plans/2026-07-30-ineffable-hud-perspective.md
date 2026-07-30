@@ -26,6 +26,7 @@
 - Create: `src/main/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudPerspective.java`
 - Create: `src/test/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudPerspectiveTest.java`
 - Modify: `src/main/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudRenderer.java`
+- Modify: `src/main/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudCubeRenderer.java`
 
 **Interfaces:**
 - Consumes: `PoseStack`, `Axis`, `Vector3f`.
@@ -160,6 +161,9 @@ IneffableHudPerspective.apply(graphics.pose());
 
 Do not add any nested perspective calls. The existing badge, level, frame,
 contradictions, and cube calls must remain inside the same outer pose scope.
+Set `IneffableHudCubeRenderer.OVERLAY_Z` to `0.0F`; its disabled depth test
+already keeps the cubes visible, and the HUD-plane center prevents the Y
+rotation from displacing their anchors.
 
 - [ ] **Step 5: Run the focused test and verify GREEN**
 
@@ -183,6 +187,6 @@ Expected: `BUILD SUCCESSFUL` and no patch-hygiene output.
 - [ ] **Step 7: Commit the implementation**
 
 ```powershell
-git add src/main/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudPerspective.java src/main/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudRenderer.java src/test/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudPerspectiveTest.java
+git add src/main/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudPerspective.java src/main/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudRenderer.java src/main/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudCubeRenderer.java src/test/java/com/vincenthuto/mnagnosis/client/authorship/IneffableHudPerspectiveTest.java
 git commit -m "feat: angle the complete Ineffable HUD"
 ```

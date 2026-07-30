@@ -31,7 +31,7 @@ public final class IneffableHudCubeRenderer {
             {0.0F, 1.0F}, {0.0F, 0.0F},
             {1.0F, 0.0F}, {1.0F, 1.0F}
     };
-    private static final float OVERLAY_Z = 250.0F;
+    private static final float OVERLAY_Z = 0.0F;
 
     private IneffableHudCubeRenderer() {
     }

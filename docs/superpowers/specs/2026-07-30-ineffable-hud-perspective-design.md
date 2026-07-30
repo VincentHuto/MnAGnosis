@@ -77,8 +77,10 @@ projection matrix or create an off-screen framebuffer, so other HUD overlays
 cannot inherit the transform.
 
 The cube renderer already consumes the active GUI pose, so its six-faced
-geometry follows the panel automatically. Its existing buffer flush and render
-state restoration remain unchanged.
+geometry follows the panel automatically. Its center depth moves from the old
+artificial overlay depth to the HUD plane because depth testing is already
+disabled for the cubes; this prevents Y rotation from shifting their anchors.
+Their corner depth, buffer flush, and render-state restoration remain intact.
 
 ## Testing
 

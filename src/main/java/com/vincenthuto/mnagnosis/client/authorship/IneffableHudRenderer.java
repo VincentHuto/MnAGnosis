@@ -101,6 +101,7 @@ public final class IneffableHudRenderer {
 
         graphics.pose().pushPose();
         graphics.pose().translate(hudX, hudY, 0.0F);
+        IneffableHudPerspective.apply(graphics.pose());
         drawBadge(graphics, magic.getMagicLevel());
         drawConceptFrame(
                 graphics,
