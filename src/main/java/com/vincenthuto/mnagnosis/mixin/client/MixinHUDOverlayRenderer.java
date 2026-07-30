@@ -28,7 +28,14 @@ public class MixinHUDOverlayRenderer {
             CallbackInfo callback
     ) {
         if (IneffableHudRenderer.shouldRender(magic)) {
-            IneffableHudRenderer.render(graphics, x, y, magic, player);
+            IneffableHudRenderer.render(
+                    graphics,
+                    x,
+                    y,
+                    magic,
+                    player,
+                    partialTick
+            );
             callback.cancel();
         }
     }

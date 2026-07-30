@@ -83,7 +83,8 @@ public final class IneffableHudRenderer {
             int hudX,
             int hudY,
             IPlayerMagic magic,
-            Player player
+            Player player,
+            float partialTick
     ) {
         if (!shouldRender(magic)
                 || !(magic.getCastingResource() instanceof IneffableMana mana)
@@ -115,6 +116,17 @@ public final class IneffableHudRenderer {
                 snapshot.debts(),
                 snapshot.declaredClosure()
         );
+        if (Minecraft.getInstance().level != null) {
+            IneffableHudCubeRenderer.render(
+                    graphics,
+                    FRAME_X,
+                    FRAME_Y,
+                    IneffableHudCubeLayout.animationTime(
+                            Minecraft.getInstance().level.getGameTime(),
+                            partialTick
+                    )
+            );
+        }
         graphics.pose().popPose();
     }
 
