@@ -2,28 +2,36 @@ package com.vincenthuto.mnagnosis.client.authorship;
 
 import com.mna.api.capabilities.IPlayerMagic;
 import com.vincenthuto.mnagnosis.client.ClientConfig;
-import com.vincenthuto.mnagnosis.common.faction.IneffableFactionRegistry;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
 import com.vincenthuto.mnagnosis.common.registry.ItemRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 
 public final class IneffableHudRenderer {
 
-    public static final int FRAME_WIDTH = 153;
-    public static final int FRAME_HEIGHT = 16;
-    public static final int CHANNEL_WIDTH = 121;
-    public static final int CHANNEL_HEIGHT = 6;
+    public static final int FRAME_WIDTH = IneffableHudConcept.DISPLAY_WIDTH;
+    public static final int FRAME_HEIGHT = IneffableHudConcept.DISPLAY_HEIGHT;
+    public static final int CHANNEL_WIDTH = IneffableHudConcept.CHANNEL_WIDTH;
+    public static final int CHANNEL_HEIGHT = IneffableHudConcept.CHANNEL_HEIGHT;
     public static final int CONTENT_OFFSET_X = 14;
     public static final int BADGE_X = CONTENT_OFFSET_X;
-    public static final int FRAME_X = CONTENT_OFFSET_X + 20;
-    public static final int CHANNEL_X = 16;
+    public static final int FRAME_X =
+            CONTENT_OFFSET_X + IneffableHudConcept.BADGE_DISPLAY_SIZE;
+    public static final int CHANNEL_X = IneffableHudConcept.CHANNEL_X;
 
     private static final int FRAME_Y = 6;
-    private static final int CHANNEL_Y = 5;
-    private static final int BADGE_SIZE = 20;
     private static final int WHITE = 0xFFF7F7F7;
+    private static final float FRAME_SCALE_X =
+            IneffableHudConcept.DISPLAY_WIDTH
+                    / (float) IneffableHudConcept.SOURCE_WIDTH;
+    private static final float FRAME_SCALE_Y =
+            IneffableHudConcept.DISPLAY_HEIGHT
+                    / (float) IneffableHudConcept.SOURCE_HEIGHT;
+    private static final float BADGE_SCALE =
+            IneffableHudConcept.BADGE_DISPLAY_SIZE
+                    / (float) IneffableHudConcept.BADGE_SOURCE_SIZE;
 
     private IneffableHudRenderer() {
     }
@@ -61,7 +69,9 @@ public final class IneffableHudRenderer {
     }
 
     public static int channelRightInset() {
-        return FRAME_WIDTH - CHANNEL_X - CHANNEL_WIDTH;
+        return IneffableHudConcept.SOURCE_WIDTH
+                - IneffableHudConcept.CHANNEL_X
+                - IneffableHudConcept.CHANNEL_WIDTH;
     }
 
     public static IneffableHudAtlas.FrameState frameState(float paradoxRatio) {
@@ -90,21 +100,14 @@ public final class IneffableHudRenderer {
 
         graphics.pose().pushPose();
         graphics.pose().translate(hudX, hudY, 0.0F);
-
         drawBadge(graphics, magic.getMagicLevel());
-        blit(graphics, IneffableHudAtlas.FRAME_BASE, FRAME_X, FRAME_Y);
-        IneffableHudAtlas.disruption(state).ifPresent(sprite -> blit(
+        drawConceptFrame(
                 graphics,
-                sprite,
-                FRAME_X + disruptionPhase(),
-                FRAME_Y
-        ));
-
-        int channelLeft = FRAME_X + CHANNEL_X;
-        int channelTop = FRAME_Y + CHANNEL_Y;
-        drawMana(graphics, channelLeft, channelTop, manaWidth);
-        drawParadox(graphics, channelLeft, channelTop, paradoxWidth);
-        drawExperience(graphics, FRAME_X, FRAME_Y, magic);
+                state,
+                manaWidth,
+                paradoxWidth,
+                experiencePixels(magic)
+        );
         CounterlawHudRenderer.renderContradictions(
                 graphics,
                 FRAME_X,
@@ -125,101 +128,173 @@ public final class IneffableHudRenderer {
         return Math.round(ratio * CHANNEL_WIDTH);
     }
 
-    private static void drawBadge(GuiGraphics graphics, int level) {
-        int badgeTop = FRAME_Y - 2;
-        blit(
-                graphics,
-                IneffableHudAtlas.BADGE_CRADLE,
-                BADGE_X,
-                badgeTop
+    private static int experiencePixels(IPlayerMagic magic) {
+        int nextLevel = magic.getXPForLevel(magic.getMagicLevel() + 1);
+        if (nextLevel <= 0) {
+            return 0;
+        }
+        float ratio = Math.max(
+                0.0F,
+                Math.min(1.0F, magic.getMagicXP() / (float) nextLevel)
         );
+        return Math.round(ratio * CHANNEL_WIDTH);
+    }
+
+    private static void drawConceptFrame(
+            GuiGraphics graphics,
+            IneffableHudAtlas.FrameState state,
+            int manaWidth,
+            int paradoxWidth,
+            int experienceWidth
+    ) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(FRAME_X, FRAME_Y, 0.0F);
+        graphics.pose().scale(FRAME_SCALE_X, FRAME_SCALE_Y, 1.0F);
+
+        blitFull(graphics, IneffableHudConcept.baseTexture());
+        ResourceLocation disruption =
+                IneffableHudConcept.disruptionTexture(state);
+        if (disruption != null) {
+            graphics.pose().translate(disruptionPhase(), 0.0F, 0.0F);
+            blitFull(graphics, disruption);
+            graphics.pose().translate(-disruptionPhase(), 0.0F, 0.0F);
+        }
+        blitLeftResource(
+                graphics,
+                IneffableHudConcept.manaTexture(),
+                manaWidth,
+                IneffableHudConcept.CHANNEL_Y,
+                IneffableHudConcept.CHANNEL_HEIGHT
+        );
+        blitRightResource(
+                graphics,
+                IneffableHudConcept.paradoxTexture(),
+                paradoxWidth,
+                IneffableHudConcept.CHANNEL_Y,
+                IneffableHudConcept.CHANNEL_HEIGHT
+        );
+        blitLeftResource(
+                graphics,
+                IneffableHudConcept.xpTexture(),
+                experienceWidth,
+                137,
+                5
+        );
+        graphics.pose().popPose();
+    }
+
+    private static void drawBadge(GuiGraphics graphics, int level) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(BADGE_X, FRAME_Y, 0.0F);
+        graphics.pose().scale(BADGE_SCALE, BADGE_SCALE, 1.0F);
+        graphics.blit(
+                IneffableHudConcept.badgeTexture(),
+                0,
+                0,
+                0,
+                0,
+                IneffableHudConcept.BADGE_SOURCE_SIZE,
+                IneffableHudConcept.BADGE_SOURCE_SIZE,
+                IneffableHudConcept.BADGE_SOURCE_SIZE,
+                IneffableHudConcept.BADGE_SOURCE_SIZE
+        );
+        graphics.pose().popPose();
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(BADGE_X + 10, FRAME_Y + 10, 0.0F);
+        graphics.pose().scale(2.0F, 2.0F, 1.0F);
         graphics.renderItem(
                 ItemRegistry.INEFFABLE_HUD_BADGE.get().getDefaultInstance(),
-                BADGE_X + 2,
-                FRAME_Y
+                0,
+                0
         );
+        graphics.pose().popPose();
 
         String levelText = Integer.toString(level);
         int textWidth = Minecraft.getInstance().font.width(levelText);
         graphics.drawString(
                 Minecraft.getInstance().font,
                 levelText,
-                BADGE_X + (BADGE_SIZE - textWidth) / 2,
-                badgeTop + BADGE_SIZE + 1,
+                BADGE_X
+                        + (IneffableHudConcept.BADGE_DISPLAY_SIZE - textWidth)
+                        / 2,
+                FRAME_Y + IneffableHudConcept.BADGE_DISPLAY_SIZE + 2,
                 WHITE,
                 true
         );
     }
 
-    private static void drawMana(
+    private static void blitFull(
             GuiGraphics graphics,
-            int x,
-            int y,
-            int width
+            ResourceLocation texture
     ) {
-        IneffableHudAtlas.Sprite rails = IneffableHudAtlas.cropLeft(
-                IneffableHudAtlas.MANA_RAILS,
-                width
-        );
-        if (rails.width() <= 0) {
-            return;
-        }
-        blit(graphics, rails, x, y);
-        blit(
-                graphics,
-                IneffableHudAtlas.MANA_CAP,
-                x + rails.width() - 1,
-                y
+        graphics.blit(
+                texture,
+                0,
+                0,
+                0,
+                0,
+                IneffableHudConcept.SOURCE_WIDTH,
+                IneffableHudConcept.SOURCE_HEIGHT,
+                IneffableHudConcept.SOURCE_WIDTH,
+                IneffableHudConcept.SOURCE_HEIGHT
         );
     }
 
-    private static void drawParadox(
+    private static void blitLeftResource(
             GuiGraphics graphics,
-            int channelLeft,
+            ResourceLocation texture,
+            int width,
             int y,
-            int width
+            int height
     ) {
-        IneffableHudAtlas.Sprite lattice = IneffableHudAtlas.cropRight(
-                IneffableHudAtlas.PARADOX_LATTICE,
-                width
+        int clampedWidth = Math.max(
+                0,
+                Math.min(IneffableHudConcept.CHANNEL_WIDTH, width)
         );
-        if (lattice.width() <= 0) {
+        if (clampedWidth == 0) {
             return;
         }
-        blit(
-                graphics,
-                lattice,
-                channelLeft + CHANNEL_WIDTH - lattice.width(),
-                y
+        graphics.blit(
+                texture,
+                IneffableHudConcept.CHANNEL_X,
+                y,
+                IneffableHudConcept.CHANNEL_X,
+                y,
+                clampedWidth,
+                height,
+                IneffableHudConcept.SOURCE_WIDTH,
+                IneffableHudConcept.SOURCE_HEIGHT
         );
     }
 
-    private static void drawExperience(
+    private static void blitRightResource(
             GuiGraphics graphics,
-            int frameX,
-            int frameY,
-            IPlayerMagic magic
+            ResourceLocation texture,
+            int width,
+            int y,
+            int height
     ) {
-        int nextLevel = magic.getXPForLevel(magic.getMagicLevel() + 1);
-        if (nextLevel <= 0) {
+        int clampedWidth = Math.max(
+                0,
+                Math.min(IneffableHudConcept.CHANNEL_WIDTH, width)
+        );
+        if (clampedWidth == 0) {
             return;
         }
-        int width = Math.round(Math.max(
-                0.0F,
-                Math.min(1.0F, magic.getMagicXP() / (float) nextLevel)
-        ) * CHANNEL_WIDTH);
-        IneffableHudAtlas.Sprite strip = IneffableHudAtlas.cropLeft(
-                IneffableHudAtlas.XP_STRIP,
-                width
+        int offset = IneffableHudConcept.CHANNEL_WIDTH - clampedWidth;
+        int x = IneffableHudConcept.CHANNEL_X + offset;
+        graphics.blit(
+                texture,
+                x,
+                y,
+                x,
+                y,
+                clampedWidth,
+                height,
+                IneffableHudConcept.SOURCE_WIDTH,
+                IneffableHudConcept.SOURCE_HEIGHT
         );
-        if (strip.width() > 0) {
-            blit(
-                    graphics,
-                    strip,
-                    frameX + CHANNEL_X,
-                    frameY + FRAME_HEIGHT - 1
-            );
-        }
     }
 
     private static int disruptionPhase() {
@@ -227,29 +302,8 @@ public final class IneffableHudRenderer {
                 || Minecraft.getInstance().level == null) {
             return 0;
         }
-        return (int) (Minecraft.getInstance().level.getGameTime() / 8L & 1L);
-    }
-
-    private static void blit(
-            GuiGraphics graphics,
-            IneffableHudAtlas.Sprite sprite,
-            int x,
-            int y
-    ) {
-        if (sprite.width() <= 0 || sprite.height() <= 0) {
-            return;
-        }
-        graphics.blit(
-                IneffableFactionRegistry.HUD_TEXTURE,
-                x,
-                y,
-                sprite.u(),
-                sprite.v(),
-                sprite.width(),
-                sprite.height(),
-                IneffableHudAtlas.ATLAS_WIDTH,
-                IneffableHudAtlas.ATLAS_HEIGHT
-        );
+        return (int) (Minecraft.getInstance().level.getGameTime() / 8L & 1L)
+                * 3;
     }
 
     public record ManaGeometry(

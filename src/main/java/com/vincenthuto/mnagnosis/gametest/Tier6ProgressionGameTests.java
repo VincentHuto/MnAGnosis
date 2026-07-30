@@ -514,34 +514,34 @@ public final class Tier6ProgressionGameTests {
     ) {
         helper.assertTrue(IneffableHudRenderer.CONTENT_OFFSET_X == 14
                         && IneffableHudRenderer.BADGE_X == 14
-                        && IneffableHudRenderer.FRAME_X == 34,
+                        && IneffableHudRenderer.FRAME_X == 66,
                 "The custom Ineffable HUD ignored M&A's reserved left inset");
-        helper.assertTrue(IneffableHudRenderer.FRAME_WIDTH == 153
-                        && IneffableHudRenderer.FRAME_HEIGHT == 16,
-                "The custom Ineffable HUD no longer fits M&A's HUD allocation");
-        helper.assertTrue(IneffableHudRenderer.CHANNEL_WIDTH == 121
-                        && IneffableHudRenderer.CHANNEL_HEIGHT == 6
-                        && IneffableHudRenderer.CHANNEL_X == 16
-                        && IneffableHudRenderer.channelRightInset() == 16,
-                "The custom Ineffable HUD channel is not the approved thin design");
-        helper.assertTrue(IneffableHudRenderer.manaPixels(810.0F, 1620.0F) == 61,
+        helper.assertTrue(IneffableHudRenderer.FRAME_WIDTH == 320
+                        && IneffableHudRenderer.FRAME_HEIGHT == 52,
+                "The custom Ineffable HUD no longer uses the concept-art display size");
+        helper.assertTrue(IneffableHudRenderer.CHANNEL_WIDTH == 790
+                        && IneffableHudRenderer.CHANNEL_HEIGHT == 54
+                        && IneffableHudRenderer.CHANNEL_X == 80
+                        && IneffableHudRenderer.channelRightInset() == 106,
+                "The custom Ineffable HUD channel lost the concept proportions");
+        helper.assertTrue(IneffableHudRenderer.manaPixels(810.0F, 1620.0F) == 395,
                 "Mana no longer fills the Ineffable channel from the left");
         var halfMana = IneffableHudRenderer.manaGeometry(810.0F, 1620.0F);
-        helper.assertTrue(halfMana.width() == 61
+        helper.assertTrue(halfMana.width() == 395
                         && halfMana.topRailY() == 0
-                        && halfMana.bottomRailY() == 5
-                        && halfMana.leadingEdgeX() == 60,
+                        && halfMana.bottomRailY() == 53
+                        && halfMana.leadingEdgeX() == 394,
                 "Mana no longer forms a hollow law channel");
         helper.assertTrue(IneffableHudRenderer.manaGeometry(0.0F, 1620.0F)
                         .leadingEdgeX() == -1,
                 "Empty Mana still drew a leading edge");
-        helper.assertTrue(IneffableHudRenderer.paradoxPixels(405.0F, 1620.0F) == 30,
+        helper.assertTrue(IneffableHudRenderer.paradoxPixels(405.0F, 1620.0F) == 198,
                 "Paradox no longer fills the Ineffable channel from the right");
         helper.assertTrue(IneffableHudRenderer.overlapPixels(
-                        1215.0F, 405.0F, 1620.0F) == 0,
+                        810.0F, 810.0F, 1620.0F) == 0,
                 "Opposed resources overlap before together occupying the whole channel");
         helper.assertTrue(IneffableHudRenderer.overlapPixels(
-                        1458.0F, 567.0F, 1620.0F) == 30,
+                        1458.0F, 567.0F, 1620.0F) == 198,
                 "The Ineffable HUD did not calculate the contested channel region");
         helper.assertTrue(IneffableHudRenderer.frameState(0.19F)
                         == IneffableHudAtlas.FrameState.CONTAINED
