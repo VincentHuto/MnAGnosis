@@ -98,6 +98,12 @@ public final class IneffableHudRenderer {
         int manaWidth = manaPixels(mana.getAmount(), maximum);
         int paradoxWidth = paradoxPixels(paradox, maximum);
         IneffableHudAtlas.FrameState state = frameState(paradox / maximum);
+        float animationTicks = Minecraft.getInstance().level == null
+                ? 0.0F
+                : IneffableHudCubeLayout.animationTime(
+                        Minecraft.getInstance().level.getGameTime(),
+                        partialTick
+                );
 
         graphics.pose().pushPose();
         graphics.pose().translate(hudX, hudY, 0.0F);
@@ -108,7 +114,8 @@ public final class IneffableHudRenderer {
                 state,
                 manaWidth,
                 paradoxWidth,
-                experiencePixels(magic)
+                experiencePixels(magic),
+                animationTicks
         );
         CounterlawHudRenderer.renderContradictions(
                 graphics,
@@ -122,10 +129,7 @@ public final class IneffableHudRenderer {
                     graphics,
                     FRAME_X,
                     FRAME_Y,
-                    IneffableHudCubeLayout.animationTime(
-                            Minecraft.getInstance().level.getGameTime(),
-                            partialTick
-                    )
+                    animationTicks
             );
         }
         graphics.pose().popPose();
@@ -158,13 +162,15 @@ public final class IneffableHudRenderer {
             IneffableHudAtlas.FrameState state,
             int manaWidth,
             int paradoxWidth,
-            int experienceWidth
+            int experienceWidth,
+            float animationTicks
     ) {
         graphics.pose().pushPose();
         graphics.pose().translate(FRAME_X, FRAME_Y, 0.0F);
         graphics.pose().scale(FRAME_SCALE_X, FRAME_SCALE_Y, 1.0F);
 
         blitFull(graphics, IneffableHudConcept.baseTexture());
+        IneffableHudPortalRenderer.render(graphics, animationTicks);
         ResourceLocation disruption =
                 IneffableHudConcept.disruptionTexture(state);
         if (disruption != null) {
