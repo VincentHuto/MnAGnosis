@@ -69,6 +69,16 @@ public final class CorePacketRegistrar {
                 NetworkDirection.PLAY_TO_CLIENT,
                 16_384
         );
+        packets.add(
+                6,
+                PacketOwner.CORE,
+                SelectLatticePatternPacket.class,
+                SelectLatticePatternPacket::encode,
+                SelectLatticePatternPacket::decode,
+                SelectLatticePatternPacket::handle,
+                NetworkDirection.PLAY_TO_SERVER,
+                18
+        );
         return packets;
     }
 }

@@ -9,6 +9,7 @@ import com.vincenthuto.mnagnosis.common.item.MengerianTopologyItem;
 import com.vincenthuto.mnagnosis.common.item.LivingManuscriptItem;
 import com.vincenthuto.mnagnosis.common.item.PrimalMoteItem;
 import com.vincenthuto.mnagnosis.common.item.TesseractBlockItem;
+import com.vincenthuto.mnagnosis.common.item.UnboundedLatticeItem;
 import com.vincenthuto.mnagnosis.common.item.armor.TesseractItem;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.DeferredRegister;
@@ -32,6 +33,13 @@ public class ItemRegistry {
             BASEITEMS.register(
                     "living_manuscript",
                     () -> new LivingManuscriptItem(new Item.Properties().stacksTo(1))
+            );
+
+    public static final RegistryObject<Item> UNBOUNDED_LATTICE =
+            BASEITEMS.register(
+                    "unbounded_lattice",
+                    () -> new UnboundedLatticeItem(
+                            new Item.Properties().stacksTo(1).fireResistant())
             );
 
     public static final RegistryObject<Item> APOLLONIAN_TRAP =

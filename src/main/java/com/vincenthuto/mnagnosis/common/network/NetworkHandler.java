@@ -6,11 +6,13 @@ import com.vincenthuto.mnagnosis.common.authorship.AuthorshipControlService;
 import com.vincenthuto.mnagnosis.common.authorship.law.SpellFingerprint;
 import com.vincenthuto.mnagnosis.common.authorship.state.IneffableCastingStateProvider;
 import com.vincenthuto.mnagnosis.common.faction.IneffableMana;
+import com.vincenthuto.mnagnosis.common.architectonics.reassembled.ReassembledPattern;
 import com.vincenthuto.mnagnosis.common.progression.manuscript.IManuscriptState;
 import com.vincenthuto.mnagnosis.common.progression.manuscript.ManuscriptSnapshotFactory;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.InteractionHand;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -46,6 +48,15 @@ public final class NetworkHandler {
 
     public static void selectInterpretation(String fingerprint, ResourceLocation interpretation) {
         CHANNEL.sendToServer(new SelectInterpretationPacket(fingerprint, interpretation));
+    }
+
+    public static void selectLatticePattern(
+            InteractionHand hand,
+            UUID itemNonce,
+            ReassembledPattern pattern
+    ) {
+        CHANNEL.sendToServer(new SelectLatticePatternPacket(
+                hand, itemNonce, pattern));
     }
 
     public static void declareClosure(java.util.UUID debtId) {

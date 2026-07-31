@@ -10,8 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class LegacyPacketManifestTest {
 
     @Test
-    void preservesProtocolFiveLegacyDiscriminatorsAndAddsManuscriptAtFive() {
-        assertEquals("5", NetworkProtocol.CURRENT);
+    void preservesLegacyDiscriminatorsAndAddsLatticeSelectionAtSix() {
+        assertEquals("6", NetworkProtocol.CURRENT);
 
         List<PacketManifest.Entry> entries =
                 CorePacketRegistrar.create().manifest().entries();
@@ -28,7 +28,9 @@ class LegacyPacketManifestTest {
                         new Expected(4, GravityShiftStatePacket.class,
                                 NetworkDirection.PLAY_TO_CLIENT),
                         new Expected(5, ManuscriptSnapshotPacket.class,
-                                NetworkDirection.PLAY_TO_CLIENT)
+                                NetworkDirection.PLAY_TO_CLIENT),
+                        new Expected(6, SelectLatticePatternPacket.class,
+                                NetworkDirection.PLAY_TO_SERVER)
                 ),
                 entries.stream()
                         .map(entry -> new Expected(

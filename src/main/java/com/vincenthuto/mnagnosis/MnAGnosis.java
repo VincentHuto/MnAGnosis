@@ -13,6 +13,7 @@ import com.vincenthuto.mnagnosis.common.registry.SoundRegistry;
 import com.vincenthuto.mnagnosis.common.registry.ParticleRegistry;
 import com.vincenthuto.mnagnosis.common.network.NetworkHandler;
 import com.vincenthuto.mnagnosis.common.autogenic.AutogenicBootstrap;
+import com.vincenthuto.mnagnosis.common.architectonics.ArchitectonicBootstrap;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -79,6 +80,7 @@ public class MnAGnosis {
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             AutogenicBootstrap.bootstrap();
+            ArchitectonicBootstrap.bootstrap();
             NetworkHandler.register();
             CuriosApi.registerCurio(
                     ItemRegistry.INEFFABLE_ROBES.get(),

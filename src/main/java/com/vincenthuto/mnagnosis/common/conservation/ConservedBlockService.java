@@ -119,6 +119,25 @@ public final class ConservedBlockService {
         return SettlementResult.FAILED;
     }
 
+    /**
+     * Deposits reserved matter at one exact position. Unlike {@link #settle},
+     * this never substitutes a neighboring cell or restores the source.
+     */
+    public static SettlementResult settleExact(
+            ServerLevel level,
+            ServerPlayer caster,
+            Reservation reservation,
+            BlockPos target) {
+        if (reservation.settled
+                || !place(level, caster, target, reservation.state)) {
+            return SettlementResult.FAILED;
+        }
+        reservation.settled = true;
+        return target.equals(reservation.source)
+                ? SettlementResult.RESTORED
+                : SettlementResult.DEPOSITED;
+    }
+
     public static SettlementResult emergencySettle(
             ServerLevel level,
             Reservation reservation) {

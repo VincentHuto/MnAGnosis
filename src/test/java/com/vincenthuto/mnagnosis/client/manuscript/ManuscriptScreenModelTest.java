@@ -33,6 +33,31 @@ class ManuscriptScreenModelTest {
         assertEquals(AuthoredDiscipline.RELATION, model.selected().discipline());
     }
 
+    @Test
+    void relationGuidanceChangesAfterTheFirstMeasure() {
+        ManuscriptScreenModel perception = new ManuscriptScreenModel(packet());
+        perception.select(AuthoredDiscipline.RELATION);
+        assertEquals(
+                "screen.mnagnosis.manuscript.guidance.relation.measure",
+                perception.guidanceKey());
+
+        ManuscriptScreenModel intervention = new ManuscriptScreenModel(
+                new ManuscriptSnapshotPacket(List.of(
+                        snapshot(AuthoredDiscipline.DEFINITION),
+                        new ManuscriptSnapshotPacket.DisciplineSnapshot(
+                                AuthoredDiscipline.RELATION,
+                                ManuscriptStage.INTERVENTION,
+                                List.of(
+                                        ManuscriptDefinitions.revelationProof(
+                                                AuthoredDiscipline.RELATION),
+                                        ManuscriptDefinitions.firstMeasureProof())),
+                        snapshot(AuthoredDiscipline.CONTINUANCE))));
+        intervention.select(AuthoredDiscipline.RELATION);
+        assertEquals(
+                "screen.mnagnosis.manuscript.guidance.relation.return",
+                intervention.guidanceKey());
+    }
+
     private static ManuscriptSnapshotPacket packet() {
         return new ManuscriptSnapshotPacket(List.of(
                 snapshot(AuthoredDiscipline.DEFINITION),

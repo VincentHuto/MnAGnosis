@@ -138,7 +138,7 @@ public final class LivingManuscriptScreen extends Screen {
         }
         graphics.drawWordWrap(
                 font,
-                Component.translatable("screen.mnagnosis.manuscript.veiled"),
+                Component.translatable(model.guidanceKey()),
                 proofX,
                 proofY + 16,
                 BOOK_WIDTH / 2 - 34,

@@ -19,6 +19,6 @@ class LivingManuscriptScreenContractTest {
         assertTrue(source.contains("GLFW_KEY_RIGHT"));
         assertTrue(source.contains("ManuscriptStage.values()"));
         assertTrue(source.contains("proofKey("));
-        assertTrue(source.contains("screen.mnagnosis.manuscript.veiled"));
+        assertTrue(source.contains("model.guidanceKey()"));
     }
 }

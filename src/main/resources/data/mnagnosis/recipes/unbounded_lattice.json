@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ITI",
+    "EPE",
+    "IAI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_bars"
+    },
+    "T": {
+      "item": "mnagnosis:tesseract"
+    },
+    "E": {
+      "item": "minecraft:ender_eye"
+    },
+    "P": {
+      "item": "mnagnosis:primal_mote"
+    },
+    "A": {
+      "item": "minecraft:nether_star"
+    }
+  },
+  "result": {
+    "item": "mnagnosis:unbounded_lattice",
+    "count": 1
+  }
+}

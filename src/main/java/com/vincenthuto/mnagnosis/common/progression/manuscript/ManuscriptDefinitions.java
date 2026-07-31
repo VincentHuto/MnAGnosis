@@ -12,6 +12,16 @@ public final class ManuscriptDefinitions {
                     "mnagnosis",
                     "definition/axiom_of_harm"
             );
+    private static final ResourceLocation FIRST_MEASURE_PROOF =
+            ResourceLocation.fromNamespaceAndPath(
+                    "mnagnosis",
+                    "relation/first_measure"
+            );
+    private static final ResourceLocation RETURN_BORROWED_LAND_PROOF =
+            ResourceLocation.fromNamespaceAndPath(
+                    "mnagnosis",
+                    "relation/return_borrowed_land"
+            );
     private static final Map<AuthoredDiscipline, ResourceLocation> REVELATIONS =
             revelations();
 
@@ -23,9 +33,15 @@ public final class ManuscriptDefinitions {
         for (AuthoredDiscipline discipline : AuthoredDiscipline.values()) {
             ResourceLocation revelation = revelationProof(discipline);
             Set<ResourceLocation> proofIds =
-                    discipline == AuthoredDiscipline.DEFINITION
-                            ? Set.of(revelation, AXIOM_OF_HARM_PROOF)
-                            : Set.of(revelation);
+                    switch (discipline) {
+                        case DEFINITION -> Set.of(revelation, AXIOM_OF_HARM_PROOF);
+                        case RELATION -> Set.of(
+                                revelation,
+                                FIRST_MEASURE_PROOF,
+                                RETURN_BORROWED_LAND_PROOF
+                        );
+                        case CONTINUANCE -> Set.of(revelation);
+                    };
             registry.register(new DisciplineProgressionDefinition() {
                 @Override
                 public AuthoredDiscipline discipline() {
@@ -42,6 +58,11 @@ public final class ManuscriptDefinitions {
                     if (discipline == AuthoredDiscipline.DEFINITION
                             && earnedProofs.contains(revelation)
                             && earnedProofs.contains(AXIOM_OF_HARM_PROOF)) {
+                        return ManuscriptStage.INTERVENTION;
+                    }
+                    if (discipline == AuthoredDiscipline.RELATION
+                            && earnedProofs.contains(revelation)
+                            && earnedProofs.contains(FIRST_MEASURE_PROOF)) {
                         return ManuscriptStage.INTERVENTION;
                     }
                     return ManuscriptStage.PERCEPTION;
@@ -61,6 +82,14 @@ public final class ManuscriptDefinitions {
 
     public static ResourceLocation axiomOfHarmProof() {
         return AXIOM_OF_HARM_PROOF;
+    }
+
+    public static ResourceLocation firstMeasureProof() {
+        return FIRST_MEASURE_PROOF;
+    }
+
+    public static ResourceLocation returnBorrowedLandProof() {
+        return RETURN_BORROWED_LAND_PROOF;
     }
 
     private static Map<AuthoredDiscipline, ResourceLocation> revelations() {

@@ -29,6 +29,18 @@ public final class ManuscriptScreenModel {
         selectedIndex = indexOf(discipline);
     }
 
+    public String guidanceKey() {
+        var selected = selected();
+        if (selected.discipline() == AuthoredDiscipline.RELATION) {
+            return selected.stage()
+                    == com.vincenthuto.mnagnosis.common.progression.manuscript
+                    .ManuscriptStage.PERCEPTION
+                    ? "screen.mnagnosis.manuscript.guidance.relation.measure"
+                    : "screen.mnagnosis.manuscript.guidance.relation.return";
+        }
+        return "screen.mnagnosis.manuscript.veiled";
+    }
+
     private int indexOf(AuthoredDiscipline discipline) {
         for (int index = 0; index < snapshot.disciplines().size(); index++) {
             if (snapshot.disciplines().get(index).discipline() == discipline) {

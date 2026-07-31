@@ -33,6 +33,13 @@ public final class SpellComponentRegistry {
     public static final ComponentLivingLand LIVING_LAND = new ComponentLivingLand(
             MnAGnosis.rloc("textures/spell/component/living_land.png")
     );
+    public static final ResourceLocation REASSEMBLED_LAND_ID =
+            MnAGnosis.rloc("components/reassembled_land");
+    public static final ComponentReassembledLand REASSEMBLED_LAND =
+            new ComponentReassembledLand(
+                    MnAGnosis.rloc(
+                            "textures/spell/component/reassembled_land.png")
+            );
     public static final ResourceLocation POLARITY_ID = MnAGnosis.rloc("polarity");
     public static final PolarityModifier POLARITY = new PolarityModifier(
             MnAGnosis.rloc("textures/spell/modifier/polarity.png")
@@ -62,6 +69,7 @@ public final class SpellComponentRegistry {
                     helper.register(GRAVITY_CONVERGENCE_ID, GRAVITY_CONVERGENCE);
                     helper.register(GRAVITY_SHIFT_ID, GRAVITY_SHIFT);
                     helper.register(LIVING_LAND_ID, LIVING_LAND);
+                    helper.register(REASSEMBLED_LAND_ID, REASSEMBLED_LAND);
                 }
         );
         event.register(

@@ -18,6 +18,7 @@ public final class IneffableAffinityErosion {
             id("components/gravity_convergence"),
             id("components/gravity_shift"),
             id("components/living_land"),
+            id("components/reassembled_land"),
             id("components/banish")
     );
     private static final List<Affinity> CORE_AFFINITIES = List.of(

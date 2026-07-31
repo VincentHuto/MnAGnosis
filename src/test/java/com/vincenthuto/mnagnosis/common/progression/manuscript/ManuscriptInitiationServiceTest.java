@@ -21,13 +21,17 @@ class ManuscriptInitiationServiceTest {
             DisciplineProgressionDefinition definition =
                     registry.definition(discipline).orElseThrow();
             assertEquals(
-                    discipline == AuthoredDiscipline.DEFINITION ? 2 : 1,
+                    switch (discipline) {
+                        case DEFINITION -> 2;
+                        case RELATION -> 3;
+                        case CONTINUANCE -> 1;
+                    },
                     definition.proofIds().size()
             );
             assertTrue(definition.proofIds().contains(
                     ManuscriptDefinitions.revelationProof(discipline)));
             assertEquals(
-                    discipline == AuthoredDiscipline.DEFINITION
+                    discipline != AuthoredDiscipline.CONTINUANCE
                             ? ManuscriptStage.INTERVENTION
                             : ManuscriptStage.PERCEPTION,
                     definition.evaluate(definition.proofIds())

@@ -1,0 +1,19 @@
+{
+  "type": "mna:component",
+  "tier": 6,
+  "output": "mnagnosis:components/reassembled_land",
+  "items": [
+    "mnagnosis:primal_mote",
+    "mnagnosis:tesseract",
+    "mna:greater_mote_earth",
+    "mna:greater_mote_arcane",
+    "minecraft:polished_andesite",
+    "minecraft:obsidian",
+    "minecraft:quartz_block"
+  ],
+  "patterns": [
+    "mna:manaweave_patterns/square",
+    "mna:manaweave_patterns/diamond",
+    "mna:manaweave_patterns/inverted_triangle"
+  ]
+}
